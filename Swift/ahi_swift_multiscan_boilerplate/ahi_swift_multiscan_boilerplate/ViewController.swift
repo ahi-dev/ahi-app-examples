@@ -446,6 +446,8 @@ extension ViewController: AHIDelegatePersistence {
         // - _raw_ values
         // - id value
         // - date value
+        // Your token may only provide you access to a smaller subset of results.
+        // The persistence delegate will still work with your results provided you adhere to the validation check.
         exampleResults.append([
             "enum_ent_sex": "male",
             "cm_ent_height": 180,
@@ -539,6 +541,8 @@ extension NSObject {
 extension NSObject {
     /// Confirm results have correct set of keys.
     public func areBodyScanSmoothingResultsValid(bodyScanResults results: [[String: Any]]) -> Bool {
+        // Your token may only provide you access to a smaller subset of results.
+        // You should modify this list based on your available config options.
         let required: Set = [
             "enum_ent_sex",
             "cm_ent_height",
