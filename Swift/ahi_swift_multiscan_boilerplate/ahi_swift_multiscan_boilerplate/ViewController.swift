@@ -147,11 +147,11 @@ class ViewController: UIViewController {
         setupButton.heightAnchor.constraint(equalToConstant: buttonHeight).isActive = true
         setupButton.leftAnchor.constraint(equalTo: view.leftAnchor, constant: inset).isActive = true
         setupButton.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -inset).isActive = true
-        setupButton.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -(buttonHeight + inset)).isActive = true
+        setupButton.safeAreaLayoutGuide.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: (buttonHeight + inset)).isActive = true
         startFaceScanButton.heightAnchor.constraint(equalToConstant: buttonHeight).isActive = true
         startFaceScanButton.leftAnchor.constraint(equalTo: view.leftAnchor, constant: inset).isActive = true
         startFaceScanButton.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -inset).isActive = true
-        startFaceScanButton.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -(buttonHeight + inset)).isActive = true
+        startFaceScanButton.safeAreaLayoutGuide.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: (buttonHeight + inset)).isActive = true
         startBodyScanButton.heightAnchor.constraint(equalToConstant: buttonHeight).isActive = true
         startBodyScanButton.leftAnchor.constraint(equalTo: view.leftAnchor, constant: inset).isActive = true
         startBodyScanButton.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -inset).isActive = true
@@ -179,13 +179,13 @@ extension ViewController {
     }
 
     @IBAction func didTapCheckDownloadSize() {
-        getAHIResourcesDownloadSize()
+        checkAHIResourcesDownloadSize()
     }
 
     @IBAction func didTapDownloadResources() {
         downloadAHIResources()
         areAHIResourcesAvailable()
-        getAHIResourcesDownloadSize()
+        checkAHIResourcesDownloadSize()
         // Set button inactive
         downloadResourcesButton.isEnabled = false
         downloadResourcesButton.alpha = 0.5
@@ -202,7 +202,7 @@ extension ViewController {
     /// Setup the MultiScan SDK
     ///
     /// This must happen before requesting a scan.
-    /// We recommend doing this on successfuil sign in in your application.
+    /// We recommend doing this on successfuil load of your application.
     fileprivate func setupMultiScanSDK() {
         ahi.setup(withConfig: ["TOKEN": AHIConfigTokens.AHI_MULTI_SCAN_TOKEN], scans: [faceScan, bodyScan]) { [weak self] error in
             if let err = error {
@@ -210,14 +210,14 @@ extension ViewController {
                 print("AHI: Confirm you have a valid token.")
                 return
             }
-            self?.authoriseUser()
+            self?.authorizeUser()
         }
     }
 
-    /// Once successfully setup, you should authorize your user with out service.
+    /// Once successfully setup, you should authorize your user with our service.
     ///
-    /// With your signed in user, you can authenticate them provided that they have agreed to a payment method.
-    fileprivate func authoriseUser() {
+    /// With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
+    fileprivate func authorizeUser() {
         ahi.userAuthorize(forId: AHIConfigTokens.AHI_TEST_USER_ID, withSalt: AHIConfigTokens.AHI_TEST_USER_SALT, withClaims: AHIConfigTokens.AHI_TEST_USER_CLAIMS) { [weak self] authError in
             if let err = authError {
                 print("AHI: Auth Error: \(err)")
@@ -245,7 +245,7 @@ extension ViewController {
                 // We recommend polling to check resource state.
                 // This is a simple example of how.
                 DispatchQueue.main.asyncAfter(deadline: .now() + 30.0) {
-                    weakSelf?.getAHIResourcesDownloadSize()
+                    weakSelf?.checkAHIResourcesDownloadSize()
                     weakSelf?.areAHIResourcesAvailable()
                 }
                 return
@@ -262,7 +262,8 @@ extension ViewController {
         ahi.downloadResourcesInBackground()
     }
 
-    fileprivate func getAHIResourcesDownloadSize() {
+    /// Check the size of the AHI resources that require downloading. 
+    fileprivate func checkAHIResourcesDownloadSize() {
         ahi.totalEstimatedDownloadSizeInBytes { [weak self] bytes in
             print("AHI INFO: Size of download is \(self?.convertBytesToMBString(Int(bytes)) ?? "0")")
         }
