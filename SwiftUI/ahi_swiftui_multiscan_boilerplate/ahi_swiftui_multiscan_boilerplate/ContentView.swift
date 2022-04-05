@@ -1,16 +1,47 @@
 //
-//  ContentView.swift
-//  ahi_swiftui_multiscan_boilerplate
+//  AHI - Example Code
 //
-//  Created by Sabrina Tuli on 5/4/2022.
+//  Copyright (c) Advanced Human Imaging. All rights reserved.
 //
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 
 import SwiftUI
 
+public struct AHIConfigTokens {
+    /// Your AHI MultiScan DEV token
+    static let AHI_MULTI_SCAN_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJSS2Q2QUxGclZYclNKWktWdnp3SitaVVhSdW5uY29leVp4UGNVWWRrNXNZV2RHRmU1eHo4ejVtM3lIUHZvcHBXajlJeXMva1lNdVg0MUdhTUtmWktvUWVpcWdNN3NSS0dOK3RqZC9oZDBWR3FTM2ZocE1DdU9XaExZYTZFYm1MMGhQQlJyOS9HSXhVdkdkQWVpM1RHM25udDU0K1dUSkY2SFl6dHk0VWJnRFl5bVQxeFA5MEJYaE11eGhTUExJMzk3VGloNm5POW5hZXhGQmZKZjFNZHl4dWFPZzRpVFBSTEtpeG5PRXpZRHpORzQ2L0RPM2NHNlV3Q0JvRDVhYm1JVXNLRXlHUnpHSy9mMUVxcHE1ZGlQM2EvOTFLRXU1NUFXeGtzajBJTk1Sa2lCMThWOWxjRHljeFpuME9TYWtJNEptYktHYlJEMXlpcnJYYU9WQlpBZHpEcDdkN2V6aThEdE5RSWtJWExPR1pDZUlZL0xkQ0hmSy9YYmJteE9uaHlwUWFiVUxLUUFPVHVCak1FdDFybVBLdmxMUTUvSEhwZTZZVFk3dGJWNjZab2FLazZRQ0JIeEpjN2pzTHY2NkNzekttZTJHbVRteHRKOFRBMVFETDBCQUlhYktOWjFtR2NPN0VsNmtnVXRPeVl1YkVhT2d3eEFLMFJqSE9KcVhxYUNkZklaT2dEYXFRU1BodlVzWGpQNWZ5R1BUTTRSUnB5V2FGYzFEWkJzeExTUU94cG9MT1R0SzdBZnViaUsvZFJORGd4TnJxVmpHeXJ2Q29PQmwvWEhhZkxkNzI2RlVBc3FTcFJsREE4bnZJNE9XVEVJRnVrUnZkR1gvcmNNVlUvc2h6VGJ0WmJscnFCU0RDWUhxQVBKd3NPbyt0N1Y1QWc4K1phMTFuTGkwST0iLCJleHAiOjE3ODI2MzI3NDEsInZlciI6M30.02efe4ww7XKcPh3vt1009lLmfvLoAfSQTvgmlkPWMNFv9yIPWCvXejcBWhheY1XLejWGad7MXZM_WlBHhM3tCK9FN1K8_47-MTRRUpXcOR2naVArswofbPE8yGs1rOc3HwzNThg2TrnbVICRflnKoFLs3PLg067DUMOAqlm-o20rQovpwr0Bf_V6IDW-bc6u0snFIPX-VLbTr3MjuOWlJ7WTNbmKttaQsNeVo4JLyU-BnoeMv8w5j6VPPsX8LAaqE_JcdIFFlyJxHCfrs5aTP6EiBk7tb4WrsW-x1fWC34UIQA22yVfZusPxzDTDqbJuZ_MsHkoMApuuEOuJblCoUyS7JVJsCFUcw_08cu94zgI_CMTaNpsxBgdQyP_cAGrFXjmbRvERDNmss0IbFFmcMNtJtAQ0PSjl28KqzbUGG7c4QM5ctGyPJ1zkPFmGWUl2kUuEK4OhKnbcvkFaj0x_HDNm6G3ksPNsZs7_oy_RhecolX2uTeMG1CshlG3_ppJyFpr_c1VPGmJd7zrvUqOimdgraVLL5JqC-uajhCNcCVLn37VUjCRtpCoN_qkxXciYfLh0tf9-oiXAE4uTPbTY1ZrvfvO8cyT9mxn84GdDigVEJ16eMflwYkK_j_5a04TZYpsqENXlLOpRf7y4a89wCVEAG-B_DfB8VViT59b37rU"
+    /// Your user id. Hardcode a valid user id for testing purposes.
+    static let AHI_TEST_USER_ID = "AHI_TEST_USER"
+    /// Your salt token.
+    static let AHI_TEST_USER_SALT = "user"
+    /// Any claims you require passed to the SDK.
+    static let AHI_TEST_USER_CLAIMS = ["test"]
+}
+
 struct ContentView: View {
     var body: some View {
-        Text("Hello, world!")
-            .padding()
+        VStack() {
+            Button (action:{
+                }, label: {
+                    Text("Setup SDK")
+                        .foregroundColor(Color.white)
+                        .frame(maxWidth: .infinity)
+                        })
+            .frame(height: 55.0)
+            .background(Color.black)
+            Spacer()
+        }
+        .padding(EdgeInsets(top: 71, leading: 16, bottom: 16, trailing: 16))
     }
 }
 
