@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		580B6F4A7C22ABDE244E7BA7 /* Pods_ahi_swiftui_multiscan_boilerplate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 952B860B4593963F6282FED4 /* Pods_ahi_swiftui_multiscan_boilerplate.framework */; };
 		C9611E1127FD711500EB4B88 /* ahi_swiftui_multiscan_boilerplateApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9611E1027FD711500EB4B88 /* ahi_swiftui_multiscan_boilerplateApp.swift */; };
 		C9611E1327FD711500EB4B88 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9611E1227FD711500EB4B88 /* ContentView.swift */; };
 		C9611E1527FD711600EB4B88 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C9611E1427FD711600EB4B88 /* Assets.xcassets */; };
@@ -14,6 +15,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		08699E1381DBDD854727F7AB /* Pods-ahi_swiftui_multiscan_boilerplate.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ahi_swiftui_multiscan_boilerplate.debug.xcconfig"; path = "Target Support Files/Pods-ahi_swiftui_multiscan_boilerplate/Pods-ahi_swiftui_multiscan_boilerplate.debug.xcconfig"; sourceTree = "<group>"; };
+		1E41ACF0F021904CE1E9151F /* Pods-ahi_swiftui_multiscan_boilerplate.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ahi_swiftui_multiscan_boilerplate.release.xcconfig"; path = "Target Support Files/Pods-ahi_swiftui_multiscan_boilerplate/Pods-ahi_swiftui_multiscan_boilerplate.release.xcconfig"; sourceTree = "<group>"; };
+		952B860B4593963F6282FED4 /* Pods_ahi_swiftui_multiscan_boilerplate.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ahi_swiftui_multiscan_boilerplate.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9611E0D27FD711500EB4B88 /* ahi_swiftui_multiscan_boilerplate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ahi_swiftui_multiscan_boilerplate.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9611E1027FD711500EB4B88 /* ahi_swiftui_multiscan_boilerplateApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ahi_swiftui_multiscan_boilerplateApp.swift; sourceTree = "<group>"; };
 		C9611E1227FD711500EB4B88 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -26,17 +30,37 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				580B6F4A7C22ABDE244E7BA7 /* Pods_ahi_swiftui_multiscan_boilerplate.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2C54442DAB6F96DB5FBA0783 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				08699E1381DBDD854727F7AB /* Pods-ahi_swiftui_multiscan_boilerplate.debug.xcconfig */,
+				1E41ACF0F021904CE1E9151F /* Pods-ahi_swiftui_multiscan_boilerplate.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		5D79AC7C1B689DEA38260011 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				952B860B4593963F6282FED4 /* Pods_ahi_swiftui_multiscan_boilerplate.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		C9611E0427FD711500EB4B88 = {
 			isa = PBXGroup;
 			children = (
 				C9611E0F27FD711500EB4B88 /* ahi_swiftui_multiscan_boilerplate */,
 				C9611E0E27FD711500EB4B88 /* Products */,
+				2C54442DAB6F96DB5FBA0783 /* Pods */,
+				5D79AC7C1B689DEA38260011 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -74,9 +98,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = C9611E1B27FD711600EB4B88 /* Build configuration list for PBXNativeTarget "ahi_swiftui_multiscan_boilerplate" */;
 			buildPhases = (
+				9D5944543F330FE66C0DF086 /* [CP] Check Pods Manifest.lock */,
 				C9611E0927FD711500EB4B88 /* Sources */,
 				C9611E0A27FD711500EB4B88 /* Frameworks */,
 				C9611E0B27FD711500EB4B88 /* Resources */,
+				17445AC5645035AC12FB4354 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -131,6 +157,48 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		17445AC5645035AC12FB4354 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-ahi_swiftui_multiscan_boilerplate/Pods-ahi_swiftui_multiscan_boilerplate-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-ahi_swiftui_multiscan_boilerplate/Pods-ahi_swiftui_multiscan_boilerplate-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-ahi_swiftui_multiscan_boilerplate/Pods-ahi_swiftui_multiscan_boilerplate-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		9D5944543F330FE66C0DF086 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-ahi_swiftui_multiscan_boilerplate-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		C9611E0927FD711500EB4B88 /* Sources */ = {
@@ -261,6 +329,7 @@
 		};
 		C9611E1C27FD711600EB4B88 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 08699E1381DBDD854727F7AB /* Pods-ahi_swiftui_multiscan_boilerplate.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -268,8 +337,10 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"ahi_swiftui_multiscan_boilerplate/Preview Content\"";
 				DEVELOPMENT_TEAM = R8N9468BQ5;
+				ENABLE_BITCODE = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "We need to use your camera to take a scan.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -290,6 +361,7 @@
 		};
 		C9611E1D27FD711600EB4B88 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1E41ACF0F021904CE1E9151F /* Pods-ahi_swiftui_multiscan_boilerplate.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -297,8 +369,10 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"ahi_swiftui_multiscan_boilerplate/Preview Content\"";
 				DEVELOPMENT_TEAM = R8N9468BQ5;
+				ENABLE_BITCODE = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "We need to use your camera to take a scan.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
