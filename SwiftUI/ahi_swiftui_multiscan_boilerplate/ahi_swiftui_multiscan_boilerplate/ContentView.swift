@@ -36,42 +36,44 @@ public struct AHIConfigTokens {
 }
 
 struct ContentView: View {
-    @ObservedObject var sdk: SdkManager = SdkManager.sdk
+    @ObservedObject var multiScan: AHISDKManager = AHISDKManager.shared
+    @State private var buttonHeight = 55.0
+    @State private var buttonInset = 16.0
     var body: some View {
         VStack() {
             Button (action:{
-                if sdk.isSetup {
+                if multiScan.isSetup {
                     didTapStartFaceScan()
                 } else {
                     didTapSetup()
                 }
                 }, label: {
-                    Text(sdk.isSetup ? "Start FaceScan" : "Setup SDK")
+                    Text(multiScan.isSetup ? "Start FaceScan" : "Setup SDK")
                         .foregroundColor(Color.white)
                         .frame(maxWidth: .infinity)
                         })
             .frame(height: 55.0)
             .background(Color.black)
             Button (action:{
-                if sdk.isFinishedDownloadingResources {
+                if multiScan.isFinishedDownloadingResources {
                     didTapStartBodyScan()
                 } else {
                     didTapDownloadResources()
                 }
                 }, label: {
-                    Text(sdk.isFinishedDownloadingResources ? "Start BodyScan" : "Download Resources")
+                    Text(multiScan.isFinishedDownloadingResources ? "Start BodyScan" : "Download Resources")
                         .foregroundColor(Color.white)
                         .frame(maxWidth: .infinity)
                         })
-            .frame(height: 55.0)
+            .frame(height: buttonHeight)
             .background(Color.black)
-            .hidden(!sdk.isSetup)
-            .disabled(sdk.isDownloadInProgress)
-            .opacity(sdk.isDownloadInProgress ? 0.5 : 1)
+            .hidden(!multiScan.isSetup)
+            .disabled(multiScan.isDownloadInProgress)
+            .opacity(multiScan.isDownloadInProgress ? 0.5 : 1)
             Spacer()
         }
-        .padding(EdgeInsets(top: 71, leading: 16, bottom: 16, trailing: 16))
-        .onAppear(perform: sdk.setPersistenceDelegate)
+        .padding(EdgeInsets(top: buttonHeight + buttonInset, leading: buttonInset, bottom: buttonInset, trailing: buttonInset))
+        .onAppear(perform: multiScan.setPersistenceDelegate)
     }
 }
 
@@ -85,46 +87,35 @@ struct ContentView_Previews: PreviewProvider {
 
 extension ContentView {
     func didTapSetup() {
-        sdk.setupMultiScanSDK()
+        multiScan.setupMultiScanSDK()
     }
     
     func didTapStartFaceScan() {
-        sdk.startFaceScan()
+        multiScan.startFaceScan()
     }
 
     func didTapStartBodyScan() {
-        sdk.startBodyScan()
+        multiScan.startBodyScan()
     }
     
     func didTapCheckDownloadSize() {
-        sdk.checkAHIResourcesDownloadSize()
+        multiScan.checkAHIResourcesDownloadSize()
     }
 
     func didTapDownloadResources() {
-        sdk.downloadAHIResources()
-        sdk.areAHIResourcesAvailable()
-        sdk.checkAHIResourcesDownloadSize()
+        multiScan.downloadAHIResources()
+        multiScan.areAHIResourcesAvailable()
+        multiScan.checkAHIResourcesDownloadSize()
     }
     
     func didTapCheckResourcesAvailable() {
-        sdk.areAHIResourcesAvailable()
-    }
-}
-
-// MARK: - View Helper
-
-extension View {
-    @ViewBuilder func hidden(_ shouldHide: Bool) -> some View {
-        switch shouldHide {
-        case true: self.hidden()
-        case false: self
-        }
+        multiScan.areAHIResourcesAvailable()
     }
 }
 
 // MARK: - SDK functionalities manager, Setup SDK
 
-class SdkManager: NSObject, ObservableObject {
+class AHISDKManager: NSObject, ObservableObject {
     /// Default state of the app when launched is that the AHI MultiScan SDK is not setup.
     ///
     ///  When the Setup has been completed options for scans will appear.
@@ -140,7 +131,7 @@ class SdkManager: NSObject, ObservableObject {
     /// Instance of AHI BodyScan
     let bodyScan = AHIBodyScan.shared()
     
-    static let sdk = SdkManager()
+    static let shared = AHISDKManager()
     
     /// Set persistence delegate
     fileprivate func setPersistenceDelegate() {
@@ -196,7 +187,7 @@ class SdkManager: NSObject, ObservableObject {
 
 // MARK: - AHI Multi Scan Remote Resources
 
-extension SdkManager {
+extension AHISDKManager {
     /// Check if the AHI resources are downloaded.
     ///
     /// We have remote resources that exceed 100MB that enable our scans to work.
@@ -241,7 +232,7 @@ extension SdkManager {
 
 // MARK: - AHI Face Scan Initialiser
 
-extension SdkManager {
+extension AHISDKManager {
     fileprivate func startFaceScan() {
         // All required face scan options.
         let options: [String : Any] = [
@@ -287,7 +278,7 @@ extension SdkManager {
 
 // MARK: - AHI Body Scan Initialiser
 
-extension SdkManager {
+extension AHISDKManager {
     fileprivate func startBodyScan() {
         // All required body scan options
         let options: [String : Any] = [
@@ -331,7 +322,7 @@ extension SdkManager {
 
 // MARK: - Body Scan Extras
 
-extension SdkManager {
+extension AHISDKManager {
     /// Use this function to fetch the 3D avatar mesh.
     ///
     /// The 3D mesh can be created and returned at any time.
@@ -353,7 +344,7 @@ extension SdkManager {
 
 // MARK: - AHI MultiScan Optional Functions
 
-extension SdkManager {
+extension AHISDKManager {
     /// Check if MultiScan is on or offline.
     fileprivate func getMultiScanStatus() {
         ahi.status { multiScanStatus in
@@ -407,7 +398,7 @@ extension SdkManager {
 // "adj" means adjusted and is used to help provide historical results as a reference for the newest result to provide tailored to the user results.
 // We recommend using this for individual users results; avoid using this if the app is a single user ID with multiple users results.
 // More info found here: https://docs.advancedhumanimaging.io/MultiScan%20SDK/Data/
-extension SdkManager: AHIDelegatePersistence {
+extension AHISDKManager: AHIDelegatePersistence {
     func requestScanType(_ scan: String, options: [String : Any] = [:], completion completionBlock: @escaping (Error?, [[String : Any]]?) -> Void) {
         print("AHI INFO: Persistence Delegate method called by MultiScan SDK.")
         // You should have your body scan results stored somewhere that this function can access.
@@ -552,5 +543,16 @@ extension NSObject {
         byteFormatter.allowedUnits = .useMB
         byteFormatter.countStyle = .binary
         return byteFormatter.string(fromByteCount: Int64(bytes))
+    }
+}
+
+// MARK: - View Helper
+
+extension View {
+    @ViewBuilder func hidden(_ shouldHide: Bool) -> some View {
+        switch shouldHide {
+        case true: self.hidden()
+        case false: self
+        }
     }
 }
