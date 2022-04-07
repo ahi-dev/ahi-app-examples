@@ -28,17 +28,6 @@ allprojects {
         }
         // AHI Maven repositories
         maven {
-            // AHI MultiScan - Maven - Dev
-            url System.getenv("DEV_AWS_URL")
-            credentials(AwsCredentials) {
-                accessKey System.getenv("DEV_AWS_ACCESS_KEY")
-                secretKey System.getenv("DEV_AWS_SECRET_KEY")
-            }
-            content {
-                includeGroupByRegex "com\\.myfiziq.*"
-            }
-        }
-        maven {
             // AHI MultiScan - Maven - Release
             name "publicRelease"
             url System.getenv("RELEASE_AWS_URL")
