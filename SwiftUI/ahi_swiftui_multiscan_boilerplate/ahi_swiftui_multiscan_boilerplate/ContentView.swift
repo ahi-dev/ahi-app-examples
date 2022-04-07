@@ -36,9 +36,10 @@ public struct AHIConfigTokens {
 }
 
 struct ContentView: View {
-    @ObservedObject var multiScan: AHISDKManager = AHISDKManager()
+    @ObservedObject var multiScan = AHISDKManager()
     @State private var buttonHeight = 55.0
     @State private var buttonInset = 16.0
+    
     var body: some View {
         VStack() {
             Button (action:{
@@ -97,10 +98,6 @@ extension ContentView {
         multiScan.startBodyScan()
     }
     
-    func didTapCheckDownloadSize() {
-        multiScan.checkAHIResourcesDownloadSize()
-    }
-
     func didTapDownloadResources() {
         multiScan.downloadAHIResources()
         multiScan.areAHIResourcesAvailable()
@@ -117,6 +114,7 @@ class AHISDKManager: NSObject, ObservableObject {
     @Published var isSetup = false
     @Published var isFinishedDownloadingResources = false
     @Published var isDownloadInProgress = false
+    
     // MARK: Scan Instances
 
     /// Instance of AHI MultiScan
@@ -128,7 +126,7 @@ class AHISDKManager: NSObject, ObservableObject {
     
     public override init() {
         super.init()
-        /// Set persistence delegate
+        // Set persistence delegate
         ahi.setPersistenceDelegate(self)
     }
 }
@@ -255,7 +253,7 @@ extension AHISDKManager {
                     // Handle results
                     print("AHI: SCAN RESULTS: \(results)")
                 }
-                /// Handle failure.
+                // Handle failure.
                 return nil
             })
         }
@@ -299,7 +297,7 @@ extension AHISDKManager {
                     // This is an optional feature.
                     self?.getBodyScanExtras(withBodyScanResult: results)
                 }
-                /// Handle failure.
+                // Handle failure.
                 return nil
             })
         }
@@ -380,10 +378,10 @@ extension AHISDKManager {
 
 // MARK: - Persistence Delegate example
 
-// If you choose to use this, you will obtain two sets of results - one containing the "raw" output and another set containing "adj" output.
-// "adj" means adjusted and is used to help provide historical results as a reference for the newest result to provide tailored to the user results.
-// We recommend using this for individual users results; avoid using this if the app is a single user ID with multiple users results.
-// More info found here: https://docs.advancedhumanimaging.io/MultiScan%20SDK/Data/
+/// If you choose to use this, you will obtain two sets of results - one containing the "raw" output and another set containing "adj" output.
+/// "adj" means adjusted and is used to help provide historical results as a reference for the newest result to provide tailored to the user results.
+/// We recommend using this for individual users results; avoid using this if the app is a single user ID with multiple users results.
+/// More info found here: https://docs.advancedhumanimaging.io/MultiScan%20SDK/Data/
 extension AHISDKManager: AHIDelegatePersistence {
     func requestScanType(_ scan: String, options: [String : Any] = [:], completion completionBlock: @escaping (Error?, [[String : Any]]?) -> Void) {
         print("AHI INFO: Persistence Delegate method called by MultiScan SDK.")
