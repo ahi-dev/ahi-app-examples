@@ -190,10 +190,6 @@ extension ViewController {
         downloadResourcesButton.isEnabled = false
         downloadResourcesButton.alpha = 0.5
     }
-
-    @IBAction func didTapCheckResourcesAvailable() {
-        areAHIResourcesAvailable()
-    }
 }
 
 // MARK: - MultiScan SDK Setup Functions
