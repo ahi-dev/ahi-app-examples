@@ -45,24 +45,4 @@ class MultiScanViewModel : ViewModel() {
     fun setIsSetup(isSetupState: Boolean) {
         _isSetup.value = isSetupState
     }
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
