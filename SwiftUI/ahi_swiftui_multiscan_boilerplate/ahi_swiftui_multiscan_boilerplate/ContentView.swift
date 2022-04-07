@@ -36,7 +36,7 @@ public struct AHIConfigTokens {
 }
 
 struct ContentView: View {
-    @ObservedObject var multiScan: AHISDKManager = AHISDKManager.shared
+    @ObservedObject var multiScan: AHISDKManager = AHISDKManager()
     @State private var buttonHeight = 55.0
     @State private var buttonInset = 16.0
     var body: some View {
@@ -52,7 +52,7 @@ struct ContentView: View {
                         .foregroundColor(Color.white)
                         .frame(maxWidth: .infinity)
                         })
-            .frame(height: 55.0)
+            .frame(height: buttonHeight)
             .background(Color.black)
             Button (action:{
                 if multiScan.isFinishedDownloadingResources {
@@ -73,7 +73,6 @@ struct ContentView: View {
             Spacer()
         }
         .padding(EdgeInsets(top: buttonHeight + buttonInset, leading: buttonInset, bottom: buttonInset, trailing: buttonInset))
-        .onAppear(perform: multiScan.setPersistenceDelegate)
     }
 }
 
@@ -107,10 +106,6 @@ extension ContentView {
         multiScan.areAHIResourcesAvailable()
         multiScan.checkAHIResourcesDownloadSize()
     }
-    
-    func didTapCheckResourcesAvailable() {
-        multiScan.areAHIResourcesAvailable()
-    }
 }
 
 // MARK: - SDK functionalities manager, Setup SDK
@@ -131,13 +126,16 @@ class AHISDKManager: NSObject, ObservableObject {
     /// Instance of AHI BodyScan
     let bodyScan = AHIBodyScan.shared()
     
-    static let shared = AHISDKManager()
-    
-    /// Set persistence delegate
-    fileprivate func setPersistenceDelegate() {
+    public override init() {
+        super.init()
+        /// Set persistence delegate
         ahi.setPersistenceDelegate(self)
     }
-    
+}
+
+// MARK: - AHI Multi Scan SDK Setup
+
+extension AHISDKManager {
     /// Setup the MultiScan SDK
     ///
     /// This must happen before requesting a scan.
@@ -170,18 +168,6 @@ class AHISDKManager: NSObject, ObservableObject {
                 return
             }
         }
-    }
-    
-    /// Return topmost viewController to initiate face and bodyscan
-    fileprivate func topMostVC() -> UIViewController? {
-        let keyWindow = UIApplication.shared.windows.filter {$0.isKeyWindow}.first
-        if var topController = keyWindow?.rootViewController {
-            while let presentedViewController = topController.presentedViewController {
-                topController = presentedViewController
-            }
-            return topController
-        }
-        return nil
     }
 }
 
@@ -543,6 +529,22 @@ extension NSObject {
         byteFormatter.allowedUnits = .useMB
         byteFormatter.countStyle = .binary
         return byteFormatter.string(fromByteCount: Int64(bytes))
+    }
+}
+
+// MARK: - ViewController Helper
+
+extension NSObject {
+    /// Return topmost viewController to initiate face and bodyscan
+    public func topMostVC() -> UIViewController? {
+        let keyWindow = UIApplication.shared.windows.filter {$0.isKeyWindow}.first
+        if var topController = keyWindow?.rootViewController {
+            while let presentedViewController = topController.presentedViewController {
+                topController = presentedViewController
+            }
+            return topController
+        }
+        return nil
     }
 }
 
