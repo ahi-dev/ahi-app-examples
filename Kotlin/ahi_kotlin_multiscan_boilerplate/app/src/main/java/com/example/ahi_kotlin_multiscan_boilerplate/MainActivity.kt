@@ -24,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.example.ahi_kotlin_multiscan_boilerplate.databinding.ActivityMainBinding
+import com.example.ahi_kotlin_multiscan_boilerplate.utilities.saveObjResultToFile
 import com.example.ahi_kotlin_multiscan_boilerplate.viewmodel.MultiScanViewModel
 import com.myfiziq.sdk.MultiScan
 import com.myfiziq.sdk.MultiScanDelegate
@@ -36,10 +37,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import java.io.BufferedWriter
 import java.io.File
-import java.io.FileOutputStream
-import java.io.OutputStreamWriter
 import java.util.concurrent.CompletableFuture
 
 const val TAG = "MainActivityAHI"
@@ -61,7 +59,7 @@ object AHIConfigTokens {
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
     /** Instance of AHI MultiScan */
-    val ahi: MultiScan = MultiScan.shared()
+    val ahi = MultiScan.shared()
     lateinit var binding: ActivityMainBinding
     lateinit var viewModel: MultiScanViewModel
 
@@ -70,7 +68,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         viewModel = ViewModelProvider(this).get(MultiScanViewModel::class.java)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        MultiScan.shared().registerDelegate(AHIPersistenceDelegate)
+        ahi.registerDelegate(AHIPersistenceDelegate)
         viewModel.isSetup.observe(this, Observer {
             if (it) {
                 binding.setupButton.visibility = View.GONE
@@ -115,7 +113,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun didTapStartBodyScan() {
         startBodyScan()
-        MultiScan.shared().registerDelegate(AHIPersistenceDelegate)
+        ahi.registerDelegate(AHIPersistenceDelegate)
     }
 
     private fun didTapDownloadResources() {
@@ -151,7 +149,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     /**
      *  Download scan resources.
      *  We recommend only calling this function once per session to prevent duplicate background resource calls.
-     * */
+     */
     private fun downloadAHIResources() {
         ahi.downloadResourcesInBackground()
     }
@@ -202,7 +200,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun startFaceScan() {
-        /** All required face scan options. */
+        // All required face scan options.
         val avatarValues: HashMap<String, Any> = HashMap()
         avatarValues["TAG_ARG_GENDER"] = "M"
         avatarValues["TAG_ARG_SMOKER"] = "F"
@@ -273,20 +271,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             saveObjResultToFile(it, objFile)
             /** Return the URL */
         }
-    }
-
-    /** Save 3D avatar mesh result on local device. */
-    private fun saveObjResultToFile(res: SdkResultParcelable, objFile: File) {
-        val meshResObj = JSONObject(res.result)
-        val objString = meshResObj["mesh"].toString()
-        val words: List<String> = objString.split(",")
-        val stream = FileOutputStream(objFile)
-        val writer = BufferedWriter(OutputStreamWriter(stream))
-        for (word in words) {
-            writer.write(word)
-            writer.newLine()
-        }
-        writer.close()
     }
 
     /** For the newest AHIMultiScan version 21.1.3 need to implement PersistenceDelegate */
@@ -391,10 +375,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
     /** Confirm results have correct set of keys. */
     private fun areBodyScanSmoothingResultsValid(it: MutableMap<String, String>): Boolean {
-        /**
-         *  Your token may only provide you access to a smaller subset of results.
-         *  You should modify this list based on your available config options.
-         * */
+        // Your token may only provide you access to a smaller subset of results.
+        // You should modify this list based on your available config options.
         val sdkResultSchema = listOf(
             "enum_ent_sex",
             "cm_ent_height",
@@ -410,14 +392,14 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             "id",
             "date"
         )
-        var checkFlag = false
+        var isValid = false
         /** Iterate over results */
         sdkResultSchema.forEach { str ->
             /** Check if keys in results contains the required keys. */
             if (!it.keys.contains(str)) {
-                checkFlag = true
+                isValid = true
             }
         }
-        return !checkFlag
+        return !isValid
     }
 }
