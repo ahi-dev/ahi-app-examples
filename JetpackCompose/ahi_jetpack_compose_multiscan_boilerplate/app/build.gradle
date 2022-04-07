@@ -64,4 +64,6 @@ dependencies {
     implementation "com.myfiziq.sdk:orm:${AHISdkVersion}-release"
     implementation "com.myfiziq.sdk:myfiziqsdk:${AHISdkVersion}-release"
     implementation "com.myfiziq.sdk:myfiziqsdk-android-face-scan:${AHISdkVersion}-release"
+    // Compose ConstraintLayout
+    implementation "androidx.constraintlayout:constraintlayout-compose:1.0.0"
 }
