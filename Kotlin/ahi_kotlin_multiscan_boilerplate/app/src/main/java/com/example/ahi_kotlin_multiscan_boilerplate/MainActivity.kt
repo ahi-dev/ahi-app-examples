@@ -60,27 +60,6 @@ object AHIConfigTokens {
     val AHI_TEST_USER_CLAIMS = arrayOf("test")
 }
 
-/** For the newest AHIMultiScan version 21.1.3 need to implement PersistenceDelegate */
-object AHIPersistenceDelegate : MultiScanDelegate {
-    override fun request(
-        scanType: MSScanType?,
-        options: MutableMap<String, String>?
-    ): CompletableFuture<SdkResultParcelable> {
-        val future = CompletableFuture<SdkResultParcelable>()
-        if (scanType == MSScanType.BODY) {
-            val rawResultList = mutableListOf<String>()
-            options?.forEach {
-                rawResultList.add(it.toString())
-            }
-            val jsonArrayString = "[" + rawResultList.joinToString(separator = ",") + "]"
-            future.complete(SdkResultParcelable(SdkResultCode.SUCCESS, jsonArrayString))
-        } else {
-            future.complete(SdkResultParcelable(SdkResultCode.ERROR, ""))
-        }
-        return future
-    }
-}
-
 class MainActivity : AppCompatActivity(), View.OnClickListener {
     /** Instance of AHI MultiScan */
     val ahi: MultiScan = MultiScan.shared()
@@ -309,6 +288,27 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             writer.newLine()
         }
         writer.close()
+    }
+    
+    /** For the newest AHIMultiScan version 21.1.3 need to implement PersistenceDelegate */
+    object AHIPersistenceDelegate : MultiScanDelegate {
+        override fun request(
+            scanType: MSScanType?,
+            options: MutableMap<String, String>?
+        ): CompletableFuture<SdkResultParcelable> {
+            val future = CompletableFuture<SdkResultParcelable>()
+            if (scanType == MSScanType.BODY) {
+                val rawResultList = mutableListOf<String>()
+                options?.forEach {
+                    rawResultList.add(it.toString())
+                }
+                val jsonArrayString = "[" + rawResultList.joinToString(separator = ",") + "]"
+                future.complete(SdkResultParcelable(SdkResultCode.SUCCESS, jsonArrayString))
+            } else {
+                future.complete(SdkResultParcelable(SdkResultCode.ERROR, ""))
+            }
+            return future
+        }
     }
 
     /**
