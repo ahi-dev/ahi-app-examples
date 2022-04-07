@@ -289,7 +289,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         }
         writer.close()
     }
-
+    
     /** For the newest AHIMultiScan version 21.1.3 need to implement PersistenceDelegate */
     object AHIPersistenceDelegate : MultiScanDelegate {
         override fun request(
@@ -373,7 +373,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      *  BodyScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/BodyScan/Schemas/
      * */
     private fun areBodyScanConfigOptionsValid(avatarValues: java.util.HashMap<String, Any>): Boolean {
-        if (!areSharedScanConfigOptionsValid(avatarValues)) {
+        if (areSharedScanConfigOptionsValid(avatarValues)) {
             return false
         }
         val sex = avatarValues["TAG_ARG_GENDER"].takeIf { it is String }
