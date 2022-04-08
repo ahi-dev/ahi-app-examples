@@ -1,0 +1,3 @@
+
+rootProject.name = "ahi_kotlin_multiscan_boilerplate"
+include ':app'
