@@ -105,7 +105,7 @@ extension ContentView {
     }
 }
 
-// MARK: - SDK functionalities manager, Setup SDK
+// MARK: - AHI MultiScan SDK Manager
 
 class AHISDKManager: NSObject, ObservableObject {
     /// Default state of the app when launched is that the AHI MultiScan SDK is not setup.
