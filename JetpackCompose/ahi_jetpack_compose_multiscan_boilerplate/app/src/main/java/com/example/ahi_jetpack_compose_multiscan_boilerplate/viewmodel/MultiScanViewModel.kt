@@ -20,7 +20,13 @@ package com.example.ahi_jetpack_compose_multiscan_boilerplate.viewmodel
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 
-class MultiScanViewModel:ViewModel() {
+class MultiScanViewModel : ViewModel() {
+    /** Control view visibility state */
     val isSetupState = mutableStateOf(false)
+
+    /** Check download finished state */
     val isFinishedDownloadingResourcesState = mutableStateOf(false)
+
+    /** Control button enable state */
+    val buttonEnabled = mutableStateOf(true)
 }
