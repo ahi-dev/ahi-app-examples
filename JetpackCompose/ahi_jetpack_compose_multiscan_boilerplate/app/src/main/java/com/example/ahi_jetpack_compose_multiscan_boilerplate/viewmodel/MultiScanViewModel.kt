@@ -21,6 +21,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 
 class MultiScanViewModel:ViewModel() {
-    private val isSetupState = mutableStateOf(false)
-    private val _isFinishedDownloadingResourcesState = false
+    val isSetupState = mutableStateOf(false)
+    val isFinishedDownloadingResourcesState = mutableStateOf(false)
 }
