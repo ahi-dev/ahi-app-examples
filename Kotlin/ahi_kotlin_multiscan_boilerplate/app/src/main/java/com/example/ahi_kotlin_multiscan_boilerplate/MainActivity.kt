@@ -24,7 +24,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.example.ahi_kotlin_multiscan_boilerplate.databinding.ActivityMainBinding
-import com.example.ahi_kotlin_multiscan_boilerplate.utilities.saveObjResultToFile
 import com.example.ahi_kotlin_multiscan_boilerplate.viewmodel.MultiScanViewModel
 import com.myfiziq.sdk.MultiScan
 import com.myfiziq.sdk.MultiScanDelegate
@@ -37,7 +36,10 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import java.io.BufferedWriter
 import java.io.File
+import java.io.FileOutputStream
+import java.io.OutputStreamWriter
 import java.util.concurrent.CompletableFuture
 
 const val TAG = "MainActivityAHI"
@@ -231,7 +233,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         avatarValues["TAG_ARG_GENDER"] = "M"
         avatarValues["TAG_ARG_HEIGHT_IN_CM"] = 180
         avatarValues["TAG_ARG_WEIGHT_IN_KG"] = 85
-        if (areBodyScanConfigOptionsValid(avatarValues)) {
+        if (!areBodyScanConfigOptionsValid(avatarValues)) {
             Log.d(TAG, "AHI ERROR: Body Scan inputs invalid.")
             return
         }
@@ -266,9 +268,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         ) {
             /** Write the mesh to a directory */
             val objFile = File(applicationContext.filesDir, "$id.obj")
+            Log.d(TAG, "AHI: Mesh URL: ${applicationContext.filesDir.path}/$id.obj\n")
             /** Print the 3D mesh path */
-            Log.d(TAG, "AHI: MesH URL: ${applicationContext.filesDir.path}/$id.obj\n")
-            saveObjResultToFile(it, objFile)
+            saveAvatarToFile(it, objFile)
             /** Return the URL */
         }
     }
@@ -401,5 +403,19 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             }
         }
         return !isValid
+    }
+
+    /** Save 3D avatar mesh result on local device. */
+    private fun saveAvatarToFile(res: SdkResultParcelable, objFile: File) {
+        val meshResObj = JSONObject(res.result)
+        val objString = meshResObj["mesh"].toString()
+        val words: List<String> = objString.split(",")
+        val stream = FileOutputStream(objFile)
+        val writer = BufferedWriter(OutputStreamWriter(stream))
+        for (word in words) {
+            writer.write(word)
+            writer.newLine()
+        }
+        writer.close()
     }
 }
