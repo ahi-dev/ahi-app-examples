@@ -268,10 +268,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         ) {
             /** Write the mesh to a directory */
             val objFile = File(applicationContext.filesDir, "$id.obj")
-            Log.d(TAG, "AHI: Mesh URL: ${applicationContext.filesDir.path}/$id.obj\n")
             /** Print the 3D mesh path */
             saveAvatarToFile(it, objFile)
             /** Return the URL */
+            Log.d(TAG, "AHI: Mesh URL: ${applicationContext.filesDir.path}/$id.obj\n")
         }
     }
 
