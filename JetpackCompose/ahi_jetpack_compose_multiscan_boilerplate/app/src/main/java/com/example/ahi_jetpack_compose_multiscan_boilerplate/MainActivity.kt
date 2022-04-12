@@ -71,34 +71,36 @@ class MainActivity : ComponentActivity() {
     private lateinit var viewModel: MultiScanViewModel
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val inset = 16.dp
+        val buttonHeight = 55.dp
         setContent {
             viewModel = MultiScanViewModel()
             /** Set up view's layout constrains */
-            fun updateConstrains(): ConstraintSet {
+            fun updateConstraints(): ConstraintSet {
                 return ConstraintSet {
                     val setupButton = createRefFor("setupButton")
                     val startFaceScanButton = createRefFor("startFaceScanButton")
                     val downloadResourcesButton = createRefFor("downloadResourcesButton")
                     val startBodyScanButton = createRefFor("startBodyScanButton")
                     constrain(setupButton) {
-                        start.linkTo(parent.start, margin = 10.dp)
-                        top.linkTo(parent.top, margin = 20.dp)
-                        end.linkTo(parent.end, margin = 10.dp)
+                        start.linkTo(parent.start)
+                        top.linkTo(parent.top)
+                        end.linkTo(parent.end)
                     }
                     constrain(startFaceScanButton) {
-                        start.linkTo(parent.start, margin = 10.dp)
-                        top.linkTo(parent.top, margin = 20.dp)
-                        end.linkTo(parent.end, margin = 10.dp)
+                        start.linkTo(parent.start)
+                        top.linkTo(parent.top)
+                        end.linkTo(parent.end)
                     }
                     constrain(downloadResourcesButton) {
-                        start.linkTo(parent.start, margin = 10.dp)
-                        top.linkTo(parent.top, margin = 110.dp)
-                        end.linkTo(parent.end, margin = 10.dp)
+                        start.linkTo(parent.start)
+                        top.linkTo(parent.top, margin = inset+buttonHeight)
+                        end.linkTo(parent.end)
                     }
                     constrain(startBodyScanButton) {
-                        start.linkTo(parent.start, margin = 10.dp)
-                        top.linkTo(parent.top, margin = 110.dp)
-                        end.linkTo(parent.end, margin = 10.dp)
+                        start.linkTo(parent.start)
+                        top.linkTo(parent.top, margin = inset+buttonHeight)
+                        end.linkTo(parent.end)
                     }
                 }
             }
@@ -106,33 +108,34 @@ class MainActivity : ComponentActivity() {
                 ConstraintLayout(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(10.dp, 30.dp, 10.dp, 30.dp),
-                    constraintSet = updateConstrains()
+                        .padding(inset),
+                    constraintSet = updateConstraints()
                 ) {
                     AnimatedVisibility(
                         modifier = Modifier
                             .layoutId("setupButton")
                             .fillMaxWidth()
-                            .height(60.dp), visible = !viewModel.isSetupState.value
+                            .height(buttonHeight), visible = !viewModel.isSetupState.value
                     ) {
-                        Button(onClick = { didTapSetup() }) { Text(text = "Setup SDK") }
+                        Button(modifier = Modifier.height(buttonHeight),onClick = { didTapSetup() }) { Text(text = "Setup SDK") }
                     }
                     AnimatedVisibility(
                         modifier = Modifier
                             .layoutId("startFaceScanButton")
                             .fillMaxWidth()
-                            .height(60.dp), visible = viewModel.isSetupState.value
+                            .height(buttonHeight), visible = viewModel.isSetupState.value
                     ) {
-                        Button(onClick = { didTapStartFaceScan() }) { Text(text = "Start Facescan") }
+                        Button(modifier = Modifier.height(buttonHeight),onClick = { didTapStartFaceScan() }) { Text(text = "Start Facescan") }
                     }
                     AnimatedVisibility(
                         modifier = Modifier
                             .layoutId("downloadResourcesButton")
                             .fillMaxWidth()
-                            .height(60.dp),
+                            .height(buttonHeight),
                         visible = viewModel.isSetupState.value && !viewModel.isFinishedDownloadingResourcesState.value
                     ) {
                         Button(
+                            modifier = Modifier.height(buttonHeight),
                             enabled = viewModel.buttonEnabled.value,
                             onClick = {
                                 viewModel.buttonEnabled.value = false
@@ -143,7 +146,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier
                             .layoutId("startBodyScanButton")
                             .fillMaxWidth()
-                            .height(60.dp),
+                            .height(buttonHeight),
                         visible = viewModel.isFinishedDownloadingResourcesState.value
                     ) {
                         Button(onClick = { didTapStartBodyScan() }) { Text(text = "Start bodyscan") }
@@ -467,6 +470,3 @@ class MainActivity : ComponentActivity() {
         writer.close()
     }
 }
-
-
-
