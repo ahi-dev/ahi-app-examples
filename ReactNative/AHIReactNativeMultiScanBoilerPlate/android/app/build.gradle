@@ -1,4 +1,6 @@
-apply plugin: "com.android.application"
+apply plugin: 'com.android.application' // already exists
+
+apply plugin: 'kotlin-android'
 
 import com.android.build.OutputFile
 
@@ -78,7 +80,7 @@ import com.android.build.OutputFile
  */
 
 project.ext.react = [
-    enableHermes: false,  // clean and rebuild if changing
+        enableHermes: false,  // clean and rebuild if changing
 ]
 
 apply from: "../../node_modules/react-native/react.gradle"
@@ -133,6 +135,13 @@ android {
 
     compileSdkVersion rootProject.ext.compileSdkVersion
 
+    packagingOptions {
+        pickFirst 'lib/x86/libc++_shared.so'
+        pickFirst 'lib/x86_64/libc++_shared.so'
+        pickFirst 'lib/armeabi-v7a/libc++_shared.so'
+        pickFirst 'lib/arm64-v8a/libc++_shared.so'
+    }
+
     defaultConfig {
         applicationId "com.ahireactnativemultiscanboilerplate"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -146,12 +155,12 @@ android {
             externalNativeBuild {
                 ndkBuild {
                     arguments "APP_PLATFORM=android-21",
-                        "APP_STL=c++_shared",
-                        "NDK_TOOLCHAIN_VERSION=clang",
-                        "GENERATED_SRC_DIR=$buildDir/generated/source",
-                        "PROJECT_BUILD_DIR=$buildDir",
-                        "REACT_ANDROID_DIR=$rootDir/../node_modules/react-native/ReactAndroid",
-                        "REACT_ANDROID_BUILD_DIR=$rootDir/../node_modules/react-native/ReactAndroid/build"
+                            "APP_STL=c++_shared",
+                            "NDK_TOOLCHAIN_VERSION=clang",
+                            "GENERATED_SRC_DIR=$buildDir/generated/source",
+                            "PROJECT_BUILD_DIR=$buildDir",
+                            "REACT_ANDROID_DIR=$rootDir/../node_modules/react-native/ReactAndroid",
+                            "REACT_ANDROID_BUILD_DIR=$rootDir/../node_modules/react-native/ReactAndroid/build"
                     cFlags "-Wall", "-Werror", "-fexceptions", "-frtti", "-DWITH_INSPECTOR=1"
                     cppFlags "-std=c++17"
                     // Make sure this target name is the same you specify inside the
@@ -202,13 +211,12 @@ android {
             }
         }
     }
-
     splits {
         abi {
             reset()
             enable enableSeparateBuildPerCPUArchitecture
             universalApk false  // If true, also generate a universal APK
-            include (*reactNativeArchitectures())
+            include(*reactNativeArchitectures())
         }
     }
     signingConfigs {
@@ -244,7 +252,6 @@ android {
                 output.versionCodeOverride =
                         defaultConfig.versionCode * 1000 + versionCodes.get(abi)
             }
-
         }
     }
 }
@@ -252,22 +259,29 @@ android {
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
 
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.6.20"
     //noinspection GradleDynamicVersion
     implementation "com.facebook.react:react-native:+"  // From node_modules
 
-    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.0.0"
+    // AHI SDK
+    def AHISdkVersion = '21.1.3'
+    annotationProcessor "com.myfiziq.sdk:orm:${AHISdkVersion}-release"
+    implementation "com.myfiziq.sdk:orm:${AHISdkVersion}-release"
+    implementation "com.myfiziq.sdk:myfiziqsdk:${AHISdkVersion}-release"
+    implementation "com.myfiziq.sdk:myfiziqsdk-android-face-scan:${AHISdkVersion}-release"
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
 
-    debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}") {
-        exclude group:'com.facebook.fbjni'
+    debugImplementation("com.facebook.flipper:flipper:0.142.0") {
+        exclude group: 'com.facebook.fbjni'
     }
 
-    debugImplementation("com.facebook.flipper:flipper-network-plugin:${FLIPPER_VERSION}") {
-        exclude group:'com.facebook.flipper'
-        exclude group:'com.squareup.okhttp3', module:'okhttp'
+    debugImplementation("com.facebook.flipper:flipper-network-plugin:0.142.0") {
+        exclude group: 'com.facebook.flipper'
+        exclude group: 'com.squareup.okhttp3', module: 'okhttp'
     }
 
-    debugImplementation("com.facebook.flipper:flipper-fresco-plugin:${FLIPPER_VERSION}") {
-        exclude group:'com.facebook.flipper'
+    debugImplementation("com.facebook.flipper:flipper-fresco-plugin:0.142.0") {
+        exclude group: 'com.facebook.flipper'
     }
 
     if (enableHermes) {
