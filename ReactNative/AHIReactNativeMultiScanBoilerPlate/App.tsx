@@ -6,8 +6,8 @@
  * @flow strict-local
  */
 
-import React, {useState} from 'react';
-import type {ReactNode} from 'react';
+import React, { useState } from 'react';
+import type { ReactNode } from 'react';
 import MultiScanModule from './Modules/MultiScanModule';
 import {
   SafeAreaView,
@@ -18,156 +18,115 @@ import {
   View,
 } from 'react-native';
 
+/// The required tokens for the MultiScan Setup and Authorization.
+// !!!! DEBUG - DO NOT COMMIT!!!!!!!
+const AHI_MULTI_SCAN_TOKEN = '';
+// !!!! DEBUG - DO NOT COMMIT!!!!!!!
+/// Your user id. Hardcode a valid user id for testing purposes.
+const AHI_TEST_USER_ID = 'AHI_TEST_USER';
+/// Your salt token.
+const AHI_TEST_USER_SALT = 'user';
+/// Any claims you require passed to the SDK.
+const AHI_TEST_USER_CLAIMS = ['test'];
+
+
 const App: () => ReactNode = () => {
   const [isSetup, setIsSetup] = useState(false);
   const [resourcesDownloaded, setResourcesDownloaded] = useState(false);
   const [resourcesDownloading, setResourcesDownloading] = useState(false);
 
+  // setup sdk
   const didTapSetup = async () => {
     console.log('didTapSetup: ');
     try {
       let res = await MultiScanModule.setupMultiScanSDK(AHI_MULTI_SCAN_TOKEN);
-      console.log('This is the result: ', res);
-    } catch (e) {
-      console.log(e);
-    }
-  };
-
-  const didTapAuthorizeUser = async () => {
-    console.log('didTapAuthorizeUser: ');
-    console.log(AHI_TEST_USER_ID, AHI_TEST_USER_SALT, AHI_TEST_USER_CLAIMS);
-    try {
-      let res = await MultiScanModule.authorizeUser(
-        AHI_TEST_USER_ID,
-        AHI_TEST_USER_SALT,
-        AHI_TEST_USER_CLAIMS,
-      );
-      if (res === 'success') {
-        setIsSetup(true);
+      if (res === 'SUCCESS') {
+        let auth = await MultiScanModule.authorizeUser(
+          AHI_TEST_USER_ID,
+          AHI_TEST_USER_SALT,
+          AHI_TEST_USER_CLAIMS,
+        );
+        if (auth === 'SUCCESS') {
+          setIsSetup(true);
+          console.log("AHI: Setup user successfully");
+        } else {
+          console.log("AHI: Auth Error: " + auth);
+          console.log("AHI: Confirm you are using a valid user id, salt and claims.");
+        }
+      } else {
+        console.log(res);
       }
-      console.log(res);
     } catch (e) {
       console.log(e);
     }
   };
 
-  const didTapCheckDownloadSize = () => {
+  // start facescan
+  const didTapStartFaceScan = () => {
     console.log('didTapCheckDownloadSize: ');
+    MultiScanModule.startFaceScan()
+      .then(value => {
+        console.log("AHI: SCAN RESULT: " + value);
+      });
+  }
+
+  // download resources
+  const didTapDownloadResources = () => {
+    console.log('didTapCheckDownloadSize: ');
+    MultiScanModule.downloadAHIResources();
+    MultiScanModule.areAHIResourcesAvailable().then(value => {
+      console.log(value);
+    });
     MultiScanModule.checkAHIResourcesDownloadSize()
       .then(value => {
-        console.log('Download resources progress: ', value);
-      })
-      .catch((e: {message: any; code: any}) => console.log(e.message, e.code));
+        console.log(value);
+        setResourcesDownloaded(true);
+      });
   };
 
-  // Potentially redundant method? - can just call didTapAuthorizeUser again for userAuth status
-  const checkIfUserAuthorized = () => {
-    console.log('checkIfUserAuthorized: ');
-    MultiScanModule.isUserAuthorized()
-      .then((value: string) => {
-        console.log('User is authenticated ', value);
-        if (value === 'success') {
-          setIsSetup(true);
-        }
-      })
-      .catch((e: {message: any; code: any}) => console.log(e.message, e.code));
-  };
+  // start bodyscan
+  const didTapStartBodyScan = () => {
+    console.log('didTapStartBodyScan: ');
+    MultiScanModule.startBodyScan().then(value => {
+      console.log(value);
+    });
 
-  const didTapDownloadResources = async () => {
-    console.log('didTapDownloadResources: ');
-    try {
-      let value = await MultiScanModule.downloadAHIResources();
-      console.log('Download resources started: ', value);
-      if (value === 'success') {
-        // Check if the resources are available
-        await MultiScanModule.areAHIResourcesAvailable();
-        let downloadSize =
-          await MultiScanModule.checkAHIResourcesDownloadSize();
-        console.log('Resources donwload size: ', downloadSize);
-        // Poll for resources download complete and assign a boolean based on result
-        let downloadComplete = await monitorDownloadProgress();
-        if (downloadComplete) {
-          console.log('Download resources complete! Lets rock n roll');
-          setResourcesDownloaded(true);
-        }
-      }
-    } catch (e) {
-      console.log('Error occured: ', e);
-    }
-  };
+  }
 
-  const monitorDownloadProgress = async () => {
-    console.log('monitorDownloadProgress function call!!');
-    // Check download progress every 5 seconds
-    var flag = false;
-    if (flag == false) {
-      console.log('Checking resources');
-      let result = await MultiScanModule.areAHIResourcesAvailable();
-      if (result != 'success') {
-        setTimeout(() => {
-          monitorDownloadProgress();
-        }, 3000);
-      }
-      console.log('Result success!!');
-      flag = true;
-      return;
-    }
-    return flag;
-  };
 
-  const didTapCheckResourcesAvailable = async () => {
-    console.log('didTapCheckResourcesAvailable: ');
-    MultiScanModule.areAHIResourcesAvailable()
-      .then(value => {
-        console.log('Download resources progress: ', value);
-      })
-      .catch((e: {message: any; code: any}) => console.log(e.message, e.code));
-  };
+  // {isSetup ? <TouchableOpacity onPress={didTapSetup} style={styles.button} >
+  // <Text style={styles.text}>vfjdfhifhduiDK</Text>
+  // </TouchableOpacity> : null}
 
   return (
     <SafeAreaView>
       <ScrollView>
         <View>
-          <TouchableOpacity onPress={didTapSetup} style={styles.button}>
-            <Text style={styles.text}>Setup SDK</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={didTapAuthorizeUser} style={styles.button}>
-            <Text style={styles.text}>Authorize User</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={checkIfUserAuthorized}
-            style={styles.button}>
-            <Text style={styles.text}>Check User Authenticated</Text>
-          </TouchableOpacity>
-          {isSetup ? (
-            <>
-              <SDKButton
-                callbackFunction={checkIfUserAuthorized}
-                buttonText={'Start FaceScan'}
-              />
-              <SDKButton
-                callbackFunction={didTapCheckDownloadSize}
-                buttonText={'Check Download Size'}
-              />
-              <TouchableOpacity
-                onPress={didTapDownloadResources}
-                style={styles.button}
-                disabled={resourcesDownloading}>
-                <Text style={styles.text}>Download Resources</Text>
-              </TouchableOpacity>
-              <SDKButton
-                callbackFunction={didTapCheckResourcesAvailable}
-                buttonText={'Check progress'}
-              />
-            </>
-          ) : null}
-          {resourcesDownloading ? <Text>Resources Loading</Text> : null}
-          {resourcesDownloaded ? (
-            <SDKButton
-              callbackFunction={didTapCheckResourcesAvailable}
-              buttonText={'Start BodyScan'}
-            />
-          ) : null}
+          {
+            isSetup ? null : <TouchableOpacity onPress={didTapSetup} style={styles.button} >
+              <Text style={styles.text}>Setup SDK</Text>
+            </TouchableOpacity>
+          }
+          {
+            isSetup ? <TouchableOpacity onPress={didTapStartFaceScan} style={styles.button}>
+              <Text style={styles.text}>Start Facescan</Text>
+            </TouchableOpacity> : null
+          }
+          {
+            isSetup && !resourcesDownloaded ? <TouchableOpacity onPress={didTapDownloadResources} style={styles.button}>
+              <Text style={styles.text}>Download Resources</Text>
+            </TouchableOpacity> : null
+          }
+          {
+            resourcesDownloaded ? <TouchableOpacity onPress={didTapStartBodyScan} style={styles.button}>
+              <Text style={styles.text}>Start BodyScan</Text>
+            </TouchableOpacity>
+              : null
+          }
+
+
+
+
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -191,7 +150,7 @@ const styles = StyleSheet.create({
 
 export default App;
 
-const SDKButton = ({callbackFunction, buttonText}: any) => {
+const SDKButton = ({ callbackFunction, buttonText }: any) => {
   return (
     <TouchableOpacity onPress={callbackFunction} style={styles.button}>
       <Text style={styles.text}>{buttonText}</Text>

@@ -270,7 +270,7 @@ dependencies {
     implementation "com.myfiziq.sdk:myfiziqsdk:${AHISdkVersion}-release"
     implementation "com.myfiziq.sdk:myfiziqsdk-android-face-scan:${AHISdkVersion}-release"
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
-
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9"
     debugImplementation("com.facebook.flipper:flipper:0.142.0") {
         exclude group: 'com.facebook.fbjni'
     }
