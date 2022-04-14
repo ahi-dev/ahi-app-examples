@@ -10,6 +10,9 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   static const platform = MethodChannel('flutter_boilerplate_wrapper');
+  bool setupSuccessful = false;
+  bool resourcesDownload = false;
+
   // // MARK: Scan Instances
   // /// Instance of AHI MultiScan
   // let ahi = AHIMultiScan.shared()!
@@ -29,52 +32,135 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
-    bool setupSuccessful = false;
     return Scaffold(
       body: Center(
-        child: Column(
-          children: [
-            const SizedBox(height: 100),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: SizedBox(
-                width: size.width,
-                child: TextButton(
-                  child: const Text(
-                    'Setup SDK',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(Colors.black)),
-                  onPressed: () {
-                    _didTapSetup();
-                    _authorizeUser();
-                  },
-                ),
-              ),
-            ),
+          child: setupSuccessful ? afterSetupButtons() : setupSDKButton()),
+    );
+  }
 
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: SizedBox(
-                width: size.width,
-                child: TextButton(
-                  child: const Text(
-                    'Start FaceScan',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(Colors.black)),
-                  onPressed: () {
-                    _didTapStartFaceScan();
-                  },
-                ),
+  Widget setupSDKButton() {
+    Size size = MediaQuery.of(context).size;
+    return Column(
+      children: [
+        const SizedBox(height: 100),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: SizedBox(
+            width: size.width,
+            child: TextButton(
+              child: const Text(
+                'Setup SDK',
+                style: TextStyle(color: Colors.white),
               ),
+              style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all(Colors.black)),
+              onPressed: () {
+                _didTapSetup();
+                _authorizeUser();
+              },
             ),
-          ],
+          ),
         ),
-      ),
+      ],
+    );
+  }
+
+  Widget afterSetupButtons() {
+    return Column(
+      children: [
+        resourcesDownload ? resourcesDownloadButtons() : setupCompleted()
+      ],
+    );
+  }
+
+  Widget setupCompleted() {
+    Size size = MediaQuery.of(context).size;
+    return Column(
+      children: [
+        const SizedBox(height: 100),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: SizedBox(
+            width: size.width,
+            child: TextButton(
+              child: const Text(
+                'Start FaceScan',
+                style: TextStyle(color: Colors.white),
+              ),
+              style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all(Colors.black)),
+              onPressed: () {
+                _didTapStartFaceScan();
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: SizedBox(
+            width: size.width,
+            child: TextButton(
+              child: const Text(
+                'Download Resources',
+                style: TextStyle(color: Colors.white),
+              ),
+              style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all(Colors.black)),
+              onPressed: () {
+                _didTapDownloadResources();
+                setState(() {
+                  resourcesDownload = true;
+                });
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget resourcesDownloadButtons() {
+    Size size = MediaQuery.of(context).size;
+    return Column(
+      children: [
+        const SizedBox(height: 100),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: SizedBox(
+            width: size.width,
+            child: TextButton(
+              child: const Text(
+                'Start FaceScan',
+                style: TextStyle(color: Colors.white),
+              ),
+              style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all(Colors.black)),
+              onPressed: () {
+                _didTapStartFaceScan();
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: SizedBox(
+            width: size.width,
+            child: TextButton(
+              child: const Text(
+                'Start BodyScan',
+                style: TextStyle(color: Colors.white),
+              ),
+              style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all(Colors.black)),
+              onPressed: () {
+                _didTapStartBodyScan();
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -82,12 +168,13 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _didTapSetup() async {
     String resultMessage;
     try {
-      var result = await platform.invokeMethod("setupMultiScanSDK", ahiConfigTokens);
+      var result =
+          await platform.invokeMethod("setupMultiScanSDK", ahiConfigTokens);
       resultMessage = result;
       print("this is the message needed: $resultMessage");
-      if(resultMessage == "setup_successful"){
+      if (resultMessage == "setup_successful") {
         setState(() {
-          Text("The setup worked");
+          setupSuccessful = true;
         });
       }
     } on PlatformException catch (e) {
@@ -103,15 +190,27 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  void _didTapStartFaceScan() {
-    print("are you getting my logs");
-  }
-
-/*Future<void> _didTapStartFaceScan() async {
+  Future<void> _didTapStartFaceScan() async {
     try {
       platform.invokeMethod("startFaceScan");
     } on PlatformException catch (e) {
       print(e.message);
     }
-  }*/
+  }
+  
+  Future<void> _didTapDownloadResources() async {
+    try {
+      platform.invokeMethod("resourcesRelated");
+    } on PlatformException catch (e) {
+      print(e.message);
+    }
+  }
+  
+  Future<void> _didTapStartBodyScan() async {
+    try {
+      platform.invokeMethod("startBodyScan");
+    } on PlatformException catch (e) {
+      print(e.message);
+    }
+  }
 }

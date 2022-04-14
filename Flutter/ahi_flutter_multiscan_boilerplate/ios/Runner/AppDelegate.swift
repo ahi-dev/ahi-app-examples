@@ -60,13 +60,18 @@ import MFZFaceScan
                     return
                 }
                 let myArgs = args as? [String: Any]
-                let userID = myArgs?["AHI_TEST_USER_ID"] as! String
-                let salt = myArgs?["AHI_TEST_USER_SALT"] as! String
-                let claims = myArgs?["AHI_TEST_USER_CLAIMS"] as! [String]
+                guard let userID = myArgs?["AHI_TEST_USER_ID"] as? String, let salt = myArgs?["AHI_TEST_USER_SALT"] as? String, let claims = myArgs?["AHI_TEST_USER_CLAIMS"] as? [String] else {return}
                 weakSelf.multiScan.authorizeUser(userID, salt: salt, claims: claims)
             }
             else if call.method == "startFaceScan" {
                 weakSelf.multiScan.startFaceScan()
+            }
+            else if call.method == "resourcesRelated" {
+                weakSelf.multiScan.downloadAHIResources()
+                weakSelf.multiScan.areAHIResourcesAvailable()
+            }
+            else if call.method == "startBodyScan" {
+                weakSelf.multiScan.startBodyScan()
             }
         })
         
@@ -128,7 +133,8 @@ extension AHIMultiScanModule {
     ///
     /// With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
     fileprivate func authorizeUser(_ userID: String, salt: String, claims: [String]) {
-        ahi.userAuthorize(forId: userID, withSalt: salt, withClaims: claims) { [weak self] authError in
+        ahi.userAuthorize(forId: userID, withSalt: salt, withClaims: claims) {
+            [weak self] authError in
             if let err = authError {
                 print("AHI: Auth Error: \(err)")
                 print("AHI: Confirm you are using a valid user id, salt and claims")
@@ -150,16 +156,17 @@ extension AHIMultiScanModule {
     /// We have remote resources that exceed 100MB that enable our scans to work.
     /// You are required to download them inorder to obtain a body scan.
     fileprivate func areAHIResourcesAvailable() {
-        ahi.areResourcesDownloaded { [weak self] success in
+        ahi.areResourcesDownloaded {
+            [weak self] success in
             if !success {
                 print("AHI INFO: Resources are not downloaded.")
-                //                weak var weakSelf = self
+                               weak var weakSelf = self
                 //                // We recommend polling to check resource state.
                 //                // This is a simple example of how.
-                //                DispatchQueue.main.asyncAfter(deadline: .now() + 30.0) {
-                //                    weakSelf?.checkAHIResourcesDownloadSize()
-                //                    weakSelf?.areAHIResourcesAvailable()
-                //                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 30.0) {
+                                    weakSelf?.checkAHIResourcesDownloadSize()
+                                    weakSelf?.areAHIResourcesAvailable()
+                                }
                 
                 return
             }
@@ -246,30 +253,31 @@ extension AHIMultiScanModule {
         // Ensure the view controller being used is the top one.
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
-//        ahi.initiateScan("body", paymentType: .PAYG, withOptions: options, from: self) {
-//            [weak self] scanTask, error in
-//            guard let task = scanTask, error == nil else {
-//                // Error code 4 is the code for the SDK interaction that cancels the scan.
-//                if let nsError = error as? NSError, nsError.code == 4 {
-//                    print("AHI: INFO: User cancelled the session.")
-//                } else {
-//                    // Handle error through either lack of results or error.
-//                    print("AHI: ERROR WITH BODY SCAN: \(error ?? NSError())")
-//                }
-//                return
-//            }
-//            task.continueWith(block: { resultsTask in
-//                if let results = resultsTask.result as? [String : Any] {
-//                    // Handle results
-//                    print("AHI: SCAN RESULTS: \(results)")
-//                    // Consider getting the 3D mesh here
-//                    // This is an optional feature.
-//                    self?.getBodyScanExtras(withBodyScanResult: results)
-//                }
-//                /// Handle failure.
-//                return nil
-//            })
-//        }
+        guard let vc = topMostVC() else { return }
+        ahi.initiateScan("body", paymentType: .PAYG, withOptions: options, from: vc) {
+            [weak self] scanTask, error in
+            guard let task = scanTask, error == nil else {
+                // Error code 4 is the code for the SDK interaction that cancels the scan.
+                if let nsError = error as? NSError, nsError.code == 4 {
+                    print("AHI: INFO: User cancelled the session.")
+                } else {
+                    // Handle error through either lack of results or error.
+                    print("AHI: ERROR WITH BODY SCAN: \(error ?? NSError())")
+                }
+                return
+            }
+            task.continueWith(block: { resultsTask in
+                if let results = resultsTask.result as? [String : Any] {
+                    // Handle results
+                    print("AHI: SCAN RESULTS: \(results)")
+                    // Consider getting the 3D mesh here
+                    // This is an optional feature.
+                    self?.getBodyScanExtras(withBodyScanResult: results)
+                }
+                /// Handle failure.
+                return nil
+            })
+        }
     }
 }
 
