@@ -24,6 +24,10 @@ import MyFiziqSDKCoreLite
 // The FaceScan SDK
 import MFZFaceScan
 
+fileprivate var passedUserID: String = ""
+fileprivate var passedSalt: String = ""
+fileprivate var passedClaim: [String] = [""]
+
 @UIApplicationMain
 @objc class AppDelegate: FlutterAppDelegate, FlutterStreamHandler {
     private let CHANNEL = "flutter_boilerplate_wrapper"
@@ -53,22 +57,17 @@ import MFZFaceScan
                 }
                 let myArgs = args as? [String: Any]
                 let ahiMultiScanToken = myArgs?["AHI_MULTI_SCAN_TOKEN"] as! String
+                passedUserID = myArgs?["AHI_TEST_USER_ID"] as! String
+                passedSalt = myArgs?["AHI_TEST_USER_SALT"] as! String
+                passedClaim = myArgs?["AHI_TEST_USER_CLAIMS"] as! [String]
                 weakSelf.multiScan.setupMultiScanSDK(ahiMultiScanToken, result: result)
-            }
-            else if call.method == "authorizeUser" {
-                guard let args = call.arguments else {
-                    return
-                }
-                let myArgs = args as? [String: Any]
-                guard let userID = myArgs?["AHI_TEST_USER_ID"] as? String, let salt = myArgs?["AHI_TEST_USER_SALT"] as? String, let claims = myArgs?["AHI_TEST_USER_CLAIMS"] as? [String] else {return}
-                weakSelf.multiScan.authorizeUser(userID, salt: salt, claims: claims)
             }
             else if call.method == "startFaceScan" {
                 weakSelf.multiScan.startFaceScan()
             }
             else if call.method == "resourcesRelated" {
                 weakSelf.multiScan.downloadAHIResources()
-                weakSelf.multiScan.areAHIResourcesAvailable()
+                weakSelf.multiScan.areAHIResourcesAvailable(result: result)
             }
             else if call.method == "startBodyScan" {
                 weakSelf.multiScan.startBodyScan()
@@ -126,6 +125,7 @@ extension AHIMultiScanModule {
             //            self?.authorizeUser()
             // Do flutter success event
             result("setup_successful")
+            self?.authorizeUser(passedUserID, salt: passedSalt, claims: passedClaim)
         }
     }
     
@@ -155,7 +155,7 @@ extension AHIMultiScanModule {
     ///
     /// We have remote resources that exceed 100MB that enable our scans to work.
     /// You are required to download them inorder to obtain a body scan.
-    fileprivate func areAHIResourcesAvailable() {
+    fileprivate func areAHIResourcesAvailable(result: @escaping FlutterResult) {
         ahi.areResourcesDownloaded {
             [weak self] success in
             if !success {
@@ -165,13 +165,13 @@ extension AHIMultiScanModule {
                 //                // This is a simple example of how.
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 30.0) {
                                     weakSelf?.checkAHIResourcesDownloadSize()
-                                    weakSelf?.areAHIResourcesAvailable()
+                                    weakSelf?.areAHIResourcesAvailable(result: result)
                                 }
                 
                 return
             }
 //            self?.isFinishedDownloadingResources = success
-            print("AHI: Resources ready")
+            result("AHI: Resources ready")
         }
     }
     
