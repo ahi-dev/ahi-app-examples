@@ -157,7 +157,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _didTapSetup() async {
     try {
       var result = await platform.invokeMethod("setupMultiScanSDK", ahiConfigTokens);
-      if (result == "setup_successful") {
+      if (result == "setup_successful" || result == "SUCCESS") {
         setState(() {
           setupSuccessful = true;
         });
@@ -177,8 +177,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _didTapDownloadResources() async {
     try {
-      var result = await platform.invokeMethod("resourcesRelated");
-      if (result == "AHI: Resources ready") {
+      var result = await platform.invokeMethod("downloadResources");
+      if (result == "AHI: Resources ready" || result == "SUCCESS") {
         setState(() {
           resourcesDownload = true;
         });
