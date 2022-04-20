@@ -1,3 +1,3 @@
 # Example Apps
 
-The example apps demonstrate the technical integration of AHI SDK libraries. 
+The example apps demonstrate the technical integration of AHI SDKs. 
