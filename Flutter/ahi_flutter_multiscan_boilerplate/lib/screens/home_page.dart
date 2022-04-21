@@ -13,8 +13,8 @@ class _MyHomePageState extends State<MyHomePage> {
   bool setupSuccessful = false;
   bool resourcesDownload = false;
 
+  // todo do not commit the tokens
   var ahiConfigTokens = <String, dynamic>{
-
   };
 
   @override
@@ -152,12 +152,17 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _didTapSetup() async {
     try {
-      var result = await platform.invokeMethod("setupMultiScanSDK", ahiConfigTokens);
-      if (result == "setup_successful" || result == "SUCCESS") {
-        setState(() {
-          setupSuccessful = true;
-        });
+      var setupSDKResult = await platform.invokeMethod("setupMultiScanSDK", ahiConfigTokens);
+      if (!(setupSDKResult == "setup_successful" || setupSDKResult == "SUCCESS")) {
+       return;
       }
+      var authorizeUserResult = await platform.invokeMethod("authorizeUser", ahiConfigTokens);
+      if (!(authorizeUserResult == "setup_successful" || authorizeUserResult == "SUCCESS")) {
+        return;
+      }
+      setState(() {
+        setupSuccessful = true;
+      });
     } on PlatformException catch (e) {
       print(e.message);
     }
@@ -165,7 +170,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _didTapStartFaceScan() async {
     try {
-      platform.invokeMethod("startFaceScan");
+      var faceScanResult = await platform.invokeMethod("startFaceScan");
+      print("this is : $faceScanResult");
     } on PlatformException catch (e) {
       print(e.message);
     }
@@ -173,12 +179,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _didTapDownloadResources() async {
     try {
-      var result = await platform.invokeMethod("downloadResources");
-      if (result == "AHI: Resources ready" || result == "SUCCESS") {
-        setState(() {
-          resourcesDownload = true;
-        });
+      var downloadResourcesResult = await platform.invokeMapMethod("downloadAHIResources");
+      if (!(downloadResourcesResult == "setup_successful" || downloadResourcesResult == "SUCCESS")) {
+        return;
       }
+      var areResourcesDownloadedResult = await platform.invokeMethod("didTapDownloadResources");
+      print("what results: $areResourcesDownloadedResult");
     } on PlatformException catch (e) {
       print(e.message);
     }

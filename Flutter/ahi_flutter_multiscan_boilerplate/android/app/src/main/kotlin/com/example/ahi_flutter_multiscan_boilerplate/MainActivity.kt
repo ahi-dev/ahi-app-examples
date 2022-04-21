@@ -24,8 +24,9 @@ import java.io.FileOutputStream
 import java.io.OutputStreamWriter
 import java.util.concurrent.CompletableFuture
 
-class MainActivity : FlutterActivity() {
+private const val TAG = "MainActivity"
 
+class MainActivity : FlutterActivity() {
     private val CHANNEL = "flutter_boilerplate_wrapper"
 
     @RequiresApi(Build.VERSION_CODES.N)
@@ -35,54 +36,105 @@ class MainActivity : FlutterActivity() {
             flutterEngine.dartExecutor.binaryMessenger,
             CHANNEL
         ).setMethodCallHandler { call, result ->
-            val arguments = call.arguments<Map<String, Any>>()
+//            Log.d(TAG, "call -> ${call.method}, call.arguments -> ${call.arguments} ")
             when (call.method) {
                 "setupMultiScanSDK" -> {
-                    val token = arguments["AHI_MULTI_SCAN_TOKEN"]
-                    val userId = arguments["AHI_TEST_USER_ID"]
-                    val salt = arguments["AHI_TEST_USER_SALT"]
-                    val claims = arguments["AHI_TEST_USER_CLAIMS"]
-                    if (token != null) {
-                        setupMultiScanSDK(
-                            result, token, userId.toString(), salt.toString(),
-                            arrayOf(claims.toString())
-                        )
-                    }
+                    Log.d(TAG, "configureFlutterEngine: ${call.arguments}")
+                    setupMultiScanSDK(
+                        token = call.argument("AHI_MULTI_SCAN_TOKEN")!!,
+                        result = result
+                    )
+                }
+                "authorizeUser" -> {
+                    authorizeUser(
+                        userId = call.argument("AHI_TEST_USER_ID")!!,
+                        salt = call.argument("AHI_TEST_USER_SALT")!!,
+                        claims = call.argument("AHI_TEST_USER_CLAIMS")!!, result = result
+                    )
                 }
                 "startFaceScan" -> {
-                    startFaceScan()
+                    startFaceScan(result = result)
                 }
-                "downloadResources" -> {
-                    downloadAHIResources()
-                    areAHIResourcesAvailable(result)
+                "didTapDownloadResources" -> {
+                    areAHIResourcesAvailable(result = result)
                 }
-                "startBodyScan" -> {
-                    startBodyScan()
+                "downloadAHIResources" ->{
+                    downloadAHIResources(result= result);
                 }
+                "checkAHIResourcesDownloadSize" -> {
+                    Log.d(TAG, "configureFlutterEngine: 213213123")
+                    checkAHIResourcesDownloadSize(result = result)
+                }
+
                 else -> {
-                    result.error("Unavailable", "this is important secret you can't have it", null)
+                    Log.d(TAG, "fail")
                 }
             }
         }
     }
 
-    private fun setupMultiScanSDK(
-        result: MethodChannel.Result,
-        arguments: Any,
-        userId: String,
-        salt: String,
-        claims: Array<String>
-    ) {
+
+    /** Check the size of the AHI resources that require downloading. */
+
+    private fun checkAHIResourcesDownloadSize(result: MethodChannel.Result) {
+        MultiScan.waitForResult(MultiScan.shared().totalEstimatedDownloadSizeInBytes()) {
+            result.success("AHI INFO: Size of download is ${it / 1024 / 1024}")
+            Log.d(TAG, "AHI INFO: Size of download is ${it / 1024 / 1024}")
+        }
+    }
+
+    /** Check if the AHI resources are downloaded. */
+
+    private fun areAHIResourcesAvailable(result: MethodChannel.Result) {
+        MultiScan.waitForResult(MultiScan.shared().areResourcesDownloaded()) {
+            if (!it) {
+                result.success("AHI INFO: Resources are not downloaded")
+                GlobalScope.launch {
+                    delay(30000)
+                    checkAHIResourcesDownloadSize(result)
+                    areAHIResourcesAvailable(result)
+                }
+            } else {
+                result.success("AHI: Resources ready")
+            }
+        }
+    }
+
+    /**
+     *  Download scan resources.
+     *  We recommend only calling this function once per session to prevent duplicate background resource calls.
+     */
+
+    private fun downloadAHIResources(result: MethodChannel.Result) {
+        MultiScan.waitForResult(MultiScan.shared().downloadResourcesInBackground()) {
+            when (it.resultCode) {
+                SdkResultCode.SUCCESS -> {
+                    result.success(it.resultCode.toString())
+                }
+                SdkResultCode.ERROR -> {
+                    result.error(it.resultCode.toString(), it.message, null)
+                }
+            }
+        }
+    }
+
+    /**
+     *  Setup the MultiScan SDK
+     *  This must happen before requesting a scan.
+     *  We recommend doing this on successful load of your application.
+     */
+
+    private fun setupMultiScanSDK(token: String, result: MethodChannel.Result) {
         val config: MutableMap<String, String> = HashMap()
-        config["TOKEN"] = arguments.toString()
+        config["TOKEN"] = token
         MultiScan.waitForResult(MultiScan.shared().setup(config)) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
-                    result.success(it.resultCode.name)
-                    authorizeUser(userId, salt, claims)
+                    result.success(it.resultCode.toString())
+//                    Log.d(TAG, "setupMultiScanSDK: ")
                 }
                 SdkResultCode.ERROR -> {
-                    result.error(it.resultCode.name, it.message, null)
+                    result.error(it.resultCode.toString(), it.message, null)
                 }
             }
         }
@@ -92,20 +144,29 @@ class MainActivity : FlutterActivity() {
      *  Once successfully setup, you should authorize your user with our service.
      *  With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
      * */
-    private fun authorizeUser(userId: String, salt: String, claims: Array<String>) {
-        MultiScan.waitForResult(MultiScan.shared().userAuthorize(userId, salt, claims)) {
+
+    private fun authorizeUser(
+        userId: String,
+        salt: String,
+        claims: ArrayList<String>,
+        result: MethodChannel.Result
+    ) {
+        Log.d(TAG, "input: $userId ,salt: $salt, claims: $claims")
+        MultiScan.waitForResult(
+            MultiScan.shared().userAuthorize(userId, salt, arrayOf(claims[0]))
+        ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
-                    it.resultCode.toString()
+                    result.success(it.resultCode.toString())
                 }
                 SdkResultCode.ERROR -> {
-                    it.resultCode.toString(); it.message
+                    result.error(it.resultCode.toString(), it.message, null)
                 }
             }
         }
     }
 
-    private fun startFaceScan() {
+    private fun startFaceScan(result: MethodChannel.Result) {
         // All required face scan options.
         val avatarValues: HashMap<String, Any> = HashMap()
         avatarValues["TAG_ARG_GENDER"] = "M"
@@ -119,8 +180,8 @@ class MainActivity : FlutterActivity() {
         avatarValues["TAG_ARG_PREFERRED_HEIGHT_UNITS"] = "CENTIMETRES"
         avatarValues["TAG_ARG_PREFERRED_WEIGHT_UNITS"] = "KILOGRAMS"
         if (!areFaceScanConfigOptionsValid(avatarValues)) {
-//            promise.resolve("AHI ERROR: Face Scan inputs invalid.")
-            Log.d("facescan error tag", "AHI ERROR: Face Scan inputs invalid.")
+            result.success("AHI ERROR: Face Scan inputs invalid.")
+            Log.d(TAG, "AHI ERROR: Face Scan inputs invalid.")
         }
         MultiScan.waitForResult(
             MultiScan.shared().initiateScan(MSScanType.FACE, MSPaymentType.PAYG, avatarValues)
@@ -128,24 +189,28 @@ class MainActivity : FlutterActivity() {
             /** Result check */
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
-                    "AHI: SCAN RESULT: ${it.result}"
+                    result.success("AHI: SCAN RESULT: ${it.result}")
+                    Log.d(TAG, "AHI: SCAN RESULT: ${it.result}\n")
                 }
                 SdkResultCode.ERROR -> {
-                    it.resultCode.toString(); "AHI: ERROR WITH FACE SCAN: ${it.message}"
+                    result.error(
+                        it.resultCode.toString(), "AHI: ERROR WITH FACE SCAN: ${it.message}", null
+                    )
+                    Log.d(TAG, "AHI: ERROR WITH FACE SCAN: ${it.message}\n")
                 }
             }
         }
     }
 
-    private fun startBodyScan() {
+    private fun startBodyScan(result: MethodChannel.Result) {
         MultiScan.shared().registerDelegate(AHIPersistenceDelegate)
         val avatarValues: HashMap<String, Any> = HashMap()
         avatarValues["TAG_ARG_GENDER"] = "M"
         avatarValues["TAG_ARG_HEIGHT_IN_CM"] = 180
         avatarValues["TAG_ARG_WEIGHT_IN_KG"] = 85
         if (!areBodyScanConfigOptionsValid(avatarValues)) {
-            "AHI ERROR: Body Scan inputs invalid."
-            Log.d("TAG", "AHI ERROR: Body Scan inputs invalid.")
+            result.success("AHI ERROR: Body Scan inputs invalid.")
+            Log.d(TAG, "AHI ERROR: Body Scan inputs invalid.")
             return
         }
         MultiScan.waitForResult(
@@ -153,17 +218,20 @@ class MainActivity : FlutterActivity() {
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
-                    Log.d("TAG", "AHI: SCAN RESULT: ${it.result}\n")
+                    Log.d(TAG, "AHI: SCAN RESULT: ${it.result}\n")
                     val res = JSONObject(it.result)
                     val id = res["id"].toString()
                     if (areBodyScanSmoothingResultsValid(it.resultMap)) {
-                        getBodyScanExtras(id)
+                        getBodyScanExtras(id, result)
                     }
-                    "AHI: SCAN RESULT: ${it.result}\nAHI: Mesh URL: ${context.filesDir.path}/$id.obj"
+                    result.success("AHI: SCAN RESULT: ${it.result}\nAHI: Mesh URL: ${context.filesDir.path}/$id.obj")
                 }
                 SdkResultCode.ERROR -> {
-                    it.resultCode.toString(); "AHI: ERROR WITH BODY SCAN: ${it.message}"
-                    Log.d("error body TAG", "AHI: ERROR WITH BODY SCAN: ${it.message}\n")
+                    result.error(
+                        it.resultCode.toString(),
+                        "AHI: ERROR WITH BODY SCAN: ${it.message}", null
+                    )
+                    Log.d(TAG, "AHI: ERROR WITH BODY SCAN: ${it.message}\n")
                 }
             }
         }
@@ -174,7 +242,7 @@ class MainActivity : FlutterActivity() {
      *  The 3D mesh can be created and returned at any time.
      *  We recommend doing this on successful completion of a body scan with the results.
      * */
-    private fun getBodyScanExtras(id: String) {
+    private fun getBodyScanExtras(id: String, result: MethodChannel.Result) {
         val parameters: MutableMap<String, Any> = HashMap()
         parameters["operation"] = MultiScanOperation.BodyGetMeshObj.name
         parameters["id"] = id
@@ -186,7 +254,7 @@ class MainActivity : FlutterActivity() {
             /** Print the 3D mesh path */
             saveAvatarToFile(it, objFile)
             /** Return the URL */
-            Log.d("MeshTAG", "AHI: Mesh URL: ${context.filesDir.path}/$id.obj\n")
+            Log.d(TAG, "AHI: Mesh URL: ${context.filesDir.path}/$id.obj\n")
         }
     }
 
@@ -228,49 +296,11 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    /** Confirm results have correct set of keys. */
-    private fun areBodyScanSmoothingResultsValid(it: MutableMap<String, String>): Boolean {
-        // Your token may only provide you access to a smaller subset of results.
-        // You should modify this list based on your available config options.
-        val sdkResultSchema = listOf(
-            "enum_ent_sex",
-            "cm_ent_height",
-            "kg_ent_weight",
-            "cm_raw_chest",
-            "cm_raw_hips",
-            "cm_raw_inseam",
-            "cm_raw_thigh",
-            "cm_raw_waist",
-            "kg_raw_weightPredict",
-            "percent_raw_bodyFat",
-            "id",
-            "date"
-        )
-        var isValid = false
-        /** Iterate over results */
-        sdkResultSchema.forEach { str ->
-            /** Check if keys in results contains the required keys. */
-            if (!it.keys.contains(str)) {
-                isValid = true
-            }
-        }
-        return !isValid
-    }
-
-    /** Save 3D avatar mesh result on local device. */
-    private fun saveAvatarToFile(res: SdkResultParcelable, objFile: File) {
-        val meshResObj = JSONObject(res.result)
-        val objString = meshResObj["mesh"].toString()
-        val words: List<String> = objString.split(",")
-        val stream = FileOutputStream(objFile)
-        val writer = BufferedWriter(OutputStreamWriter(stream))
-        for (word in words) {
-            writer.write(word)
-            writer.newLine()
-        }
-        writer.close()
-    }
-
+    /**
+     *  FaceScan config requirements validation.
+     *  Please see the Schemas for more information:
+     *  FaceScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FaceScan/Schemas/
+     * */
     private fun areFaceScanConfigOptionsValid(avatarValues: HashMap<String, Any>): Boolean {
         if (!areSharedScanConfigOptionsValid(avatarValues)) {
             return false
@@ -328,48 +358,46 @@ class MainActivity : FlutterActivity() {
         return false
     }
 
-    /** Check the size of the AHI resources that require downloading. */
-    private fun checkAHIResourcesDownloadSize() {
-        MultiScan.waitForResult(MultiScan.shared().totalEstimatedDownloadSizeInBytes()) {
-            "AHI INFO: Size of download is ${it / 1024 / 1024}"
-        }
-    }
-
-    /** Check if the AHI resources are downloaded. */
-    @OptIn(DelicateCoroutinesApi::class)
-    private fun areAHIResourcesAvailable(result: MethodChannel.Result) {
-        MultiScan.waitForResult(MultiScan.shared().areResourcesDownloaded()) {
-            if (!it) {
-                result.success("AHI INFO: Resources are not downloaded")
-                GlobalScope.launch {
-                    delay(30000)
-                    checkAHIResourcesDownloadSize()
-                    areAHIResourcesAvailable(result)
-                    Log.d("still downloading", "downloading.... ")
-                }
-            } else {
-                result.success("AHI: Resources ready")
+    /** Confirm results have correct set of keys. */
+    private fun areBodyScanSmoothingResultsValid(it: MutableMap<String, String>): Boolean {
+        // Your token may only provide you access to a smaller subset of results.
+        // You should modify this list based on your available config options.
+        val sdkResultSchema = listOf(
+            "enum_ent_sex",
+            "cm_ent_height",
+            "kg_ent_weight",
+            "cm_raw_chest",
+            "cm_raw_hips",
+            "cm_raw_inseam",
+            "cm_raw_thigh",
+            "cm_raw_waist",
+            "kg_raw_weightPredict",
+            "percent_raw_bodyFat",
+            "id",
+            "date"
+        )
+        var isValid = false
+        /** Iterate over results */
+        sdkResultSchema.forEach { str ->
+            /** Check if keys in results contains the required keys. */
+            if (!it.keys.contains(str)) {
+                isValid = true
             }
         }
+        return !isValid
     }
 
-    /**
-     *  Download scan resources.
-     *  We recommend only calling this function once per session to prevent duplicate background resource calls.
-     */
-    private fun downloadAHIResources() {
-        MultiScan.waitForResult(MultiScan.shared().downloadResourcesInBackground()) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> {
-                    it.resultCode.toString()
-                    Log.d("reso", "Resources that need to be downloaded")
-                }
-                SdkResultCode.ERROR -> {
-                    it.resultCode.toString()
-                    Log.d("botcha", "Something went wrong")
-
-                }
-            }
+    /** Save 3D avatar mesh result on local device. */
+    private fun saveAvatarToFile(res: SdkResultParcelable, objFile: File) {
+        val meshResObj = JSONObject(res.result)
+        val objString = meshResObj["mesh"].toString()
+        val words: List<String> = objString.split(",")
+        val stream = FileOutputStream(objFile)
+        val writer = BufferedWriter(OutputStreamWriter(stream))
+        for (word in words) {
+            writer.write(word)
+            writer.newLine()
         }
+        writer.close()
     }
 }

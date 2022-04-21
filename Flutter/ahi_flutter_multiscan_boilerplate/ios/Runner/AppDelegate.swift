@@ -65,7 +65,7 @@ fileprivate var passedClaim: [String] = [""]
             else if call.method == "startFaceScan" {
                 weakSelf.multiScan.startFaceScan()
             }
-            else if call.method == "resourcesRelated" {
+            else if call.method == "downloadResources" {
                 weakSelf.multiScan.downloadAHIResources()
                 weakSelf.multiScan.areAHIResourcesAvailable(result: result)
             }
@@ -77,7 +77,7 @@ fileprivate var passedClaim: [String] = [""]
         GeneratedPluginRegistrant.register(with: self)
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
     }
-
+    
     func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
         self.eventSink = events
         return nil
@@ -142,7 +142,7 @@ extension AHIMultiScanModule {
                 return
             }
             print("AHI: Setup user successfully")
-//            self?.isSetup = true
+            //            self?.isSetup = true
             // Do flutter success
         }
     }
@@ -160,17 +160,17 @@ extension AHIMultiScanModule {
             [weak self] success in
             if !success {
                 print("AHI INFO: Resources are not downloaded.")
-                               weak var weakSelf = self
+                weak var weakSelf = self
                 //                // We recommend polling to check resource state.
                 //                // This is a simple example of how.
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 30.0) {
-                                    weakSelf?.checkAHIResourcesDownloadSize()
-                                    weakSelf?.areAHIResourcesAvailable(result: result)
-                                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 30.0) {
+                    weakSelf?.checkAHIResourcesDownloadSize()
+                    weakSelf?.areAHIResourcesAvailable(result: result)
+                }
                 
                 return
             }
-//            self?.isFinishedDownloadingResources = success
+            //            self?.isFinishedDownloadingResources = success
             result("AHI: Resources ready")
         }
     }
@@ -322,10 +322,10 @@ extension AHIMultiScanModule {
     
     /// Check if the userr is authorized to use the MuiltScan service.
     fileprivate func getUserAuthorizedState() {
-//        ahi.userIsAuthorized(forId: AHIConfigTokens.AHI_TEST_USER_ID) {
-//            isAuthorized in
-//            print("AHI INFO: User is \(isAuthorized ? "authorized" : "not authorized")")
-//        }
+        //        ahi.userIsAuthorized(forId: AHIConfigTokens.AHI_TEST_USER_ID) {
+        //            isAuthorized in
+        //            print("AHI INFO: User is \(isAuthorized ? "authorized" : "not authorized")")
+        //        }
     }
     
     /// Deuathorize the user.
@@ -348,7 +348,7 @@ extension AHIMultiScanModule {
                 print("AHI ERROR: Failed to release SDK with error: \(err)")
             } else {
                 print("AHI INFO: SDK has been released successfully.")
-//                self?.isSetup = false
+                //                self?.isSetup = false
             }
         }
     }
