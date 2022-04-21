@@ -24,68 +24,17 @@ import MyFiziqSDKCoreLite
 // The FaceScan SDK
 import MFZFaceScan
 
-fileprivate var passedUserID: String = ""
-fileprivate var passedSalt: String = ""
-fileprivate var passedClaim: [String] = [""]
-
 @UIApplicationMain
-@objc class AppDelegate: FlutterAppDelegate, FlutterStreamHandler {
-    private let CHANNEL = "flutter_boilerplate_wrapper"
-    private let EVENTS_CHANNEL = "flutter_boilerplate_wrapper"
-    /// Event sink used to send scan status events back to the Flutter code
-    private var eventSink: FlutterEventSink?
+@objc class AppDelegate: FlutterAppDelegate {
+    
     let multiScan = AHIMultiScanModule()
     
     override func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
-        let controller: FlutterViewController = window?.rootViewController as! FlutterViewController
-        let boilerPlateChannel = FlutterMethodChannel(name: CHANNEL, binaryMessenger: controller.binaryMessenger)
-        let eventBoilerPlateChannel = FlutterEventChannel(name: EVENTS_CHANNEL, binaryMessenger: controller.binaryMessenger)
-        eventBoilerPlateChannel.setStreamHandler(self)
-        
-        boilerPlateChannel.setMethodCallHandler({
-            [weak self] (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
-            guard let weakSelf = self else {
-                result("Error: self was nil when trying to call iOS method")
-                return
-            }
-            if call.method == "setupMultiScanSDK" {
-                guard let args = call.arguments else {
-                    return
-                }
-                let myArgs = args as? [String: Any]
-                let ahiMultiScanToken = myArgs?["AHI_MULTI_SCAN_TOKEN"] as! String
-                passedUserID = myArgs?["AHI_TEST_USER_ID"] as! String
-                passedSalt = myArgs?["AHI_TEST_USER_SALT"] as! String
-                passedClaim = myArgs?["AHI_TEST_USER_CLAIMS"] as! [String]
-                weakSelf.multiScan.setupMultiScanSDK(ahiMultiScanToken, result: result)
-            }
-            else if call.method == "startFaceScan" {
-                weakSelf.multiScan.startFaceScan()
-            }
-            else if call.method == "resourcesRelated" {
-                weakSelf.multiScan.downloadAHIResources()
-                weakSelf.multiScan.areAHIResourcesAvailable(result: result)
-            }
-            else if call.method == "startBodyScan" {
-                weakSelf.multiScan.startBodyScan()
-            }
-        })
-        
         GeneratedPluginRegistrant.register(with: self)
         return super.application(application, didFinishLaunchingWithOptions: launchOptions)
-    }
-
-    func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
-        self.eventSink = events
-        return nil
-    }
-    
-    func onCancel(withArguments arguments: Any?) -> FlutterError? {
-        self.eventSink = nil
-        return nil
     }
 }
 
@@ -113,19 +62,16 @@ extension AHIMultiScanModule {
     ///
     /// This must happen before requesting a scan.
     /// We recommend doing this on successfuil load of your application.
-    fileprivate func setupMultiScanSDK(_ token: String, result: @escaping FlutterResult) {
-        ahi.setup(withConfig: ["TOKEN": token], scans: [faceScan, bodyScan]) {
-            [weak self] error in
+    fileprivate func setupMultiScanSDK(_ token: String) {
+        ahi.setup(withConfig: ["TOKEN": token], scans: [faceScan, bodyScan]) { [weak self] error in
             if let err = error {
                 print("AHI: Error setting up: \(err)")
                 print("AHI: Confirm you have a valid token.")
-                result("setup_falied");
+                // Do flutter fail event
                 return
             }
             //            self?.authorizeUser()
             // Do flutter success event
-            result("setup_successful")
-            self?.authorizeUser(passedUserID, salt: passedSalt, claims: passedClaim)
         }
     }
     
@@ -133,8 +79,7 @@ extension AHIMultiScanModule {
     ///
     /// With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
     fileprivate func authorizeUser(_ userID: String, salt: String, claims: [String]) {
-        ahi.userAuthorize(forId: userID, withSalt: salt, withClaims: claims) {
-            [weak self] authError in
+        ahi.userAuthorize(forId: userID, withSalt: salt, withClaims: claims) { [weak self] authError in
             if let err = authError {
                 print("AHI: Auth Error: \(err)")
                 print("AHI: Confirm you are using a valid user id, salt and claims")
@@ -155,23 +100,22 @@ extension AHIMultiScanModule {
     ///
     /// We have remote resources that exceed 100MB that enable our scans to work.
     /// You are required to download them inorder to obtain a body scan.
-    fileprivate func areAHIResourcesAvailable(result: @escaping FlutterResult) {
-        ahi.areResourcesDownloaded {
-            [weak self] success in
+    fileprivate func areAHIResourcesAvailable() {
+        ahi.areResourcesDownloaded { [weak self] success in
             if !success {
                 print("AHI INFO: Resources are not downloaded.")
-                               weak var weakSelf = self
+                //                weak var weakSelf = self
                 //                // We recommend polling to check resource state.
                 //                // This is a simple example of how.
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 30.0) {
-                                    weakSelf?.checkAHIResourcesDownloadSize()
-                                    weakSelf?.areAHIResourcesAvailable(result: result)
-                                }
+                //                DispatchQueue.main.asyncAfter(deadline: .now() + 30.0) {
+                //                    weakSelf?.checkAHIResourcesDownloadSize()
+                //                    weakSelf?.areAHIResourcesAvailable()
+                //                }
                 
                 return
             }
-//            self?.isFinishedDownloadingResources = success
-            result("AHI: Resources ready")
+            self?.isFinishedDownloadingResources = success
+            print("AHI: Resources ready")
         }
     }
     
@@ -212,8 +156,7 @@ extension AHIMultiScanModule {
         // Ensure the view controller being used is the top one.
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
-        guard let vc = topMostVC() else { return }
-        ahi.initiateScan("face", paymentType: .PAYG, withOptions: options, from: vc) { scanTask, error in
+        ahi.initiateScan("face", paymentType: .PAYG, withOptions: options, from: self) { scanTask, error in
             guard let task = scanTask, error == nil else {
                 // Error code 7 is the code for the SDK interaction that cancels the scan.
                 if let nsError = error as? NSError, nsError.code == 7 {
@@ -253,9 +196,7 @@ extension AHIMultiScanModule {
         // Ensure the view controller being used is the top one.
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
-        guard let vc = topMostVC() else { return }
-        ahi.initiateScan("body", paymentType: .PAYG, withOptions: options, from: vc) {
-            [weak self] scanTask, error in
+        ahi.initiateScan("body", paymentType: .PAYG, withOptions: options, from: self) { [weak self] scanTask, error in
             guard let task = scanTask, error == nil else {
                 // Error code 4 is the code for the SDK interaction that cancels the scan.
                 if let nsError = error as? NSError, nsError.code == 4 {
@@ -322,10 +263,9 @@ extension AHIMultiScanModule {
     
     /// Check if the userr is authorized to use the MuiltScan service.
     fileprivate func getUserAuthorizedState() {
-//        ahi.userIsAuthorized(forId: AHIConfigTokens.AHI_TEST_USER_ID) {
-//            isAuthorized in
-//            print("AHI INFO: User is \(isAuthorized ? "authorized" : "not authorized")")
-//        }
+        ahi.userIsAuthorized(forId: AHIConfigTokens.AHI_TEST_USER_ID) { isAuthorized in
+            print("AHI INFO: User is \(isAuthorized ? "authorized" : "not authorized")")
+        }
     }
     
     /// Deuathorize the user.
@@ -348,7 +288,7 @@ extension AHIMultiScanModule {
                 print("AHI ERROR: Failed to release SDK with error: \(err)")
             } else {
                 print("AHI INFO: SDK has been released successfully.")
-//                self?.isSetup = false
+                self?.isSetup = false
             }
         }
     }
@@ -505,21 +445,5 @@ extension NSObject {
         byteFormatter.allowedUnits = .useMB
         byteFormatter.countStyle = .binary
         return byteFormatter.string(fromByteCount: Int64(bytes))
-    }
-}
-
-// MARK: - ViewController Helper
-
-extension NSObject {
-    /// Return topmost viewController to initiate face and bodyscan
-    public func topMostVC() -> UIViewController? {
-        let keyWindow = UIApplication.shared.windows.filter {$0.isKeyWindow}.first
-        if var topController = keyWindow?.rootViewController {
-            while let presentedViewController = topController.presentedViewController {
-                topController = presentedViewController
-            }
-            return topController
-        }
-        return nil
     }
 }
