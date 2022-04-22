@@ -39,7 +39,6 @@ class MainActivity : FlutterActivity() {
 //            Log.d(TAG, "call -> ${call.method}, call.arguments -> ${call.arguments} ")
             when (call.method) {
                 "setupMultiScanSDK" -> {
-                    Log.d(TAG, "configureFlutterEngine: ${call.arguments}")
                     setupMultiScanSDK(
                         token = call.argument("AHI_MULTI_SCAN_TOKEN")!!,
                         result = result
@@ -59,13 +58,15 @@ class MainActivity : FlutterActivity() {
                     areAHIResourcesAvailable(result = result)
                 }
                 "downloadAHIResources" ->{
-                    downloadAHIResources(result= result);
+                    downloadAHIResources(result = result);
                 }
                 "checkAHIResourcesDownloadSize" -> {
                     Log.d(TAG, "configureFlutterEngine: 213213123")
                     checkAHIResourcesDownloadSize(result = result)
                 }
-
+                "startBodyScan" -> {
+                    startBodyScan(result = result)
+                }
                 else -> {
                     Log.d(TAG, "fail")
                 }
@@ -79,12 +80,12 @@ class MainActivity : FlutterActivity() {
     private fun checkAHIResourcesDownloadSize(result: MethodChannel.Result) {
         MultiScan.waitForResult(MultiScan.shared().totalEstimatedDownloadSizeInBytes()) {
             result.success("AHI INFO: Size of download is ${it / 1024 / 1024}")
-            Log.d(TAG, "AHI INFO: Size of download is ${it / 1024 / 1024}")
         }
     }
 
     /** Check if the AHI resources are downloaded. */
 
+    @OptIn(DelicateCoroutinesApi::class)
     private fun areAHIResourcesAvailable(result: MethodChannel.Result) {
         MultiScan.waitForResult(MultiScan.shared().areResourcesDownloaded()) {
             if (!it) {
@@ -151,7 +152,6 @@ class MainActivity : FlutterActivity() {
         claims: ArrayList<String>,
         result: MethodChannel.Result
     ) {
-        Log.d(TAG, "input: $userId ,salt: $salt, claims: $claims")
         MultiScan.waitForResult(
             MultiScan.shared().userAuthorize(userId, salt, arrayOf(claims[0]))
         ) {
@@ -181,7 +181,6 @@ class MainActivity : FlutterActivity() {
         avatarValues["TAG_ARG_PREFERRED_WEIGHT_UNITS"] = "KILOGRAMS"
         if (!areFaceScanConfigOptionsValid(avatarValues)) {
             result.success("AHI ERROR: Face Scan inputs invalid.")
-            Log.d(TAG, "AHI ERROR: Face Scan inputs invalid.")
         }
         MultiScan.waitForResult(
             MultiScan.shared().initiateScan(MSScanType.FACE, MSPaymentType.PAYG, avatarValues)
@@ -190,13 +189,11 @@ class MainActivity : FlutterActivity() {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
                     result.success("AHI: SCAN RESULT: ${it.result}")
-                    Log.d(TAG, "AHI: SCAN RESULT: ${it.result}\n")
                 }
                 SdkResultCode.ERROR -> {
                     result.error(
                         it.resultCode.toString(), "AHI: ERROR WITH FACE SCAN: ${it.message}", null
                     )
-                    Log.d(TAG, "AHI: ERROR WITH FACE SCAN: ${it.message}\n")
                 }
             }
         }
@@ -210,7 +207,6 @@ class MainActivity : FlutterActivity() {
         avatarValues["TAG_ARG_WEIGHT_IN_KG"] = 85
         if (!areBodyScanConfigOptionsValid(avatarValues)) {
             result.success("AHI ERROR: Body Scan inputs invalid.")
-            Log.d(TAG, "AHI ERROR: Body Scan inputs invalid.")
             return
         }
         MultiScan.waitForResult(
@@ -218,7 +214,6 @@ class MainActivity : FlutterActivity() {
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
-                    Log.d(TAG, "AHI: SCAN RESULT: ${it.result}\n")
                     val res = JSONObject(it.result)
                     val id = res["id"].toString()
                     if (areBodyScanSmoothingResultsValid(it.resultMap)) {
@@ -231,7 +226,6 @@ class MainActivity : FlutterActivity() {
                         it.resultCode.toString(),
                         "AHI: ERROR WITH BODY SCAN: ${it.message}", null
                     )
-                    Log.d(TAG, "AHI: ERROR WITH BODY SCAN: ${it.message}\n")
                 }
             }
         }
@@ -253,8 +247,6 @@ class MainActivity : FlutterActivity() {
             val objFile = File(context.filesDir, "$id.obj")
             /** Print the 3D mesh path */
             saveAvatarToFile(it, objFile)
-            /** Return the URL */
-            Log.d(TAG, "AHI: Mesh URL: ${context.filesDir.path}/$id.obj\n")
         }
     }
 

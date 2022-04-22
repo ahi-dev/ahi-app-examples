@@ -12,6 +12,7 @@ class _MyHomePageState extends State<MyHomePage> {
   static const platform = MethodChannel('flutter_boilerplate_wrapper');
   bool setupSuccessful = false;
   bool resourcesDownload = false;
+  bool _isButtonDisabled = false;
 
   // todo do not commit the tokens
   var ahiConfigTokens = <String, dynamic>{
@@ -95,10 +96,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 style: TextStyle(color: Colors.white),
               ),
               style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all(Colors.black)),
-              onPressed: () {
-                _didTapDownloadResources();
-              },
+                  backgroundColor: MaterialStateProperty.all(Colors.black),),
+                onPressed: _isButtonDisabled == false ? _didTapDownloadResources: null
             ),
           ),
         ),
@@ -158,7 +157,7 @@ class _MyHomePageState extends State<MyHomePage> {
        return;
       }
       var authorizeUserResult = await platform.invokeMethod("authorizeUser", ahiConfigTokens);
-      if (!(authorizeUserResult == "setup_successful" || authorizeUserResult == "SUCCESS")) {
+      if (!(authorizeUserResult == "AHI: Setup user successfully" || authorizeUserResult == "SUCCESS")) {
         return;
       }
       setState(() {
@@ -172,7 +171,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _didTapStartFaceScan() async {
     try {
       var faceScanResult = await platform.invokeMethod("startFaceScan");
-      print("this is : $faceScanResult");
+      print(faceScanResult);
     } on PlatformException catch (e) {
       print(e.message);
     }
@@ -180,12 +179,15 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _didTapDownloadResources() async {
     try {
+      setState(() {
+        _isButtonDisabled = true;
+      });
       var downloadResourcesResult = await platform.invokeMethod("downloadAHIResources");
       if (!(downloadResourcesResult == "setup_successful" || downloadResourcesResult == "SUCCESS")) {
         return;
       }
       var checkAHIResourcesDownloadSizeResult = platform.invokeMethod("checkAHIResourcesDownloadSize");
-      checkAHIResourcesDownloadSizeResult.then((value) => print("what are you $value"));
+      checkAHIResourcesDownloadSizeResult.then((value) => print(value));
       var areResourcesDownloadedResult = await platform.invokeMethod("didTapDownloadResources");
       if (areResourcesDownloadedResult == "AHI: Resources ready") {
         setState(() {
@@ -199,7 +201,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _didTapStartBodyScan() async {
     try {
-      platform.invokeMethod("startBodyScan");
+      var bodyScanResult = await platform.invokeMethod("startBodyScan");
+      print(bodyScanResult);
     } on PlatformException catch (e) {
       print(e.message);
     }

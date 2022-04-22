@@ -57,17 +57,29 @@ fileprivate var passedClaim: [String] = [""]
                 }
                 let myArgs = args as? [String: Any]
                 let ahiMultiScanToken = myArgs?["AHI_MULTI_SCAN_TOKEN"] as! String
+                weakSelf.multiScan.setupMultiScanSDK(ahiMultiScanToken, result: result)
+            }
+            else if call.method == "authorizeUser" {
+                guard let args = call.arguments else {
+                    return
+                }
+                let myArgs = args as? [String: Any]
                 passedUserID = myArgs?["AHI_TEST_USER_ID"] as! String
                 passedSalt = myArgs?["AHI_TEST_USER_SALT"] as! String
                 passedClaim = myArgs?["AHI_TEST_USER_CLAIMS"] as! [String]
-                weakSelf.multiScan.setupMultiScanSDK(ahiMultiScanToken, result: result)
+                weakSelf.multiScan.authorizeUser(passedUserID, salt: passedSalt, claims: passedClaim, result: result)
             }
             else if call.method == "startFaceScan" {
-                weakSelf.multiScan.startFaceScan()
+                weakSelf.multiScan.startFaceScan(result: result)
             }
-            else if call.method == "downloadResources" {
-                weakSelf.multiScan.downloadAHIResources()
+            else if call.method == "didTapDownloadResources" {
                 weakSelf.multiScan.areAHIResourcesAvailable(result: result)
+            }
+            else if call.method == "downloadAHIResources" {
+                weakSelf.multiScan.downloadAHIResources(result: result)
+            }
+            else if call.method == "checkAHIResourcesDownloadSize" {
+                weakSelf.multiScan.checkAHIResourcesDownloadSize()
             }
             else if call.method == "startBodyScan" {
                 weakSelf.multiScan.startBodyScan()
@@ -122,17 +134,14 @@ extension AHIMultiScanModule {
                 result("setup_falied");
                 return
             }
-            //            self?.authorizeUser()
-            // Do flutter success event
             result("setup_successful")
-            self?.authorizeUser(passedUserID, salt: passedSalt, claims: passedClaim)
         }
     }
     
     /// Once successfully setup, you should authorize your user with our service.
     ///
     /// With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
-    fileprivate func authorizeUser(_ userID: String, salt: String, claims: [String]) {
+    fileprivate func authorizeUser(_ userID: String, salt: String, claims: [String], result: @escaping FlutterResult) {
         ahi.userAuthorize(forId: userID, withSalt: salt, withClaims: claims) {
             [weak self] authError in
             if let err = authError {
@@ -141,9 +150,7 @@ extension AHIMultiScanModule {
                 // Do flutter fail
                 return
             }
-            print("AHI: Setup user successfully")
-            //            self?.isSetup = true
-            // Do flutter success
+            result("AHI: Setup user successfully")
         }
     }
 }
@@ -171,15 +178,18 @@ extension AHIMultiScanModule {
                 return
             }
             //            self?.isFinishedDownloadingResources = success
-            result("AHI: Resources ready")
+            if success {
+                result("AHI: Resources ready")
+            }
         }
     }
     
     /// Download scan resources.
     ///
     /// We recomment only calling this function once per session to prevent duplicate background resource calls.
-    fileprivate func downloadAHIResources() {
+    fileprivate func downloadAHIResources(result: @escaping FlutterResult) {
         ahi.downloadResourcesInBackground()
+        result("setup_successful")
     }
     
     /// Check the size of the AHI resources that require downloading.
@@ -193,7 +203,7 @@ extension AHIMultiScanModule {
 // MARK: - AHI Face Scan Initialiser
 
 extension AHIMultiScanModule {
-    fileprivate func startFaceScan() {
+    fileprivate func startFaceScan(result: @escaping FlutterResult) {
         // All required face scan options.
         let options: [String : Any] = [
             "enum_ent_sex": "male",
@@ -206,7 +216,7 @@ extension AHIMultiScanModule {
             "enum_ent_diabetic": "none"
         ]
         if !areFaceScanConfigOptionsValid(faceScanInput: options) {
-            print("AHI ERROR: Face Scan inputs invalid.")
+            result("AHI ERROR: Face Scan inputs invalid.")
             return
         }
         // Ensure the view controller being used is the top one.
@@ -217,17 +227,17 @@ extension AHIMultiScanModule {
             guard let task = scanTask, error == nil else {
                 // Error code 7 is the code for the SDK interaction that cancels the scan.
                 if let nsError = error as? NSError, nsError.code == 7 {
-                    print("AHI: INFO: User cancelled the session.")
+                    result("AHI: INFO: User cancelled the session.")
                 } else {
                     // Handle error through either lack of results or error.
-                    print("AHI: ERROR WITH FACE SCAN: \(error ?? NSError())")
+                    result("AHI: ERROR WITH FACE SCAN: \(error ?? NSError())")
                 }
                 return
             }
             task.continueWith(block: { resultsTask in
                 if let results = resultsTask.result as? [String : Any] {
                     // Handle results
-                    print("AHI: SCAN RESULTS: \(results)")
+                    result("AHI: SCAN RESULTS: \(results)")
                 }
                 /// Handle failure.
                 return nil
@@ -239,7 +249,7 @@ extension AHIMultiScanModule {
 // MARK: - AHI Body Scan Initialiser
 
 extension AHIMultiScanModule {
-    fileprivate func startBodyScan() {
+    fileprivate func startBodyScan(result: @escaping FlutterResult) {
         // All required body scan options
         let options: [String : Any] = [
             "enum_ent_sex": "male",
@@ -247,7 +257,7 @@ extension AHIMultiScanModule {
             "kg_ent_weight": 85
         ]
         if !areBodyScanConfigOptionsValid(faceScanInput: options) {
-            print("AHI ERROR: Body Scan inputs invalid.")
+            result("AHI ERROR: Body Scan inputs invalid.")
             return
         }
         // Ensure the view controller being used is the top one.
@@ -259,17 +269,17 @@ extension AHIMultiScanModule {
             guard let task = scanTask, error == nil else {
                 // Error code 4 is the code for the SDK interaction that cancels the scan.
                 if let nsError = error as? NSError, nsError.code == 4 {
-                    print("AHI: INFO: User cancelled the session.")
+                    result("AHI: INFO: User cancelled the session.")
                 } else {
                     // Handle error through either lack of results or error.
-                    print("AHI: ERROR WITH BODY SCAN: \(error ?? NSError())")
+                    result("AHI: ERROR WITH BODY SCAN: \(error ?? NSError())")
                 }
                 return
             }
             task.continueWith(block: { resultsTask in
                 if let results = resultsTask.result as? [String : Any] {
                     // Handle results
-                    print("AHI: SCAN RESULTS: \(results)")
+                    result("AHI: SCAN RESULTS: \(results)")
                     // Consider getting the 3D mesh here
                     // This is an optional feature.
                     self?.getBodyScanExtras(withBodyScanResult: results)
@@ -348,7 +358,6 @@ extension AHIMultiScanModule {
                 print("AHI ERROR: Failed to release SDK with error: \(err)")
             } else {
                 print("AHI INFO: SDK has been released successfully.")
-                //                self?.isSetup = false
             }
         }
     }
