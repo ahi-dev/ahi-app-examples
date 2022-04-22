@@ -21,10 +21,11 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-          child: setupSuccessful ? afterSetupButtons() : setupSDKButton()),
+          child: setupSuccessful ? afterSetupSDKButtonClicked() : setupSDKButton()),
     );
   }
 
+  /// This is the initial view when the app launches
   Widget setupSDKButton() {
     Size size = MediaQuery.of(context).size;
     return Column(
@@ -51,15 +52,17 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Widget afterSetupButtons() {
+  /// This view appears after the setup sdk button is clicked
+  Widget afterSetupSDKButtonClicked() {
     return Column(
       children: [
-        resourcesDownload ? resourcesDownloadButtons() : setupCompleted()
+        resourcesDownload ? resourcesDownloaded() : setupSDKCompleted()
       ],
     );
   }
 
-  Widget setupCompleted() {
+  /// This is when the sdk setup is complete
+  Widget setupSDKCompleted() {
     Size size = MediaQuery.of(context).size;
     return Column(
       children: [
@@ -95,9 +98,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   backgroundColor: MaterialStateProperty.all(Colors.black)),
               onPressed: () {
                 _didTapDownloadResources();
-                // setState(() {
-                //   resourcesDownload = true;
-                // });
               },
             ),
           ),
@@ -106,7 +106,8 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Widget resourcesDownloadButtons() {
+  /// THis view is when the resources are downloaded.
+  Widget resourcesDownloaded() {
     Size size = MediaQuery.of(context).size;
     return Column(
       children: [
@@ -179,12 +180,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _didTapDownloadResources() async {
     try {
-      var downloadResourcesResult = await platform.invokeMapMethod("downloadAHIResources");
+      var downloadResourcesResult = await platform.invokeMethod("downloadAHIResources");
       if (!(downloadResourcesResult == "setup_successful" || downloadResourcesResult == "SUCCESS")) {
         return;
       }
+      var checkAHIResourcesDownloadSizeResult = platform.invokeMethod("checkAHIResourcesDownloadSize");
+      checkAHIResourcesDownloadSizeResult.then((value) => print("what are you $value"));
       var areResourcesDownloadedResult = await platform.invokeMethod("didTapDownloadResources");
-      print("what results: $areResourcesDownloadedResult");
+      if (areResourcesDownloadedResult == "AHI: Resources ready") {
+        setState(() {
+          resourcesDownload = true;
+        });
+      }
     } on PlatformException catch (e) {
       print(e.message);
     }
