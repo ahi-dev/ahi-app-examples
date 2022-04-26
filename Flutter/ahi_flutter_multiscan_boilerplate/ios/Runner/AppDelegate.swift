@@ -82,7 +82,7 @@ fileprivate var passedClaim: [String] = [""]
                 weakSelf.multiScan.checkAHIResourcesDownloadSize()
             }
             else if call.method == "startBodyScan" {
-                weakSelf.multiScan.startBodyScan()
+                weakSelf.multiScan.startBodyScan(result: result)
             }
         })
         
