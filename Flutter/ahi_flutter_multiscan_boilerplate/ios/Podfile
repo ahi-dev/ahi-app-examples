@@ -1,0 +1,16 @@
+# Uncomment the next line to define a global platform for your project
+# platform :ios, '9.0'
+
+platform :ios, '13.4'
+source 'https://cdn.cocoapods.org/'
+source 'https://git-codecommit.ap-southeast-1.amazonaws.com/v1/repos/myfiziq-sdk-podrepo'
+target 'Runner' do
+  # Comment the next line if you don't want to use dynamic frameworks
+  use_frameworks!
+
+  # Pods for Runner
+  pod 'MyFiziqSDKCoreLite', '~> 21.1.2'
+  pod 'MFZFaceScan', '~> 21.1.2'
+  pod 'AHIMultiScan', '~> 21.1.2'
+
+end
