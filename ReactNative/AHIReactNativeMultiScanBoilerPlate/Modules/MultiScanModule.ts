@@ -1,7 +1,6 @@
 import { NativeModules } from 'react-native';
 const { MultiScanModule } = NativeModules;
 
-
 interface MultiScanInterface {
   passValueFromReact(message: string): Promise<string>;
   increment(): Promise<string>;
@@ -19,8 +18,4 @@ interface MultiScanInterface {
   startFaceScan(): Promise<string>;
   startBodyScan(): Promise<string>;
 }
-
 export default MultiScanModule as MultiScanInterface;
-
-// isUserAuthorized(): Promise<string>;
-// downloadAHIResources(): Promise<string>;

@@ -29,7 +29,6 @@ const AHI_TEST_USER_SALT = 'user';
 /// Any claims you require passed to the SDK.
 const AHI_TEST_USER_CLAIMS = ['test'];
 
-
 const App: () => ReactNode = () => {
   const [isSetup, setIsSetup] = useState(false);
   const [resourcesDownloaded, setResourcesDownloaded] = useState(false);
@@ -90,13 +89,7 @@ const App: () => ReactNode = () => {
     MultiScanModule.startBodyScan().then(value => {
       console.log(value);
     });
-
   }
-
-
-  // {isSetup ? <TouchableOpacity onPress={didTapSetup} style={styles.button} >
-  // <Text style={styles.text}>vfjdfhifhduiDK</Text>
-  // </TouchableOpacity> : null}
 
   return (
     <SafeAreaView>
@@ -123,10 +116,6 @@ const App: () => ReactNode = () => {
             </TouchableOpacity>
               : null
           }
-
-
-
-
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -149,7 +138,6 @@ const styles = StyleSheet.create({
 });
 
 export default App;
-
 const SDKButton = ({ callbackFunction, buttonText }: any) => {
   return (
     <TouchableOpacity onPress={callbackFunction} style={styles.button}>
