@@ -219,7 +219,7 @@ class MainActivity : ComponentActivity() {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> authorizeUser()
                 SdkResultCode.ERROR -> {
-                    Log.d(TAG, "AHI: Error setting up: $}\n")
+                    Log.d(TAG, "AHI: Error setting up: ${it.message}}\n")
                     Log.d(TAG, "AHI: Confirm you habe a valid token.\n")
                     return@waitForResult
                 }
