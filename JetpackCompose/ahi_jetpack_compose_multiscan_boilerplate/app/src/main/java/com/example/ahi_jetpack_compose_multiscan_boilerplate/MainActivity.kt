@@ -65,7 +65,6 @@ object AHIConfigTokens {
     val AHI_TEST_USER_CLAIMS = arrayOf("test")
 }
 
-
 class MainActivity : ComponentActivity() {
     val ahi: MultiScan = MultiScan.shared()
     private lateinit var viewModel: MultiScanViewModel
@@ -94,12 +93,12 @@ class MainActivity : ComponentActivity() {
                     }
                     constrain(downloadResourcesButton) {
                         start.linkTo(parent.start)
-                        top.linkTo(parent.top, margin = inset+buttonHeight)
+                        top.linkTo(parent.top, margin = inset + buttonHeight)
                         end.linkTo(parent.end)
                     }
                     constrain(startBodyScanButton) {
                         start.linkTo(parent.start)
-                        top.linkTo(parent.top, margin = inset+buttonHeight)
+                        top.linkTo(parent.top, margin = inset + buttonHeight)
                         end.linkTo(parent.end)
                     }
                 }
@@ -165,8 +164,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun didTapStartBodyScan() {
-        startBodyScan()
         ahi.registerDelegate(AHIPersistenceDelegate)
+        startBodyScan()
     }
 
     private fun didTapDownloadResources() {
@@ -263,6 +262,7 @@ class MainActivity : ComponentActivity() {
         avatarValues["TAG_ARG_HEIGHT_IN_CM"] = 180
         avatarValues["TAG_ARG_WEIGHT_IN_KG"] = 85
         avatarValues["TAG_ARG_AGE"] = 35
+        // TAG_ARG_PREFERRED_HEIGHT_UNITS and TAG_ARG_PREFERRED_WEIGHT_UNITS are unique to the Android MultiScan SDK.
         avatarValues["TAG_ARG_PREFERRED_HEIGHT_UNITS"] = "CENTIMETRES"
         avatarValues["TAG_ARG_PREFERRED_WEIGHT_UNITS"] = "KILOGRAMS"
         if (!areFaceScanConfigOptionsValid(avatarValues)) {
@@ -317,11 +317,11 @@ class MainActivity : ComponentActivity() {
         MultiScan.waitForResult(
             MultiScan.shared().getScanExtra(MSScanType.BODY, parameters)
         ) {
-            /** Write the mesh to a directory */
+            // Write the mesh to a directory
             val objFile = File(applicationContext.filesDir, "$id.obj")
-            /** Print the 3D mesh path */
+            // Print the 3D mesh path
             saveAvatarToFile(it, objFile)
-            /** Return the URL */
+            // Return the URL
             Log.d(TAG, "AHI: Mesh URL: ${applicationContext.filesDir.path}/$id.obj\n")
         }
     }
@@ -446,9 +446,9 @@ class MainActivity : ComponentActivity() {
             "date"
         )
         var isValid = false
-        /** Iterate over results */
+        // Iterate over results
         sdkResultSchema.forEach { str ->
-            /** Check if keys in results contains the required keys. */
+            // Check if keys in results contains the required keys.
             if (!it.keys.contains(str)) {
                 isValid = true
             }
