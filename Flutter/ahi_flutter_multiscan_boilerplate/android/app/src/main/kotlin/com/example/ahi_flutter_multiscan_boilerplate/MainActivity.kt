@@ -52,7 +52,7 @@ class MainActivity : FlutterActivity() {
                     )
                 }
                 "startFaceScan" -> {
-                    startFaceScan(result = result)
+                    startFaceScan(dataMap = call.arguments, result = result)
                 }
                 "didTapDownloadResources" -> {
                     areAHIResourcesAvailable(result = result)
@@ -105,7 +105,7 @@ class MainActivity : FlutterActivity() {
      *  Download scan resources.
      *  We recommend only calling this function once per session to prevent duplicate background resource calls.
      */
-
+    // todo this looks good, leave
     private fun downloadAHIResources(result: MethodChannel.Result) {
         MultiScan.waitForResult(MultiScan.shared().downloadResourcesInBackground()) {
             when (it.resultCode) {
@@ -124,7 +124,7 @@ class MainActivity : FlutterActivity() {
      *  This must happen before requesting a scan.
      *  We recommend doing this on successful load of your application.
      */
-
+    // todo this looks good I think, not sure will have to ask to confirm
     private fun setupMultiScanSDK(token: String, result: MethodChannel.Result) {
         val config: MutableMap<String, String> = HashMap()
         config["TOKEN"] = token
@@ -145,7 +145,7 @@ class MainActivity : FlutterActivity() {
      *  Once successfully setup, you should authorize your user with our service.
      *  With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
      * */
-
+    // todo this looks good I think, not sure will have to ask to confirm
     private fun authorizeUser(
         userId: String,
         salt: String,
@@ -166,22 +166,23 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    private fun startFaceScan(result: MethodChannel.Result) {
+    private fun startFaceScan(avatarValues: Any, result: MethodChannel.Result) {
         // All required face scan options.
-        val avatarValues: HashMap<String, Any> = HashMap()
-        avatarValues["TAG_ARG_GENDER"] = "M"
-        avatarValues["TAG_ARG_SMOKER"] = "F"
-        avatarValues["TAG_ARG_DIABETIC"] = "none"
-        avatarValues["TAG_ARG_HYPERTENSION"] = "F"
-        avatarValues["TAG_ARG_BPMEDS"] = "F"
-        avatarValues["TAG_ARG_HEIGHT_IN_CM"] = 180
-        avatarValues["TAG_ARG_WEIGHT_IN_KG"] = 85
-        avatarValues["TAG_ARG_AGE"] = 35
-        avatarValues["TAG_ARG_PREFERRED_HEIGHT_UNITS"] = "CENTIMETRES"
-        avatarValues["TAG_ARG_PREFERRED_WEIGHT_UNITS"] = "KILOGRAMS"
-        if (!areFaceScanConfigOptionsValid(avatarValues)) {
-            result.success("AHI ERROR: Face Scan inputs invalid.")
-        }
+        // todo the below is handle by flutter
+        avatarValues as HashMap<String, Any>
+//        avatarValues["TAG_ARG_GENDER"] = "M"
+//        avatarValues["TAG_ARG_SMOKER"] = "F"
+//        avatarValues["TAG_ARG_DIABETIC"] = "none"
+//        avatarValues["TAG_ARG_HYPERTENSION"] = "F"
+//        avatarValues["TAG_ARG_BPMEDS"] = "F"
+//        avatarValues["TAG_ARG_HEIGHT_IN_CM"] = 180
+//        avatarValues["TAG_ARG_WEIGHT_IN_KG"] = 85
+//        avatarValues["TAG_ARG_AGE"] = 35
+//        avatarValues["TAG_ARG_PREFERRED_HEIGHT_UNITS"] = "CENTIMETRES"
+//        avatarValues["TAG_ARG_PREFERRED_WEIGHT_UNITS"] = "KILOGRAMS"
+//        if (!areFaceScanConfigOptionsValid(avatarValues)) {
+//            result.error("AHI ERROR: Face Scan inputs invalid.", "there was an error", null)
+//        }
         MultiScan.waitForResult(
             MultiScan.shared().initiateScan(MSScanType.FACE, MSPaymentType.PAYG, avatarValues)
         ) {
@@ -236,6 +237,7 @@ class MainActivity : FlutterActivity() {
      *  The 3D mesh can be created and returned at any time.
      *  We recommend doing this on successful completion of a body scan with the results.
      * */
+    // todo stays
     private fun getBodyScanExtras(id: String, result: MethodChannel.Result) {
         val parameters: MutableMap<String, Any> = HashMap()
         parameters["operation"] = MultiScanOperation.BodyGetMeshObj.name
@@ -251,6 +253,7 @@ class MainActivity : FlutterActivity() {
     }
 
     /** For the newest AHIMultiScan version 21.1.3 need to implement PersistenceDelegate */
+    // todo stay here
     object AHIPersistenceDelegate : MultiScanDelegate {
         override fun request(
             scanType: MSScanType?,
@@ -277,6 +280,7 @@ class MainActivity : FlutterActivity() {
      *  BodyScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/BodyScan/Schemas/
      *  FaceScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FaceScan/Schemas/
      * */
+    // todo this should be in flutter
     private fun areSharedScanConfigOptionsValid(avatarValues: java.util.HashMap<String, Any>): Boolean {
         val sex = avatarValues["TAG_ARG_GENDER"].takeIf { it is String }
         val height = avatarValues["TAG_ARG_HEIGHT_IN_CM"].takeIf { it is Int }
@@ -293,6 +297,7 @@ class MainActivity : FlutterActivity() {
      *  Please see the Schemas for more information:
      *  FaceScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FaceScan/Schemas/
      * */
+    // todo this should be in flutter
     private fun areFaceScanConfigOptionsValid(avatarValues: HashMap<String, Any>): Boolean {
         if (!areSharedScanConfigOptionsValid(avatarValues)) {
             return false
@@ -332,6 +337,7 @@ class MainActivity : FlutterActivity() {
      *  Please see the Schemas for more information:
      *  BodyScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/BodyScan/Schemas/
      * */
+    // todo this should be in flutter
     private fun areBodyScanConfigOptionsValid(avatarValues: java.util.HashMap<String, Any>): Boolean {
         if (!areSharedScanConfigOptionsValid(avatarValues)) {
             return false
@@ -351,6 +357,7 @@ class MainActivity : FlutterActivity() {
     }
 
     /** Confirm results have correct set of keys. */
+    // todo this should be in flutter
     private fun areBodyScanSmoothingResultsValid(it: MutableMap<String, String>): Boolean {
         // Your token may only provide you access to a smaller subset of results.
         // You should modify this list based on your available config options.
@@ -380,6 +387,7 @@ class MainActivity : FlutterActivity() {
     }
 
     /** Save 3D avatar mesh result on local device. */
+    // todo stay
     private fun saveAvatarToFile(res: SdkResultParcelable, objFile: File) {
         val meshResObj = JSONObject(res.result)
         val objString = meshResObj["mesh"].toString()
