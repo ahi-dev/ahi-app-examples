@@ -17,7 +17,6 @@
 
 package com.ahireactnativemultiscanboilerplate
 
-import android.util.Log
 import com.facebook.react.bridge.*
 import com.myfiziq.sdk.MultiScan
 import com.myfiziq.sdk.MultiScanDelegate
@@ -26,17 +25,12 @@ import com.myfiziq.sdk.enums.MSPaymentType
 import com.myfiziq.sdk.enums.MSScanType
 import com.myfiziq.sdk.enums.SdkResultCode
 import com.myfiziq.sdk.vo.SdkResultParcelable
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStreamWriter
 import java.util.concurrent.CompletableFuture
-
-private const val TAG = "MultiScanModule"
 
 class MultiScanModule(private val context: ReactApplicationContext) :
     ReactContextBaseJavaModule(context) {
@@ -56,16 +50,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     @ReactMethod
     fun areAHIResourcesAvailable(promise: Promise) {
         MultiScan.waitForResult(MultiScan.shared().areResourcesDownloaded()) {
-            if (!it) {
-                promise.resolve(it)
-                GlobalScope.launch {
-                    delay(30000)
-                    checkAHIResourcesDownloadSize(promise)
-                    areAHIResourcesAvailable(promise)
-                }
-            } else {
-                promise.resolve(it)
-            }
+            promise.resolve(it)
         }
     }
 
@@ -89,6 +74,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         MultiScan.waitForResult(MultiScan.shared().setup(config)) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
+                    MultiScan.shared().registerDelegate(AHIPersistenceDelegate)
                     promise.resolve(it.resultCode.toString())
                 }
                 SdkResultCode.ERROR -> {
@@ -105,7 +91,10 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      */
     @ReactMethod
     fun authorizeUser(userId: String, salt: String, claims: ReadableArray, promise: Promise) {
-        val claimsArray = arrayOf(claims.getString(0))
+        // Convert claims to an Array<String>
+        val claimsArray: Array<String> = claims.toArrayList().map {
+            it.toString()
+        }.toTypedArray()
         MultiScan.waitForResult(MultiScan.shared().userAuthorize(userId, salt, claimsArray)) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
@@ -119,16 +108,19 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     }
 
     @ReactMethod
-    fun startFaceScan(msPaymentType: String, avatarValues: ReadableMap, promise: Promise) {
-        var paymentType = when (msPaymentType) {
+    fun startFaceScan(paymentType: String, avatarValues: ReadableMap, promise: Promise) {
+        val pType = when (paymentType) {
             "PAYG" -> MSPaymentType.PAYG
             "SUBS" -> MSPaymentType.SUBS
             else -> null
         }
+        if (pType == null) {
+            promise.reject("-99", "invalid payment type.")
+            return
+        }
         MultiScan.waitForResult(
-
             MultiScan.shared()
-                .initiateScan(MSScanType.FACE, paymentType, avatarValues.toHashMap())
+                .initiateScan(MSScanType.FACE, pType, avatarValues.toHashMap())
         ) {
             /** Result check */
             when (it.resultCode) {
@@ -143,16 +135,20 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     }
 
     @ReactMethod
-    fun startBodyScan(msPaymentType: String, avatarValues: ReadableMap, promise: Promise) {
-        var payment = when (msPaymentType) {
+    fun startBodyScan(paymentType: String, avatarValues: ReadableMap, promise: Promise) {
+        val pType = when (paymentType) {
             "PAYG" -> MSPaymentType.PAYG
             "SUBS" -> MSPaymentType.SUBS
             else -> null
         }
+        if (pType == null) {
+            promise.reject("-99", "invalid payment type.")
+            return
+        }
         MultiScan.shared().registerDelegate(AHIPersistenceDelegate)
         MultiScan.waitForResult(
             MultiScan.shared()
-                .initiateScan(MSScanType.BODY, payment, avatarValues.toHashMap())
+                .initiateScan(MSScanType.BODY, pType, avatarValues.toHashMap())
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
@@ -162,12 +158,12 @@ class MultiScanModule(private val context: ReactApplicationContext) :
                         getBodyScanExtras(id, promise)
                     }
                     promise.resolve(
-                        "AHI: SCAN RESULT: ${it.result}\nAHI: Mesh URL: ${context.filesDir.path}/$id.obj"
+                        it.result
                     )
                 }
                 SdkResultCode.ERROR -> {
                     promise.reject(
-                        it.resultCode.toString(), "AHI: ERROR WITH BODY SCAN: ${it.message}"
+                        it.resultCode.toString(), it.message
                     )
                 }
             }
@@ -178,6 +174,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      * Use this function to fetch the 3D avatar mesh. The 3D mesh can be created and returned at any
      * time. We recommend doing this on successful completion of a body scan with the results.
      */
+    @ReactMethod
     private fun getBodyScanExtras(id: String, promise: Promise) {
         val parameters: MutableMap<String, Any> = HashMap()
         parameters["operation"] = MultiScanOperation.BodyGetMeshObj.name
@@ -187,22 +184,37 @@ class MultiScanModule(private val context: ReactApplicationContext) :
             val objFile = File(context.filesDir, "$id.obj")
             /** Print the 3D mesh path */
             saveAvatarToFile(it, objFile)
-            /** Return the URL */
-            Log.d(TAG, "AHI: Mesh URL: ${context.filesDir.path}/$id.obj\n")
+            promise.resolve(context.filesDir.path)
+        }
+    }
+
+    /** The MultiScan SDK can provide personalised results.
+     *
+     * Optionally call this function on load of the SDK.
+     * */
+    @ReactMethod
+    fun setPersistenceDelegate(results: ReadableArray) {
+        AHIPersistenceDelegate.let {
+            it.bodyScanResults = results.toArrayList().map {
+                it.toString()
+            }.toMutableList()
+            MultiScan.shared().registerDelegate(it)
         }
     }
 
     /** For the newest AHIMultiScan version 21.1.3 need to implement PersistenceDelegate */
     object AHIPersistenceDelegate : MultiScanDelegate {
+        /** You should have your body scan results stored somewhere in your app that this function can access.*/
+        var bodyScanResults = mutableListOf<String>()
+
         override fun request(
             scanType: MSScanType?,
             options: MutableMap<String, String>?
         ): CompletableFuture<SdkResultParcelable> {
             val future = CompletableFuture<SdkResultParcelable>()
             if (scanType == MSScanType.BODY) {
-                val rawResultList = mutableListOf<String>()
-                options?.forEach { rawResultList.add(it.toString()) }
-                val jsonArrayString = "[" + rawResultList.joinToString(separator = ",") + "]"
+                options?.forEach { bodyScanResults.add(it.toString()) }
+                val jsonArrayString = "[" + bodyScanResults.joinToString(separator = ",") + "]"
                 future.complete(SdkResultParcelable(SdkResultCode.SUCCESS, jsonArrayString))
             } else {
                 future.complete(SdkResultParcelable(SdkResultCode.ERROR, ""))
@@ -212,7 +224,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     }
 
     /** Confirm results have correct set of keys. */
-    private fun areBodyScanSmoothingResultsValid(it: MutableMap<String, String>): Boolean {
+    private fun areBodyScanSmoothingResultsValid(it: Map<String, Any>): Boolean {
         // Your token may only provide you access to a smaller subset of results.
         // You should modify this list based on your available config options.
         val sdkResultSchema =

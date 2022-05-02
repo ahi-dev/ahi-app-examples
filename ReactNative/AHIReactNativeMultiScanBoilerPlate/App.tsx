@@ -56,6 +56,7 @@ let avatarValues = {
 
 const App: () => ReactNode = () => {
   const [isSetup, setIsSetup] = useState(false);
+  const [downloadingButtonVisibility, setdownloadingButtonVisibility] = useState(true);
   const [resourcesDownloaded, setResourcesDownloaded] = useState(false);
   const [resourcesDownloading, setResourcesDownloading] = useState(false);
   const map = new Map();
@@ -98,8 +99,8 @@ const App: () => ReactNode = () => {
       console.log("AHI ERROR: Face Scan inputs")
       return;
     }
-    MultiScanModule.startFaceScan(MSPaymentType.PAYG, avatarValues).then(value => {
-      console.log(value);
+    MultiScanModule.startFaceScan(MSPaymentType.PAYG, avatarValues).then((value: any) => {
+      console.log("AHI: SCAN RESULTS: " + value);
     });
   }
 
@@ -108,26 +109,42 @@ const App: () => ReactNode = () => {
     if (!areBodyScanConfigOptionsValid(objectToMap(avatarValues))) {
       console.log("AHI ERROR: Body Scan inputs invalid.");
     }
-    MultiScanModule.startBodyScan(MSPaymentType.PAYG, avatarValues).then(value => {
-      console.log(value);
+    MultiScanModule.startBodyScan(MSPaymentType.PAYG, avatarValues).then((value: any) => {
+      console.log("AHI: SCAN RESULTS: " + value);
+      MultiScanModule.getBodyScanExtras();
     });
   }
 
   // download resources
-  const didTapDownloadResources = () => {
-    MultiScanModule.downloadAHIResources();
-    MultiScanModule.areAHIResourcesAvailable().then(value => {
-      if (value)
+  const didTapDownloadResources = async () => {
+    MultiScanModule.areAHIResourcesAvailable().then((value: any) => {
+      if (!value) {
         console.log("AHI INFO: Resources are not downloaded");
-      else
+        // start download.
+        MultiScanModule.downloadAHIResources();
+        MultiScanModule.checkAHIResourcesDownloadSize()
+          .then((size: any) => {
+            console.log("AHI INFO: Size of download is " + Number(size) / 1024 / 1024);
+          });
+        setTimeout(() => didTapDownloadResources(), 3000);
+      } else {
         console.log("AHI: Resources ready");
-    });
-    MultiScanModule.checkAHIResourcesDownloadSize()
-      .then(value => {
-        console.log("AHI INFO: Size of download is " + Number(value));
+        // control view state
         setResourcesDownloaded(true);
-      });
+      }
+    });
+
   };
+
+  function getAHIResourcesDownloadSizeWithAsync() {
+    var downloadSize = 0;
+    MultiScanModule.checkAHIResourcesDownloadSize()
+      .then((size: any) => {
+        downloadSize = size;
+        console.log("AHI INFO: Size of download is " + Number(size) / 1024 / 1024);
+      });
+    return downloadSize;
+  }
 
   /**
    * FaceScan config requirements validation. Please see the Schemas for more information:
