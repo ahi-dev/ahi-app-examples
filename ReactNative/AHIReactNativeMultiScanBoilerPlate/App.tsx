@@ -1,10 +1,19 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow strict-local
- */
+//
+//  AHI - Example Code
+//
+//  Copyright (c) Advanced Human Imaging. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 
 import React, { useState } from 'react';
 import type { ReactNode } from 'react';
@@ -19,76 +28,180 @@ import {
 } from 'react-native';
 
 /// The required tokens for the MultiScan Setup and Authorization.
-// !!!! DEBUG - DO NOT COMMIT!!!!!!!
 const AHI_MULTI_SCAN_TOKEN = '';
-// !!!! DEBUG - DO NOT COMMIT!!!!!!!
 /// Your user id. Hardcode a valid user id for testing purposes.
 const AHI_TEST_USER_ID = 'AHI_TEST_USER';
 /// Your salt token.
 const AHI_TEST_USER_SALT = 'user';
 /// Any claims you require passed to the SDK.
 const AHI_TEST_USER_CLAIMS = ['test'];
+/// Payment type
+enum MSPaymentType {
+  PAYG = "PAYG",
+  SUBS = "SUBS"
+}
+
+let avatarValues = {
+  'TAG_ARG_GENDER': 'M',
+  'TAG_ARG_SMOKER': 'F',
+  'TAG_ARG_DIABETIC': 'none',
+  'TAG_ARG_HYPERTENSION': 'F',
+  'TAG_ARG_BPMEDS': 'F',
+  'TAG_ARG_HEIGHT_IN_CM': 180,
+  'TAG_ARG_WEIGHT_IN_KG': 85,
+  'TAG_ARG_AGE': 35,
+  'TAG_ARG_PREFERRED_HEIGHT_UNITS': 'CENTIMETRES',
+  'TAG_ARG_PREFERRED_WEIGHT_UNITS': 'KILOGRAMS'
+}
 
 const App: () => ReactNode = () => {
   const [isSetup, setIsSetup] = useState(false);
   const [resourcesDownloaded, setResourcesDownloaded] = useState(false);
   const [resourcesDownloading, setResourcesDownloading] = useState(false);
+  const map = new Map();
+  const objectToMap = (avatarValues: any) => {
+    const keys = Object.keys(avatarValues);
+    const map = new Map();
+    for (let i = 0; i < keys.length; i++) {
+      map.set(keys[i], avatarValues[keys[i]]);
+    };
+    return map
+  };
 
   // setup sdk
   const didTapSetup = async () => {
-    console.log('didTapSetup: ');
     try {
       let res = await MultiScanModule.setupMultiScanSDK(AHI_MULTI_SCAN_TOKEN);
-      if (res === 'SUCCESS') {
-        let auth = await MultiScanModule.authorizeUser(
-          AHI_TEST_USER_ID,
-          AHI_TEST_USER_SALT,
-          AHI_TEST_USER_CLAIMS,
-        );
-        if (auth === 'SUCCESS') {
-          setIsSetup(true);
-          console.log("AHI: Setup user successfully");
-        } else {
-          console.log("AHI: Auth Error: " + auth);
-          console.log("AHI: Confirm you are using a valid user id, salt and claims.");
-        }
-      } else {
-        console.log(res);
+      if (res !== 'SUCCESS') {
+        return;
       }
+      let auth = await MultiScanModule.authorizeUser(
+        AHI_TEST_USER_ID,
+        AHI_TEST_USER_SALT,
+        AHI_TEST_USER_CLAIMS
+      );
+      if (auth !== 'SUCCESS') {
+        console.log("AHI: Auth Error: " + auth);
+        console.log("AHI: Confirm you are using a valid user id, salt and claims.");
+        return;
+      }
+      setIsSetup(true);
+      console.log("AHI: Setup user successfully");
     } catch (e) {
       console.log(e);
     }
   };
 
   // start facescan
-  const didTapStartFaceScan = () => {
-    console.log('didTapCheckDownloadSize: ');
-    MultiScanModule.startFaceScan()
-      .then(value => {
-        console.log("AHI: SCAN RESULT: " + value);
-      });
+  const didTapStartFaceScan = async () => {
+    if (!areFaceScanConfigOptionsValid(objectToMap(avatarValues))) {
+      console.log("AHI ERROR: Face Scan inputs")
+      return;
+    }
+    MultiScanModule.startFaceScan(MSPaymentType.PAYG, avatarValues).then(value => {
+      console.log(value);
+    });
+  }
+
+  // start bodyscan
+  const didTapStartBodyScan = () => {
+    if (!areBodyScanConfigOptionsValid(objectToMap(avatarValues))) {
+      console.log("AHI ERROR: Body Scan inputs invalid.");
+    }
+    MultiScanModule.startBodyScan(MSPaymentType.PAYG, avatarValues).then(value => {
+      console.log(value);
+    });
   }
 
   // download resources
   const didTapDownloadResources = () => {
-    console.log('didTapCheckDownloadSize: ');
     MultiScanModule.downloadAHIResources();
     MultiScanModule.areAHIResourcesAvailable().then(value => {
-      console.log(value);
+      if (value)
+        console.log("AHI INFO: Resources are not downloaded");
+      else
+        console.log("AHI: Resources ready");
     });
     MultiScanModule.checkAHIResourcesDownloadSize()
       .then(value => {
-        console.log(value);
+        console.log("AHI INFO: Size of download is " + Number(value));
         setResourcesDownloaded(true);
       });
   };
 
-  // start bodyscan
-  const didTapStartBodyScan = () => {
-    console.log('didTapStartBodyScan: ');
-    MultiScanModule.startBodyScan().then(value => {
-      console.log(value);
-    });
+  /**
+   * FaceScan config requirements validation. Please see the Schemas for more information:
+   * FaceScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FaceScan/Schemas/
+   */
+  function areFaceScanConfigOptionsValid(avatarValues: Map<string, any>): boolean {
+    if (!areSharedScanConfigOptionsValid(avatarValues)) {
+      return false;
+    }
+    var sex = avatarValues.get('TAG_ARG_GENDER');
+    var smoke = avatarValues.get('TAG_ARG_SMOKER');
+    var isDiabetic = avatarValues.get('TAG_ARG_DIABETIC');
+    var hypertension = avatarValues.get('TAG_ARG_HYPERTENSION');
+    var blood = avatarValues.get('TAG_ARG_BPMEDS');
+    var height = avatarValues.get('TAG_ARG_HEIGHT_IN_CM');
+    var weight = avatarValues.get('TAG_ARG_WEIGHT_IN_KG');
+    var age = avatarValues.get('TAG_ARG_AGE');
+    var heightUnits = avatarValues.get('TAG_ARG_PREFERRED_HEIGHT_UNITS');
+    var weightUnits = avatarValues.get('TAG_ARG_PREFERRED_WEIGHT_UNITS');
+    if (sex != null &&
+      smoke != null &&
+      isDiabetic != null &&
+      hypertension != null &&
+      blood != null &&
+      height != null &&
+      weight != null &&
+      age != null &&
+      heightUnits != null &&
+      weightUnits != null
+    ) {
+      return ['none', 'type1', 'type2'].includes(isDiabetic);
+    } else {
+      return false;
+    }
+  }
+
+  /**
+  * BodyScan config requirements validation. Please see the Schemas for more information:
+  * BodyScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/BodyScan/Schemas/
+  */
+  function areBodyScanConfigOptionsValid(avatarValues: Map<string, any>): boolean {
+    if (!areSharedScanConfigOptionsValid(avatarValues)) {
+      return false
+    }
+    var sex = avatarValues.get('TAG_ARG_GENDER');
+    var height = avatarValues.get('TAG_ARG_HEIGHT_IN_CM');
+    var weight = avatarValues.get('TAG_ARG_WEIGHT_IN_KG');
+    if (sex != null &&
+      height != null &&
+      weight != null &&
+      height >= 50 &&
+      height <= 255 &&
+      weight >= 16 &&
+      weight <= 300
+    ) {
+      return true
+    }
+    return false
+  }
+
+  /**
+  * All MultiScan scan configs require this information.
+  *
+  * BodyScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/BodyScan/Schemas/ FaceScan:
+  * https://docs.advancedhumanimaging.io/MultiScan%20SDK/FaceScan/Schemas/
+  */
+  function areSharedScanConfigOptionsValid(avatarValues: Map<string, any>): boolean {
+    var sex = avatarValues.get('TAG_ARG_GENDER');
+    var height = avatarValues.get('TAG_ARG_HEIGHT_IN_CM');
+    var weight = avatarValues.get('TAG_ARG_WEIGHT_IN_KG');
+    if (sex != null && height != null && weight != null) {
+      return ['M', 'F'].includes(sex);
+    }
+    return false;
   }
 
   return (
@@ -125,9 +238,9 @@ const App: () => ReactNode = () => {
 const styles = StyleSheet.create({
   button: {
     flex: 1,
-    padding: 10,
-    marginHorizontal: 15,
-    marginTop: 10,
+    padding: 8,
+    marginHorizontal: 16,
+    marginTop: 8,
     backgroundColor: 'black',
     alignSelf: 'stretch',
   },
