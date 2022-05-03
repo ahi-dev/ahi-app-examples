@@ -31,7 +31,7 @@ interface MultiScanInterface {
   ): Promise<string>;
   startFaceScan(msPaymentType: string, avatarValues: Object): Promise<string>;
   startBodyScan(msPaymentType: string, avatarValues: Object): Promise<string>;
-  getBodyScaExtra(id: string): Promise<string>;
+  getBodyScanExtras(id: string): Promise<string>;
   setPersistenceDelegate(result: Array<any>): void;
 }
 export default MultiScanModule as MultiScanInterface;

@@ -106,13 +106,21 @@ const App: () => ReactNode = () => {
 
   // start bodyscan
   const didTapStartBodyScan = () => {
+    var id;
     if (!areBodyScanConfigOptionsValid(objectToMap(avatarValues))) {
       console.log("AHI ERROR: Body Scan inputs invalid.");
     }
     MultiScanModule.startBodyScan(MSPaymentType.PAYG, avatarValues).then((value: any) => {
       console.log("AHI: SCAN RESULTS: " + value);
-      MultiScanModule.getBodyScanExtras();
+      var result = JSON.parse(value);
+      if (areBodyScanSmoothingResultsValid(result)) {
+        id = result['id'];
+        MultiScanModule.getBodyScanExtras(id).then((path: any) => {
+          console.log("AHI 3D Mesh path: " + path);
+        });
+      }
     });
+
   }
 
   // download resources
@@ -133,18 +141,7 @@ const App: () => ReactNode = () => {
         setResourcesDownloaded(true);
       }
     });
-
   };
-
-  function getAHIResourcesDownloadSizeWithAsync() {
-    var downloadSize = 0;
-    MultiScanModule.checkAHIResourcesDownloadSize()
-      .then((size: any) => {
-        downloadSize = size;
-        console.log("AHI INFO: Size of download is " + Number(size) / 1024 / 1024);
-      });
-    return downloadSize;
-  }
 
   /**
    * FaceScan config requirements validation. Please see the Schemas for more information:
@@ -203,6 +200,34 @@ const App: () => ReactNode = () => {
       return true
     }
     return false
+  }
+
+  /** Confirm results have correct set of keys. */
+  function areBodyScanSmoothingResultsValid(result: Map<string, any>): boolean {
+    // Your token may only provide you access to a smaller subset of results.
+    // You should modify this list based on your available config options.
+    var sdkResultSchema = [
+      "enum_ent_sex",
+      "cm_ent_height",
+      "kg_ent_weight",
+      "cm_raw_chest",
+      "cm_raw_hips",
+      "cm_raw_inseam",
+      "cm_raw_thigh",
+      "cm_raw_waist",
+      "kg_raw_weightPredict",
+      "percent_raw_bodyFat",
+      "id",
+      "date"];
+    var isValid = false;
+    // Iterate over results
+    for (let i = 0; i < sdkResultSchema.length; i++) {
+      // Check if keys in result contains the required keys.
+      if (!(sdkResultSchema[i] in result)) {
+        isValid = true;
+      }
+    }
+    return !isValid;
   }
 
   /**

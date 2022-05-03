@@ -152,11 +152,6 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
-                    val res = JSONObject(it.result)
-                    val id = res["id"].toString()
-                    if (areBodyScanSmoothingResultsValid(it.resultMap)) {
-                        getBodyScanExtras(id, promise)
-                    }
                     promise.resolve(
                         it.result
                     )
@@ -179,13 +174,13 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         val parameters: MutableMap<String, Any> = HashMap()
         parameters["operation"] = MultiScanOperation.BodyGetMeshObj.name
         parameters["id"] = id
+        /** Write the mesh to a directory */
+        val objFile = File(context.filesDir, "$id.obj")
         MultiScan.waitForResult(MultiScan.shared().getScanExtra(MSScanType.BODY, parameters)) {
-            /** Write the mesh to a directory */
-            val objFile = File(context.filesDir, "$id.obj")
             /** Print the 3D mesh path */
             saveAvatarToFile(it, objFile)
-            promise.resolve(context.filesDir.path)
         }
+        promise.resolve(objFile.path);
     }
 
     /** The MultiScan SDK can provide personalised results.

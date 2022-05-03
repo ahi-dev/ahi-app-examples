@@ -97,7 +97,7 @@ public class MainApplication extends Application implements ReactApplication {
                         .invoke(null, context, reactInstanceManager);
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
-            } catch (NoSuchMethodException e) {
+            } catch (NoSuchMethodException e)   {
                 e.printStackTrace();
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
