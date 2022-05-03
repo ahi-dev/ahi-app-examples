@@ -20,7 +20,7 @@ class _MyHomePageState extends State<MyHomePage> {
   var ahiConfigTokens = <String, dynamic>{
   };
 
-  var ahiConfigFaceScan = <String, dynamic>{
+  var ahiConfigScan = <String, dynamic>{
     "TAG_ARG_GENDER": "M",
     "TAG_ARG_SMOKER": "F",
     "TAG_ARG_DIABETIC": "none",
@@ -216,6 +216,32 @@ class _MyHomePageState extends State<MyHomePage> {
     return false;
   }
 
+  bool areBodyScanSmoothingResultsValid(Map<String, dynamic> result){
+    // Your token may only provide you access to a smaller subset of results.
+    // You should modify this list based on your available config options.
+    var sdkResultSchema = [
+      "enum_ent_sex",
+      "cm_ent_height",
+      "kg_ent_weight",
+      "cm_raw_chest",
+      "cm_raw_hips",
+      "cm_raw_inseam",
+      "cm_raw_thigh",
+      "cm_raw_waist",
+      "kg_raw_weightPredict",
+      "percent_raw_bodyFat",
+      "id",
+      "date"];
+    var isValid = false;
+    for (var i = 0; i < sdkResultSchema.length; i++) {
+      // Check if keys in result contains the required keys.
+      if (!(sdkResultSchema[i].contains(result as Pattern) )) {
+        isValid = true;
+      }
+    }
+    return !isValid;
+  }
+
   bool areSharedScanConfigOptionsValid(Map<String, dynamic> avatarValues) {
     var sex = avatarValues["TAG_ARG_GENDER"] is String;
     var height = avatarValues["TAG_ARG_HEIGHT_IN_CM"] is int;
@@ -286,7 +312,7 @@ class _MyHomePageState extends State<MyHomePage> {
         print("something here");
         platform.invokeMethod("checkAHIResourcesDownloadSize").then((size) =>
             print("AHI INFO: Size of download is ${(size as num) / 1024 / 1024}"));
-        Future.delayed(const Duration(seconds: 5), () {
+        Future.delayed(const Duration(seconds: 30), () {
           _didTapDownloadResources();
         });
       } else {
