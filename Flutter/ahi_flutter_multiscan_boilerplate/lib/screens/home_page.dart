@@ -14,7 +14,7 @@ enum MSPaymentType {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  static const platform = MethodChannel('flutter_boilerplate_wrapper');
+  static const platform = MethodChannel('ahi_multiscan_flutter_wrapper');
   bool setupSuccessful = false;
   bool resourcesDownload = false;
   bool _isButtonDisabled = false;

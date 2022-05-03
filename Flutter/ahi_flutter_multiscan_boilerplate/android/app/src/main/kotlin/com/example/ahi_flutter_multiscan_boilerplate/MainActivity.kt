@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture
 private const val TAG = "MainActivity"
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "flutter_boilerplate_wrapper"
+    private val CHANNEL = "ahi_multiscan_flutter_wrapper"
 
     @RequiresApi(Build.VERSION_CODES.N)
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
