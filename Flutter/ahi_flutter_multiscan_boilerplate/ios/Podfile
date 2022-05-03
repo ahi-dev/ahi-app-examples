@@ -12,5 +12,6 @@ target 'Runner' do
   pod 'MyFiziqSDKCoreLite', '~> 21.1.2'
   pod 'MFZFaceScan', '~> 21.1.2'
   pod 'AHIMultiScan', '~> 21.1.2'
+  pod 'Flutter'
 
 end
