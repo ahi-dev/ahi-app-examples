@@ -38,29 +38,10 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         return "MultiScanModule"
     }
 
-    /** Check the size of the AHI resources that require downloading. */
+    // Default.
     @ReactMethod
-    fun checkAHIResourcesDownloadSize(promise: Promise) {
-        MultiScan.waitForResult(MultiScan.shared().totalEstimatedDownloadSizeInBytes()) {
-            promise.resolve("$it")
-        }
-    }
-
-    /** Check if the AHI resources are downloaded. */
-    @ReactMethod
-    fun areAHIResourcesAvailable(promise: Promise) {
-        MultiScan.waitForResult(MultiScan.shared().areResourcesDownloaded()) {
-            promise.resolve(it)
-        }
-    }
-
-    /**
-     * Download scan resources. We recommend only calling this function once per session to prevent
-     * duplicate background resource calls.
-     */
-    @ReactMethod
-    fun downloadAHIResources() {
-        MultiScan.shared().downloadResourcesInBackground()
+    fun unknow(promise: Promise){
+        promise.resolve(null)
     }
 
     /**
@@ -104,6 +85,31 @@ class MultiScanModule(private val context: ReactApplicationContext) :
                     promise.reject(it.resultCode.toString(), it.message)
                 }
             }
+        }
+    }
+
+    /** Check if the AHI resources are downloaded. */
+    @ReactMethod
+    fun areAHIResourcesAvailable(promise: Promise) {
+        MultiScan.waitForResult(MultiScan.shared().areResourcesDownloaded()) {
+            promise.resolve(it)
+        }
+    }
+
+    /**
+     * Download scan resources. We recommend only calling this function once per session to prevent
+     * duplicate background resource calls.
+     */
+    @ReactMethod
+    fun downloadAHIResources() {
+        MultiScan.shared().downloadResourcesInBackground()
+    }
+
+    /** Check the size of the AHI resources that require downloading. */
+    @ReactMethod
+    fun checkAHIResourcesDownloadSize(promise: Promise) {
+        MultiScan.waitForResult(MultiScan.shared().totalEstimatedDownloadSizeInBytes()) {
+            promise.resolve("$it")
         }
     }
 
@@ -170,7 +176,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      * time. We recommend doing this on successful completion of a body scan with the results.
      */
     @ReactMethod
-    private fun getBodyScanExtras(id: String, promise: Promise) {
+    fun getBodyScanExtras(id: String, promise: Promise) {
         val parameters: MutableMap<String, Any> = HashMap()
         parameters["operation"] = MultiScanOperation.BodyGetMeshObj.name
         parameters["id"] = id
@@ -181,6 +187,65 @@ class MultiScanModule(private val context: ReactApplicationContext) :
             saveAvatarToFile(it, objFile)
         }
         promise.resolve(objFile.path);
+    }
+
+    /**
+     * Check if MultiScan is on or offline.
+     * */
+    @ReactMethod
+    fun getMultiScanStatus(promise: Promise) {
+        MultiScan.waitForResult(MultiScan.shared().state) {
+            promise.resolve(it.result)
+        }
+    }
+
+    /**
+     * Check your AHI MultiScan organisation  details.
+     * */
+    @ReactMethod
+    fun getMultiScanDetails(promise: Promise) {
+        promise.resolve(null)
+    }
+
+    /**
+     * Check if the userr is authorized to use the MuiltScan service.
+     * */
+    @ReactMethod
+    fun getUserAuthorizedState(userId: String?, promise: Promise) {
+        if (userId.isNullOrEmpty()) {
+            promise.reject("ERROR", "Missing user ID")
+            return
+        }
+        MultiScan.waitForResult(MultiScan.shared().userIsAuthorized(userId)) {
+            when (it.resultCode) {
+                SdkResultCode.SUCCESS -> {
+                    promise.resolve(it.result)
+                }
+                SdkResultCode.ERROR -> {
+                    promise.reject(it.resultCode.toString(),it.message)
+                }
+            }
+        }
+    }
+
+    /**
+     * Deuathorize the user.
+     * */
+    @ReactMethod
+    fun deauthorizeUser(promise: Promise){
+        MultiScan.waitForResult(MultiScan.shared().userDeauthorize()){
+            promise.reject(it.resultCode.toString(),it.message)
+        }
+    }
+
+    /**
+     * Release the MultiScan SDK session.
+     *
+     * If you  use this, you will need to call setupSDK again.
+     * */
+    @ReactMethod
+    fun releaseMultiScanSDK(promise: Promise){
+        promise.resolve(null)
     }
 
     /** The MultiScan SDK can provide personalised results.

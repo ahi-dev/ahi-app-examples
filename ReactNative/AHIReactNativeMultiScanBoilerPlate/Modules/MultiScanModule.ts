@@ -18,20 +18,37 @@
 import { NativeModules } from 'react-native';
 const { MultiScanModule } = NativeModules;
 
+// SDK
 interface MultiScanInterface {
-  // SDK
-  checkAHIResourcesDownloadSize(): Promise<string>;
-  areAHIResourcesAvailable(): Promise<boolean>;
-  downloadAHIResources(): void;
+  // Default
+  unknow(): Promise<void>
+  // Requires a token String to be provided as an argument.
   setupMultiScanSDK(token: string): Promise<string>;
-  authorizeUser(
-    userID: string,
-    aSalt: string,
-    aClaims: string[],
-  ): Promise<string>;
+  // Requires a Map object to be passed in containing 3 arguments.
+  authorizeUser(userID: string, aSalt: string, aClaims: string[]): Promise<string>;
+  // Will return a boolean.
+  areAHIResourcesAvailable(): Promise<boolean>;
+  // A void function that will invoke the download of remote resources.
+  downloadAHIResources(): void;
+  // Will return an integer for the bytes size.
+  checkAHIResourcesDownloadSize(): Promise<string>;
+  // Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG").
   startFaceScan(msPaymentType: string, avatarValues: Object): Promise<string>;
+  // Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG").
   startBodyScan(msPaymentType: string, avatarValues: Object): Promise<string>;
+  // Requires a map object of the body scan results and returns a Map object.
   getBodyScanExtras(id: string): Promise<string>;
+  // Returns the SDK status.
+  getMultiScanStatus(): Promise<string>;
+  // Returns a Map containing the SDK details.
+  getMultiScanDetails(): Promise<Map<string, any>>
+  // Returns the user authorization status of the SDK.
+  getUserAuthorizedState(): Promise<string>
+  // Will deuathorize the user from the SDK.
+  deauthorizeUser(): Promise<string>
+  // Released the actively registered SDK session.
+  releaseMultiScanSDK(): Promise<void>
+  // Use the AHIMultiScan persistence delegate and set historical body scan results
   setPersistenceDelegate(result: Array<any>): void;
 }
 export default MultiScanModule as MultiScanInterface;

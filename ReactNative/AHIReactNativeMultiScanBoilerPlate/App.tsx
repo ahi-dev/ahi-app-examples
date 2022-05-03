@@ -134,7 +134,7 @@ const App: () => ReactNode = () => {
           .then((size: any) => {
             console.log("AHI INFO: Size of download is " + Number(size) / 1024 / 1024);
           });
-        setTimeout(() => didTapDownloadResources(), 3000);
+        setTimeout(() => didTapDownloadResources(), 30000);
       } else {
         console.log("AHI: Resources ready");
         // control view state
