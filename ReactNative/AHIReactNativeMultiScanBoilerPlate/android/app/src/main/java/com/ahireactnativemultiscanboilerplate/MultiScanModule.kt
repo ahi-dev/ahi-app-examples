@@ -218,36 +218,6 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         }
     }
 
-    /** Confirm results have correct set of keys. */
-    private fun areBodyScanSmoothingResultsValid(it: Map<String, Any>): Boolean {
-        // Your token may only provide you access to a smaller subset of results.
-        // You should modify this list based on your available config options.
-        val sdkResultSchema =
-            listOf(
-                "enum_ent_sex",
-                "cm_ent_height",
-                "kg_ent_weight",
-                "cm_raw_chest",
-                "cm_raw_hips",
-                "cm_raw_inseam",
-                "cm_raw_thigh",
-                "cm_raw_waist",
-                "kg_raw_weightPredict",
-                "percent_raw_bodyFat",
-                "id",
-                "date"
-            )
-        var isValid = false
-        /** Iterate over results */
-        sdkResultSchema.forEach { str ->
-            /** Check if keys in results contains the required keys. */
-            if (!it.keys.contains(str)) {
-                isValid = true
-            }
-        }
-        return !isValid
-    }
-
     /** Save 3D avatar mesh result on local device. */
     private fun saveAvatarToFile(res: SdkResultParcelable, objFile: File) {
         val meshResObj = JSONObject(res.result)
