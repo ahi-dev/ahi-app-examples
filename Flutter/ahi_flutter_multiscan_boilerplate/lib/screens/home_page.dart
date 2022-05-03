@@ -8,10 +8,7 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-enum MSPaymentType {
-  PAYG,
-  SUBS
-}
+enum MSPaymentType { PAYG, SUBS }
 
 class _MyHomePageState extends State<MyHomePage> {
   static const platform = MethodChannel('flutter_boilerplate_wrapper');
@@ -36,12 +33,6 @@ class _MyHomePageState extends State<MyHomePage> {
     "TAG_ARG_PREFERRED_WEIGHT_UNITS": "KILOGRAMS"
   };
 
-  var ahiConfigBodyScan = <String, dynamic>{
-    "TAG_ARG_GENDER": "M",
-    "TAG_ARG_HEIGHT_IN_CM": 180,
-    "TAG_ARG_WEIGHT_IN_KG": 85
-  };
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -54,9 +45,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   /// This is the initial view when the app launches
   Widget setupSDKButton() {
-    Size size = MediaQuery
-        .of(context)
-        .size;
+    Size size = MediaQuery.of(context).size;
     return Column(
       children: [
         const SizedBox(height: 100),
@@ -92,9 +81,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   /// This is when the sdk setup is complete
   Widget setupSDKCompleted() {
-    Size size = MediaQuery
-        .of(context)
-        .size;
+    Size size = MediaQuery.of(context).size;
     return Column(
       children: [
         const SizedBox(height: 100),
@@ -139,9 +126,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   /// THis view is when the resources are downloaded.
   Widget resourcesDownloaded() {
-    Size size = MediaQuery
-        .of(context)
-        .size;
+    Size size = MediaQuery.of(context).size;
     return Column(
       children: [
         const SizedBox(height: 100),
@@ -185,7 +170,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   bool _areFaceScanConfigOptionsValid(Map<String, dynamic> avatarValues) {
-
+    if (!areSharedScanConfigOptionsValid(avatarValues)) {
+      return false;
+    }
     var sex = avatarValues["TAG_ARG_GENDER"] is String;
     var smoke = avatarValues["TAG_ARG_SMOKER"] is String;
     var isDiabetic = avatarValues["TAG_ARG_DIABETIC"] is String;
@@ -196,68 +183,70 @@ class _MyHomePageState extends State<MyHomePage> {
     var age = avatarValues["TAG_ARG_AGE"] is int;
     var heightUnits = avatarValues["TAG_ARG_PREFERRED_HEIGHT_UNITS"] is String;
     var weightUnits = avatarValues["TAG_ARG_PREFERRED_WEIGHT_UNITS"] is String;
-    if (sex != null && smoke != null && isDiabetic != null &&
-        hypertension != null && blood != null &&
-        height != null && weight != null &&
-        age != null && heightUnits != null &&
-        weightUnits != null && height in 25..300 && weight in 25..300 && age in 13..120) {
-
+    if (sex != null &&
+        smoke != null &&
+        isDiabetic != null &&
+        hypertension != null &&
+        blood != null &&
+        height != null &&
+        weight != null &&
+        age != null &&
+        heightUnits != null &&
+        weightUnits != null &&
+        height != null &&
+        weight != null &&
+        age != null) {
+      return ["none", "type1", "type2"].contains(isDiabetic);
+    } else {
+      return false;
     }
+  }
+
+  // todo we will do range check later
+  bool _areBodyScanConfigOptionsValid(Map<String, dynamic> avatarValues) {
+    if (!areSharedScanConfigOptionsValid(avatarValues)) {
+      return false;
+    }
+    var sex = avatarValues["TAG_ARG_GENDER"] is String;
+    var height = avatarValues["TAG_ARG_HEIGHT_IN_CM"] is int;
+    var weight = avatarValues["TAG_ARG_WEIGHT_IN_KG"] is int;
+    if (sex != null && height != null && weight != null) {
+      return true;
+    }
+    return false;
+  }
+
+  bool areSharedScanConfigOptionsValid(Map<String, dynamic> avatarValues) {
+    var sex = avatarValues["TAG_ARG_GENDER"] is String;
+    var height = avatarValues["TAG_ARG_HEIGHT_IN_CM"] is int;
+    var weight = avatarValues["TAG_ARG_WEIGHT_IN_KG"] is int;
+
+    if (sex != null && height != null && weight != null) {
+      return ['M', 'F'].contains(sex);
+    }
+    return false;
   }
 
   Future<void> _didTapSetup() async {
     try {
       var setupSDKResult =
-      await platform.invokeMethod("setupMultiScanSDK", ahiConfigTokens);
+          await platform.invokeMethod("setupMultiScanSDK", ahiConfigTokens);
       if (!(setupSDKResult == "setup_successful" ||
           setupSDKResult == "SUCCESS")) {
         return;
       }
       var authorizeUserResult =
-      await platform.invokeMethod("authorizeUser", ahiConfigTokens);
+          await platform.invokeMethod("authorizeUser", ahiConfigTokens);
       if (!(authorizeUserResult == "AHI: Setup user successfully" ||
           authorizeUserResult == "SUCCESS")) {
+        print("AHI: Auth Error: $authorizeUserResult");
+        print("AHI: Confirm you are using a valid user id, salt and claims.");
         return;
       }
       setState(() {
         setupSuccessful = true;
       });
-    } on PlatformException catch (e) {
-      print(e.message);
-    }
-  }
-
-  Future<void> _didTapStartFaceScan() async {
-    try {
-      var faceScanResult = await platform.invokeMethod(
-          "startFaceScan", ahiConfigFaceScan);
-      print(faceScanResult);
-    } on PlatformException catch (e) {
-      print(e.message);
-    }
-  }
-
-  Future<void> _didTapDownloadResources() async {
-    try {
-      setState(() {
-        _isButtonDisabled = true;
-      });
-      var downloadResourcesResult =
-      await platform.invokeMethod("downloadAHIResources");
-      if (!(downloadResourcesResult == "setup_successful" ||
-          downloadResourcesResult == "SUCCESS")) {
-        return;
-      }
-      var checkAHIResourcesDownloadSizeResult =
-      platform.invokeMethod("checkAHIResourcesDownloadSize");
-      checkAHIResourcesDownloadSizeResult.then((value) => print(value));
-      var areResourcesDownloadedResult =
-      await platform.invokeMethod("didTapDownloadResources");
-      if (areResourcesDownloadedResult == "AHI: Resources ready") {
-        setState(() {
-          resourcesDownload = true;
-        });
-      }
+      print("AHI: Setup user successfully");
     } on PlatformException catch (e) {
       print(e.message);
     }
@@ -265,8 +254,57 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _didTapStartBodyScan() async {
     try {
-      var bodyScanResult = await platform.invokeMethod("startBodyScan");
+      var paymentType = MSPaymentType.PAYG.name;
+      ahiConfigScan["Payment_Type"] = paymentType;
+      var bodyScanResult =
+          await platform.invokeMethod("startBodyScan", ahiConfigScan);
       print(bodyScanResult);
+    } on PlatformException catch (e) {
+      print(e.message);
+    }
+  }
+
+  Future<void> _didTapStartFaceScan() async {
+    try {
+      var paymentType = MSPaymentType.PAYG.name;
+      ahiConfigScan["Payment_Type"] = paymentType;
+      var faceScanResult =
+          await platform.invokeMethod("startFaceScan", ahiConfigScan);
+      print("AHI: SCAN RESULTS: $faceScanResult");
+    } on PlatformException catch (e) {
+      print(e.message);
+    }
+  }
+
+  Future<void> _didTapDownloadResources() async {
+    try {
+      bool areResourcesDownloadedResult =
+          await platform.invokeMethod("areAHIResourcesAvailable");
+      if (areResourcesDownloadedResult == false) {
+        print("AHI INFO: Resources are not downloaded");
+        platform.invokeMethod("downloadAHIResources");
+        print("something here");
+        platform.invokeMethod("checkAHIResourcesDownloadSize").then((size) =>
+            print("AHI INFO: Size of download is ${(size as num) / 1024 / 1024}"));
+        Future.delayed(const Duration(seconds: 5), () {
+          _didTapDownloadResources();
+        });
+      } else {
+        print("AHI: Resources ready");
+        setState(() {
+          resourcesDownload = true;
+        });
+      }
+
+      setState(() {
+        _isButtonDisabled = true;
+      });
+      var downloadResourcesResult =
+          await platform.invokeMethod("downloadAHIResources");
+      if (!(downloadResourcesResult == "setup_successful" ||
+          downloadResourcesResult == "SUCCESS")) {
+        return;
+      }
     } on PlatformException catch (e) {
       print(e.message);
     }
