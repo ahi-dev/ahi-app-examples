@@ -253,7 +253,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      * Optionally call this function on load of the SDK.
      * */
     @ReactMethod
-    fun setPersistenceDelegate(results: ReadableArray) {
+    fun setMultiScanPersistenceDelegate(results: ReadableArray) {
         AHIPersistenceDelegate.let {
             it.bodyScanResults = results.toArrayList().map {
                 it.toString()
