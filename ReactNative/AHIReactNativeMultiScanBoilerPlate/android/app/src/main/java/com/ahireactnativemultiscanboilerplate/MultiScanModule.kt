@@ -40,7 +40,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
 
     // Default.
     @ReactMethod
-    fun unknow(promise: Promise){
+    fun unknow(promise: Promise) {
         promise.resolve(null)
     }
 
@@ -73,9 +73,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     @ReactMethod
     fun authorizeUser(userId: String, salt: String, claims: ReadableArray, promise: Promise) {
         // Convert claims to an Array<String>
-        val claimsArray: Array<String> = claims.toArrayList().map {
-            it.toString()
-        }.toTypedArray()
+        val claimsArray: Array<String> = claims.toArrayList().map { it.toString() }.toTypedArray()
         MultiScan.waitForResult(MultiScan.shared().userAuthorize(userId, salt, claimsArray)) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
@@ -91,9 +89,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     /** Check if the AHI resources are downloaded. */
     @ReactMethod
     fun areAHIResourcesAvailable(promise: Promise) {
-        MultiScan.waitForResult(MultiScan.shared().areResourcesDownloaded()) {
-            promise.resolve(it)
-        }
+        MultiScan.waitForResult(MultiScan.shared().areResourcesDownloaded()) { promise.resolve(it) }
     }
 
     /**
@@ -114,19 +110,21 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     }
 
     @ReactMethod
-    fun startFaceScan(paymentType: String, avatarValues: ReadableMap, promise: Promise) {
-        val pType = when (paymentType) {
-            "PAYG" -> MSPaymentType.PAYG
-            "SUBS" -> MSPaymentType.SUBS
-            else -> null
-        }
+    fun startFaceScan(paymentType: String, userInputAvatarMap: ReadableMap, promise: Promise) {
+        val pType =
+            when (paymentType) {
+                "PAYG" -> MSPaymentType.PAYG
+                "SUBS" -> MSPaymentType.SUBS
+                else -> null
+            }
         if (pType == null) {
             promise.reject("-99", "invalid payment type.")
             return
         }
+        // Before we feed to SDK we need to mapping the keys and values to reach the sdk needs.
+        val sdkStandradSchema = userInputConverter(userInputAvatarMap)
         MultiScan.waitForResult(
-            MultiScan.shared()
-                .initiateScan(MSScanType.FACE, pType, avatarValues.toHashMap())
+            MultiScan.shared().initiateScan(MSScanType.FACE, pType, sdkStandradSchema)
         ) {
             /** Result check */
             when (it.resultCode) {
@@ -141,31 +139,29 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     }
 
     @ReactMethod
-    fun startBodyScan(paymentType: String, avatarValues: ReadableMap, promise: Promise) {
-        val pType = when (paymentType) {
-            "PAYG" -> MSPaymentType.PAYG
-            "SUBS" -> MSPaymentType.SUBS
-            else -> null
-        }
+    fun startBodyScan(paymentType: String, userInputAvatarMap: ReadableMap, promise: Promise) {
+        val pType =
+            when (paymentType) {
+                "PAYG" -> MSPaymentType.PAYG
+                "SUBS" -> MSPaymentType.SUBS
+                else -> null
+            }
         if (pType == null) {
             promise.reject("-99", "invalid payment type.")
             return
         }
+        // Before we feed to SDK we need to mapping the keys and values to reach the sdk needs.
+        val sdkStandradSchema = userInputConverter(userInputAvatarMap)
         MultiScan.shared().registerDelegate(AHIPersistenceDelegate)
         MultiScan.waitForResult(
-            MultiScan.shared()
-                .initiateScan(MSScanType.BODY, pType, avatarValues.toHashMap())
+            MultiScan.shared().initiateScan(MSScanType.BODY, pType, sdkStandradSchema)
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
-                    promise.resolve(
-                        it.result
-                    )
+                    promise.resolve(it.result)
                 }
                 SdkResultCode.ERROR -> {
-                    promise.reject(
-                        it.resultCode.toString(), it.message
-                    )
+                    promise.reject(it.resultCode.toString(), it.message)
                 }
             }
         }
@@ -186,30 +182,22 @@ class MultiScanModule(private val context: ReactApplicationContext) :
             /** Print the 3D mesh path */
             saveAvatarToFile(it, objFile)
         }
-        promise.resolve(objFile.path);
+        promise.resolve(objFile.path)
     }
 
-    /**
-     * Check if MultiScan is on or offline.
-     * */
+    /** Check if MultiScan is on or offline. */
     @ReactMethod
     fun getMultiScanStatus(promise: Promise) {
-        MultiScan.waitForResult(MultiScan.shared().state) {
-            promise.resolve(it.result)
-        }
+        MultiScan.waitForResult(MultiScan.shared().state) { promise.resolve(it.result) }
     }
 
-    /**
-     * Check your AHI MultiScan organisation  details.
-     * */
+    /** Check your AHI MultiScan organisation details. */
     @ReactMethod
     fun getMultiScanDetails(promise: Promise) {
         promise.resolve(null)
     }
 
-    /**
-     * Check if the userr is authorized to use the MuiltScan service.
-     * */
+    /** Check if the userr is authorized to use the MuiltScan service. */
     @ReactMethod
     fun getUserAuthorizedState(userId: String?, promise: Promise) {
         if (userId.isNullOrEmpty()) {
@@ -222,49 +210,49 @@ class MultiScanModule(private val context: ReactApplicationContext) :
                     promise.resolve(it.result)
                 }
                 SdkResultCode.ERROR -> {
-                    promise.reject(it.resultCode.toString(),it.message)
+                    promise.reject(it.resultCode.toString(), it.message)
                 }
             }
         }
     }
 
-    /**
-     * Deuathorize the user.
-     * */
+    /** Deuathorize the user. */
     @ReactMethod
-    fun deauthorizeUser(promise: Promise){
-        MultiScan.waitForResult(MultiScan.shared().userDeauthorize()){
-            promise.reject(it.resultCode.toString(),it.message)
+    fun deauthorizeUser(promise: Promise) {
+        MultiScan.waitForResult(MultiScan.shared().userDeauthorize()) {
+            promise.reject(it.resultCode.toString(), it.message)
         }
     }
 
     /**
      * Release the MultiScan SDK session.
      *
-     * If you  use this, you will need to call setupSDK again.
-     * */
+     * If you use this, you will need to call setupSDK again.
+     */
     @ReactMethod
-    fun releaseMultiScanSDK(promise: Promise){
+    fun releaseMultiScanSDK(promise: Promise) {
         promise.resolve(null)
     }
 
-    /** The MultiScan SDK can provide personalised results.
+    /**
+     * The MultiScan SDK can provide personalised results.
      *
      * Optionally call this function on load of the SDK.
-     * */
+     */
     @ReactMethod
     fun setMultiScanPersistenceDelegate(results: ReadableArray) {
         AHIPersistenceDelegate.let {
-            it.bodyScanResults = results.toArrayList().map {
-                it.toString()
-            }.toMutableList()
+            it.bodyScanResults = results.toArrayList().map { it.toString() }.toMutableList()
             MultiScan.shared().registerDelegate(it)
         }
     }
 
     /** For the newest AHIMultiScan version 21.1.3 need to implement PersistenceDelegate */
     object AHIPersistenceDelegate : MultiScanDelegate {
-        /** You should have your body scan results stored somewhere in your app that this function can access.*/
+        /**
+         * You should have your body scan results stored somewhere in your app that this function
+         * can access.
+         */
         var bodyScanResults = mutableListOf<String>()
 
         override fun request(
@@ -295,5 +283,23 @@ class MultiScanModule(private val context: ReactApplicationContext) :
             writer.newLine()
         }
         writer.close()
+    }
+
+    private fun userInputConverter(userInputAvatarMap: ReadableMap): Map<String, Any?> {
+        // Convert the schema and feed to SDK
+        val inputAvatarValues = userInputAvatarMap.toHashMap()
+        val newSchema = mapOf(
+            "TAG_ARG_GENDER" to inputAvatarValues["sex"],
+            "TAG_ARG_SMOKER" to inputAvatarValues["smoker"],
+            "TAG_ARG_DIABETIC" to inputAvatarValues["diabetic"],
+            "TAG_ARG_HYPERTENSION" to inputAvatarValues["hypertension"],
+            "TAG_ARG_BPMEDS" to inputAvatarValues["bpmeds"],
+            "TAG_ARG_HEIGHT_IN_CM" to inputAvatarValues["height"],
+            "TAG_ARG_WEIGHT_IN_KG" to inputAvatarValues["weight"],
+            "TAG_ARG_AGE" to inputAvatarValues["age"],
+            "TAG_ARG_PREFERRED_HEIGHT_UNITS" to inputAvatarValues["height_units"],
+            "TAG_ARG_PREFERRED_WEIGHT_UNITS" to inputAvatarValues["weight_units"],
+        )
+        return newSchema
     }
 }

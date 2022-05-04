@@ -41,17 +41,18 @@ enum MSPaymentType {
   SUBS = "SUBS"
 }
 
-let avatarValues = {
-  'TAG_ARG_GENDER': 'M',
-  'TAG_ARG_SMOKER': 'F',
-  'TAG_ARG_DIABETIC': 'none',
-  'TAG_ARG_HYPERTENSION': 'F',
-  'TAG_ARG_BPMEDS': 'F',
-  'TAG_ARG_HEIGHT_IN_CM': 180,
-  'TAG_ARG_WEIGHT_IN_KG': 85,
-  'TAG_ARG_AGE': 35,
-  'TAG_ARG_PREFERRED_HEIGHT_UNITS': 'CENTIMETRES',
-  'TAG_ARG_PREFERRED_WEIGHT_UNITS': 'KILOGRAMS'
+
+let userInput = {
+  'sex': 'M',
+  'smoker': 'F',
+  'diabetic': 'none',
+  'hypertension': 'F',
+  'bpmeds': 'F',
+  'height': 180,
+  'weight': 85,
+  'age': 35,
+  'height_units': 'CENTIMETRES',
+  'weight_units': 'KILOGRAMS'
 }
 
 const App: () => ReactNode = () => {
@@ -151,16 +152,16 @@ const App: () => ReactNode = () => {
     if (!areSharedScanConfigOptionsValid(avatarValues)) {
       return false;
     }
-    var sex = avatarValues.get('TAG_ARG_GENDER');
-    var smoke = avatarValues.get('TAG_ARG_SMOKER');
-    var isDiabetic = avatarValues.get('TAG_ARG_DIABETIC');
-    var hypertension = avatarValues.get('TAG_ARG_HYPERTENSION');
-    var blood = avatarValues.get('TAG_ARG_BPMEDS');
-    var height = avatarValues.get('TAG_ARG_HEIGHT_IN_CM');
-    var weight = avatarValues.get('TAG_ARG_WEIGHT_IN_KG');
-    var age = avatarValues.get('TAG_ARG_AGE');
-    var heightUnits = avatarValues.get('TAG_ARG_PREFERRED_HEIGHT_UNITS');
-    var weightUnits = avatarValues.get('TAG_ARG_PREFERRED_WEIGHT_UNITS');
+    var sex = avatarValues.get('sex');
+    var smoke = avatarValues.get('smoker');
+    var isDiabetic = avatarValues.get('diabetic');
+    var hypertension = avatarValues.get('hypertension');
+    var blood = avatarValues.get('bpmeds');
+    var height = avatarValues.get('height');
+    var weight = avatarValues.get('weight');
+    var age = avatarValues.get('age');
+    var heightUnits = avatarValues.get('height_units');
+    var weightUnits = avatarValues.get('weight_units');
     if (sex != null &&
       smoke != null &&
       isDiabetic != null &&
@@ -186,9 +187,9 @@ const App: () => ReactNode = () => {
     if (!areSharedScanConfigOptionsValid(avatarValues)) {
       return false
     }
-    var sex = avatarValues.get('TAG_ARG_GENDER');
-    var height = avatarValues.get('TAG_ARG_HEIGHT_IN_CM');
-    var weight = avatarValues.get('TAG_ARG_WEIGHT_IN_KG');
+    var sex = avatarValues.get('sex');
+    var height = avatarValues.get('height');
+    var weight = avatarValues.get('weight');
     if (sex != null &&
       height != null &&
       weight != null &&
@@ -237,9 +238,9 @@ const App: () => ReactNode = () => {
   * https://docs.advancedhumanimaging.io/MultiScan%20SDK/FaceScan/Schemas/
   */
   function areSharedScanConfigOptionsValid(avatarValues: Map<string, any>): boolean {
-    var sex = avatarValues.get('TAG_ARG_GENDER');
-    var height = avatarValues.get('TAG_ARG_HEIGHT_IN_CM');
-    var weight = avatarValues.get('TAG_ARG_WEIGHT_IN_KG');
+    var sex = avatarValues.get('sex');
+    var height = avatarValues.get('height');
+    var weight = avatarValues.get('weight');
     if (sex != null && height != null && weight != null) {
       return ['M', 'F'].includes(sex);
     }
