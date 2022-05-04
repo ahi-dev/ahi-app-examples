@@ -96,11 +96,11 @@ const App: () => ReactNode = () => {
 
   // start facescan
   const didTapStartFaceScan = async () => {
-    if (!areFaceScanConfigOptionsValid(objectToMap(avatarValues))) {
+    if (!areFaceScanConfigOptionsValid(objectToMap(userInput))) {
       console.log("AHI ERROR: Face Scan inputs")
       return;
     }
-    MultiScanModule.startFaceScan(MSPaymentType.PAYG, avatarValues).then((value: any) => {
+    MultiScanModule.startFaceScan(MSPaymentType.PAYG, userInput).then((value: any) => {
       console.log("AHI: SCAN RESULTS: " + value);
     });
   }
@@ -108,10 +108,10 @@ const App: () => ReactNode = () => {
   // start bodyscan
   const didTapStartBodyScan = () => {
     var id;
-    if (!areBodyScanConfigOptionsValid(objectToMap(avatarValues))) {
+    if (!areBodyScanConfigOptionsValid(objectToMap(userInput))) {
       console.log("AHI ERROR: Body Scan inputs invalid.");
     }
-    MultiScanModule.startBodyScan(MSPaymentType.PAYG, avatarValues).then((value: any) => {
+    MultiScanModule.startBodyScan(MSPaymentType.PAYG, userInput).then((value: any) => {
       console.log("AHI: SCAN RESULTS: " + value);
       var result = JSON.parse(value);
       if (areBodyScanSmoothingResultsValid(result)) {
