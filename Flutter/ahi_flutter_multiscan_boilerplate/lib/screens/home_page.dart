@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -21,16 +23,14 @@ class _MyHomePageState extends State<MyHomePage> {
   };
 
   var ahiConfigScan = <String, dynamic>{
-    "TAG_ARG_GENDER": "M",
-    "TAG_ARG_SMOKER": "F",
-    "TAG_ARG_DIABETIC": "none",
-    "TAG_ARG_HYPERTENSION": "F",
-    "TAG_ARG_BPMEDS": "F",
-    "TAG_ARG_HEIGHT_IN_CM": 171,
-    "TAG_ARG_WEIGHT_IN_KG": 86,
-    "TAG_ARG_AGE": 24,
-    "TAG_ARG_PREFERRED_HEIGHT_UNITS": "CENTIMETRES",
-    "TAG_ARG_PREFERRED_WEIGHT_UNITS": "KILOGRAMS"
+    "sex": "M",
+    "smoker": "F",
+    "diabetic": "none",
+    "hypertension": "F",
+    "bloodPressureMedication": "F",
+    "height": 171,
+    "weight": 86,
+    "age": 24
   };
 
   @override
@@ -169,33 +169,87 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  bool _areFaceScanConfigOptionsValid(Map<String, dynamic> avatarValues) {
-    if (!areSharedScanConfigOptionsValid(avatarValues)) {
+  void _setupMultiScanSDK() async {
+    var setupSDKResult =
+        await platform.invokeMethod("setupMultiScanSDK", ahiConfigTokens);
+    if (!(setupSDKResult == "setup_successful" ||
+        setupSDKResult == "SUCCESS")) {
+      return;
+    }
+  }
+
+  void _authorizeUser() async {
+    var authorizeUserResult =
+        await platform.invokeMethod("authorizeUser", ahiConfigTokens);
+    if (!(authorizeUserResult == "AHI: Setup user successfully" ||
+        authorizeUserResult == "SUCCESS")) {
+      print("AHI: Auth Error: $authorizeUserResult");
+      print("AHI: Confirm you are using a valid user id, salt and claims.");
+      return;
+    }
+  }
+
+  void _areAHIResourcesAvailable() async{
+    bool areResourcesDownloadedResult =
+        await platform.invokeMethod("areAHIResourcesAvailable");
+    if (areResourcesDownloadedResult == false) {
+      print("AHI INFO: Resources are not downloaded");
+      _downloadAHIResources();
+      _checkAHIResourcesDownloadSize();
+      Future.delayed(const Duration(seconds: 30), () {
+        _didTapDownloadResources();
+      });
+    } else {
+      print("AHI: Resources ready");
+      setState(() {
+        resourcesDownload = true;
+      });
+    }
+  }
+
+  void _downloadAHIResources() {
+    platform.invokeMethod("downloadAHIResources");
+  }
+
+  void _checkAHIResourcesDownloadSize() {
+    platform.invokeMethod("checkAHIResourcesDownloadSize").then((size) =>
+        print("AHI INFO: Size of download is ${(size as num) / 1024 / 1024}"));
+  }
+
+  void _startFaceScan() {}
+
+  void _startBodyScan() {}
+
+  void _getBodyScanExtras() {}
+
+  bool _areFaceScanConfigOptionsValid(Map<String, dynamic> inputValues) {
+    if (!_areSharedScanConfigOptionsValid(inputValues)) {
       return false;
     }
-    var sex = avatarValues["TAG_ARG_GENDER"] is String;
-    var smoke = avatarValues["TAG_ARG_SMOKER"] is String;
-    var isDiabetic = avatarValues["TAG_ARG_DIABETIC"] is String;
-    var hypertension = avatarValues["TAG_ARG_HYPERTENSION"] is String;
-    var blood = avatarValues["TAG_ARG_BPMEDS"] is String;
-    var height = avatarValues["TAG_ARG_HEIGHT_IN_CM"] is int;
-    var weight = avatarValues["TAG_ARG_WEIGHT_IN_KG"] is int;
-    var age = avatarValues["TAG_ARG_AGE"] is int;
-    var heightUnits = avatarValues["TAG_ARG_PREFERRED_HEIGHT_UNITS"] is String;
-    var weightUnits = avatarValues["TAG_ARG_PREFERRED_WEIGHT_UNITS"] is String;
+    var sex = inputValues["sex"];
+    var smoke = inputValues["smoker"];
+    var isDiabetic = inputValues["diabetic"];
+    var hypertension = inputValues["hypertension"];
+    var blood = inputValues["bloodPressureMedication"];
+    var height = inputValues["height"];
+    var weight = inputValues["weight"];
+    var age = inputValues["age"];
     if (sex != null &&
+        sex is String &&
         smoke != null &&
+        smoke is String &&
         isDiabetic != null &&
+        isDiabetic is String &&
         hypertension != null &&
+        hypertension is String &&
         blood != null &&
+        blood is String &&
         height != null &&
+        height is int &&
         weight != null &&
+        weight is int &&
         age != null &&
-        heightUnits != null &&
-        weightUnits != null &&
-        height != null &&
-        weight != null &&
-        age != null) {
+        age is int) {
       return ["none", "type1", "type2"].contains(isDiabetic);
     } else {
       return false;
@@ -203,20 +257,25 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   // todo we will do range check later
-  bool _areBodyScanConfigOptionsValid(Map<String, dynamic> avatarValues) {
-    if (!areSharedScanConfigOptionsValid(avatarValues)) {
+  bool _areBodyScanConfigOptionsValid(Map<String, dynamic> inputValues) {
+    if (!_areSharedScanConfigOptionsValid(inputValues)) {
       return false;
     }
-    var sex = avatarValues["TAG_ARG_GENDER"] is String;
-    var height = avatarValues["TAG_ARG_HEIGHT_IN_CM"] is int;
-    var weight = avatarValues["TAG_ARG_WEIGHT_IN_KG"] is int;
-    if (sex != null && height != null && weight != null) {
+    var sex = inputValues["sex"];
+    var height = inputValues["height"];
+    var weight = inputValues["weight"];
+    if (sex != null &&
+        sex is String &&
+        height != null &&
+        height is int &&
+        weight != null &&
+        weight is int) {
       return true;
     }
     return false;
   }
 
-  bool areBodyScanSmoothingResultsValid(Map<String, dynamic> result){
+  bool _areBodyScanSmoothingResultsValid(Map<String, dynamic> result) {
     // Your token may only provide you access to a smaller subset of results.
     // You should modify this list based on your available config options.
     var sdkResultSchema = [
@@ -231,23 +290,28 @@ class _MyHomePageState extends State<MyHomePage> {
       "kg_raw_weightPredict",
       "percent_raw_bodyFat",
       "id",
-      "date"];
-    var isValid = false;
-    for (var i = 0; i < sdkResultSchema.length; i++) {
-      // Check if keys in result contains the required keys.
-      if (!(sdkResultSchema[i].contains(result as Pattern) )) {
-        isValid = true;
+      "date"
+    ];
+    bool isValid = true;
+    var resultsKeys = result.keys;
+    for (String key in sdkResultSchema) {
+      if (!resultsKeys.contains(key)) {
+        isValid = false;
       }
     }
-    return !isValid;
+    return isValid;
   }
 
-  bool areSharedScanConfigOptionsValid(Map<String, dynamic> avatarValues) {
-    var sex = avatarValues["TAG_ARG_GENDER"] is String;
-    var height = avatarValues["TAG_ARG_HEIGHT_IN_CM"] is int;
-    var weight = avatarValues["TAG_ARG_WEIGHT_IN_KG"] is int;
-
-    if (sex != null && height != null && weight != null) {
+  bool _areSharedScanConfigOptionsValid(Map<String, dynamic> inputValues) {
+    var sex = inputValues["sex"];
+    var height = inputValues["height"];
+    var weight = inputValues["weight"];
+    if (sex != null &&
+        sex is String &&
+        height != null &&
+        height is int &&
+        weight != null &&
+        weight is int) {
       return ['M', 'F'].contains(sex);
     }
     return false;
@@ -282,9 +346,23 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       var paymentType = MSPaymentType.PAYG.name;
       ahiConfigScan["Payment_Type"] = paymentType;
+      var inputValues = ahiConfigScan;
+      if (!_areBodyScanConfigOptionsValid(inputValues)) {
+        print("AHI ERROR: Body Scan inputs invalid.");
+        return;
+      }
       var bodyScanResult =
           await platform.invokeMethod("startBodyScan", ahiConfigScan);
-      print(bodyScanResult);
+      print("AHI: SCAN RESULTS: $bodyScanResult");
+      bodyScanResult = Map<String, dynamic>.from(bodyScanResult);
+      if (_areBodyScanSmoothingResultsValid(bodyScanResult)) {
+        var id = bodyScanResult['id'];
+        var path = await platform.invokeMethod("getBodyScanExtras", id);
+        print("AHI 3D Mesh path: $path");
+      }
+      else{
+        print("no path specified yet");
+      }
     } on PlatformException catch (e) {
       print(e.message);
     }
@@ -294,6 +372,11 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       var paymentType = MSPaymentType.PAYG.name;
       ahiConfigScan["Payment_Type"] = paymentType;
+      var inputValues = ahiConfigScan;
+      if (!_areFaceScanConfigOptionsValid(inputValues)) {
+        print("AHI ERROR: Face Scan inputs invalid.");
+        return;
+      }
       var faceScanResult =
           await platform.invokeMethod("startFaceScan", ahiConfigScan);
       print("AHI: SCAN RESULTS: $faceScanResult");
@@ -311,7 +394,8 @@ class _MyHomePageState extends State<MyHomePage> {
         platform.invokeMethod("downloadAHIResources");
         print("something here");
         platform.invokeMethod("checkAHIResourcesDownloadSize").then((size) =>
-            print("AHI INFO: Size of download is ${(size as num) / 1024 / 1024}"));
+            print(
+                "AHI INFO: Size of download is ${(size as num) / 1024 / 1024}"));
         Future.delayed(const Duration(seconds: 30), () {
           _didTapDownloadResources();
         });
