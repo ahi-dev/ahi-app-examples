@@ -126,10 +126,10 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         MultiScan.waitForResult(
             MultiScan.shared().initiateScan(MSScanType.FACE, pType, sdkStandradSchema)
         ) {
-            /** Result check */
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
-                    promise.resolve(it.result)
+                    val resultsMap = convertJSONStringToMap(it.result)
+                    promise.resolve(resultsMap)
                 }
                 SdkResultCode.ERROR -> {
                     promise.reject(it.resultCode.toString(), it.message)
@@ -158,7 +158,8 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
-                    promise.resolve(it.result)
+                    val resultsMap = convertJSONStringToMap(it.result)
+                    promise.resolve(resultsMap)
                 }
                 SdkResultCode.ERROR -> {
                     promise.reject(it.resultCode.toString(), it.message)
@@ -301,5 +302,17 @@ class MultiScanModule(private val context: ReactApplicationContext) :
             "TAG_ARG_PREFERRED_WEIGHT_UNITS" to inputAvatarValues["weight_units"],
         )
         return newSchema
+    }
+
+    private fun convertJSONStringToMap(result: String?): Map<String, Any> {
+        if (result == null || result!!.isEmpty()) {
+            return emptyMap()
+        }
+        val jsonMap =  JSONObject("${result}")
+        var resultsMap = mutableMapOf<String, Any>()
+        for (key in jsonMap.keys()) {
+            resultsMap[key] = jsonMap[key]
+        }
+        return resultsMap
     }
 }

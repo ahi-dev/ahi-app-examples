@@ -30,12 +30,6 @@ import MFZFaceScan
 
 @objc(MultiScanModule)
 class MultiScanModule: NSObject {
-  
-  fileprivate let success = "success"
-  fileprivate var isSetup = false
-  fileprivate var isFinishedDownloadingResources = false
-  fileprivate let errorCode = NSError(domain: "", code: 200, userInfo: nil)
-  fileprivate var flag = false
   // Start SDK init
   /// Instance of AHI MultiScan
   let ahi = AHIMultiScan.shared()!
@@ -43,14 +37,9 @@ class MultiScanModule: NSObject {
   let faceScan = AHIFaceScan.shared()
   /// Instance of AHI BodyScan
   let bodyScan = AHIBodyScan.shared()
-  //  ahi.setPersistenceDelegate(self)
+  /// Body Scan Results
+      var bodyScanResults = [[String: Any]]()
   
-  // DEBUG
-  /// Testing shit
-  private var count = 0
-  // DEBUG
-  
-  // This method is required since the MultiScanModule overrides init
   @objc static func requiresMainQueueSetup() -> Bool {
     return false
   }
@@ -58,205 +47,233 @@ class MultiScanModule: NSObject {
 }
 
 extension MultiScanModule {
-  /// Setup the MultiScan SDK
-  ///
-  /// This must happen before requesting a scan.
-  /// We recommend doing this on successfuil load of your application.
-  @objc
-  fileprivate func setupMultiScanSDK(_ token: String,
-                                     resolver resolve: @escaping RCTPromiseResolveBlock,
-                                     rejecter reject: @escaping RCTPromiseRejectBlock) -> Void {
-    var flag = false
-    ahi.setup(withConfig: ["TOKEN": token], scans: [faceScan, bodyScan]) { error in
-      if let err = error {
-        reject("SETUP_ERROR", "Failed to setup SDK: \(err). OR SDK already setup bro show error code=1??", self.errorCode)
-        return
-      }
-      print("We are called here")
-      flag = true
-    }
-    // resolve must be outside of the completion block due to the success state being called twice
-    if flag == true {
-      print("Are we resolving??")
-      resolve(self.success)
-    }
-  }
   
-  /// Once successfully setup, you should authorize your user with our service.
-  ///
-  /// With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
+  @objc
+    fileprivate func setupMultiScanSDK(_ token: String,
+                                       resolver resolve: @escaping RCTPromiseResolveBlock,
+                                       rejecter reject: @escaping RCTPromiseRejectBlock) {
+      var hasReturned = false
+      ahi.setup(withConfig: ["TOKEN": token], scans: [faceScan, bodyScan]) { error in
+        if hasReturned {
+          return
+        }
+        hasReturned = true
+        if let err = error as? NSError {
+          reject("\(err.code)", err.localizedDescription, err)
+          return
+        }
+        if hasReturned {
+          resolve("SUCCESS")
+        }
+      }
+    }
+
   @objc
   fileprivate func authorizeUser(_ userID: String, salt aSalt:String, claims aClaims:[String],
                                  resolver resolve: @escaping RCTPromiseResolveBlock,
                                  rejecter reject: @escaping RCTPromiseRejectBlock) {
-    ahi.userAuthorize(forId: userID, withSalt: aSalt, withClaims: aClaims) { authError in
-      if let err = authError {
-        reject("USER_AUTHENTICATION_ERROR","Failed to authorize user: \(err)", self.errorCode)
+    ahi.userAuthorize(forId: userID, withSalt: aSalt, withClaims: aClaims) { error in
+      if let err = error as? NSError {
+        reject("\(err.code)", err.localizedDescription, err)
         return
       }
-      // Redundant? -> Just return the success back to react.
-      self.isSetup = true
-      resolve(self.success)
-      print("AHI: Setup user successfully")
+      resolve("SUCCESS")
     }
   }
   
-  // Redundant method? - We can just call userAuthorize() method again to get the userAuth status.
   @objc
-  fileprivate func isUserAuthorized(_ resolve: RCTPromiseResolveBlock, rejecter reject: RCTPromiseRejectBlock) {
-    if !self.isSetup {
-      reject("USER_AUTHENTICATION_ERROR", "User not authenticated", self.errorCode)
-      return
-    }
-    resolve(self.success)
-  }
-  
-}
-
-
-
-extension MultiScanModule {
-  /// Check if the AHI resources are downloaded.
-  ///
-  /// We have remote resources that exceed 100MB that enable our scans to work.
-  /// You are required to download them inorder to obtain a body scan.
-  @objc
-  fileprivate func areAHIResourcesAvailable(_ resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
-    ahi.areResourcesDownloaded { [weak self] success in
-      if !success {
-//        print("AHI INFO: Resources are not downloaded.")
-//        reject("AHI_ASSET_ERROR","AHI INFO: Resources are not finished downloading.", self?.errorCode)
-        resolve("Resources not finished downloading")
-        return
-      }
-      self?.isFinishedDownloadingResources = success
-      print("AHI: Resources ready")
-      resolve(self?.success)
-      return
+  fileprivate func areAHIResourcesAvailable(_ resolve: @escaping RCTPromiseResolveBlock,
+                                            rejecter reject: @escaping RCTPromiseRejectBlock){
+    ahi.areResourcesDownloaded{ success in
+      resolve(success)
     }
   }
   
-  /// Download scan resources.
-  ///
-  /// We recomment only calling this function once per session to prevent duplicate background resource calls.
   @objc
-  fileprivate func downloadAHIResources(_ resolve: RCTPromiseResolveBlock, rejecter reject: RCTPromiseRejectBlock) {
+  fileprivate func downloadAHIResources(){
     ahi.downloadResourcesInBackground()
-    resolve(self.success)
   }
   
-  /// Check the size of the AHI resources that require downloading.
   @objc
-  fileprivate func checkAHIResourcesDownloadSize(_ resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping  RCTPromiseRejectBlock) {
-    ahi.totalEstimatedDownloadSizeInBytes() { [weak self] bytes in
-      print("AHI INFO: Size of download is \(self?.convertBytesToMBString(Int(bytes)) ?? "0")")
-      resolve(self?.convertBytesToMBString(Int(bytes)))
+  fileprivate func checkAHIResourcesDownloadSize(_ resolve: @escaping RCTPromiseResolveBlock,
+                                                 rejecter reject: @escaping RCTPromiseRejectBlock){
+    ahi.totalEstimatedDownloadSizeInBytes(){ bytes in
+      resolve(Int(bytes))
     }
   }
   
-}
-
-extension ViewController {
-  fileprivate func startFaceScan() {
-    // All required face scan options.
-    let options: [String : Any] = [
-      "enum_ent_sex": "male",
-      "cm_ent_height": 180,
-      "kg_ent_weight": 85,
-      "yr_ent_age": 35,
-      "bool_ent_smoker": false,
-      "bool_ent_hypertension": false,
-      "bool_ent_bloodPressureMedication": false,
-      "enum_ent_diabetic": "none"
-    ]
-    if !areFaceScanConfigOptionsValid(faceScanInput: options) {
-      print("AHI ERROR: Face Scan inputs invalid.")
-      return
+  @objc
+  fileprivate func startFaceScan(_ userInputs:[String: Any], paymentType msPaymentType:String,
+                                 resolver resolve: @escaping RCTPromiseResolveBlock,
+                                 rejecter reject: @escaping RCTPromiseRejectBlock) {
+    var pType = AHIMultiScanPaymentType.PAYG
+    if msPaymentType == "PAYG" {
+      pType = AHIMultiScanPaymentType.PAYG
+    }else if msPaymentType == "SUBS" {
+      pType = AHIMultiScanPaymentType.subscriber
     }
-    // Ensure the view controller being used is the top one.
-    // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
-    // you may have issues.
-    ahi.initiateScan("face", paymentType: .PAYG, withOptions: options, from: self) { scanTask, error in
-      guard let task = scanTask, error == nil else {
-        // Error code 7 is the code for the SDK interaction that cancels the scan.
-        if let nsError = error as? NSError, nsError.code == 7 {
-          print("AHI: INFO: User cancelled the session.")
-        } else {
-          // Handle error through either lack of results or error.
-          print("AHI: ERROR WITH FACE SCAN: \(error ?? NSError())")
-        }
+    guard let vc = topMostVC() else {return }
+    ahi.initiateScan("face", paymentType: pType, withOptions: userInputs, from:vc) { scanTask, error in
+      guard let task = scanTask,
+              error == nil else {
+              // Error code 4 is the code for the SDK interaction that cancels the scan.
+              if let err = error as? NSError {
+                reject("\(err.code)", err.localizedDescription, err)
+              }
+              return
+          }
+          task.continueWith(block: { resultsTask in
+              if let results = resultsTask.result as? [String : Any] {
+                  resolve(results)
+              } else {
+                resolve(nil)
+              }
+              // Handle failure.
+              return nil
+          })
+      }
+    }
+  
+  @objc
+  fileprivate func startBodyScan(_ userInputs:[String: Any], paymentType msPaymentType:String,
+                                 resolver resolve: @escaping RCTPromiseResolveBlock,
+                                 rejecter reject: @escaping RCTPromiseRejectBlock) {
+    var pType = AHIMultiScanPaymentType.PAYG
+    if msPaymentType == "PAYG" {
+      pType = AHIMultiScanPaymentType.PAYG
+    }else if msPaymentType == "SUBS" {
+      pType = AHIMultiScanPaymentType.subscriber
+    }
+    guard let vc = topMostVC() else {return }
+    ahi.initiateScan("body", paymentType: pType, withOptions: userInputs, from:vc) { scanTask, error in
+      guard let task = scanTask,
+              error == nil else {
+              // Error code 4 is the code for the SDK interaction that cancels the scan.
+              if let err = error as? NSError {
+                reject("\(err.code)", err.localizedDescription, err)
+              }
+              return
+          }
+          task.continueWith(block: { resultsTask in
+              if let results = resultsTask.result as? [String : Any] {
+                  resolve(results)
+              } else {
+                resolve(nil)
+              }
+              // Handle failure.
+              return nil
+          })
+      }
+    }
+  
+  @objc
+  func getBodyScanExtras(_ bodyScanResult:[String: Any],
+                                    resolver resolve: @escaping RCTPromiseResolveBlock,
+                                    rejecter reject: @escaping RCTPromiseRejectBlock){
+    print("TESTING")
+    ahi.getExtra(bodyScanResult, options: nil){ error, bodyExtras in
+      print("GOT IT")
+      if let err = error as? NSError {
+        reject("\(err.code)", err.localizedDescription, err)
         return
       }
-      task.continueWith(block: { resultsTask in
-        if let results = resultsTask.result as? [String : Any] {
-          // Handle results
-          print("AHI: SCAN RESULTS: \(results)")
-        }
-        /// Handle failure.
-        return nil
-      })
+      guard let extras = bodyExtras else {
+        let err = NSError(domain: "com.ahi.ios.ahi_multiscan_react_native_wrapper", code: -10, userInfo: [NSLocalizedDescriptionKey: "No body scan extras available."])
+        reject("\(err.code)", err.localizedDescription, err)
+        return
+      }
+      var bsExtras = [String: String]()
+      if let meshURL = extras["meshURL"] as? URL {
+        bsExtras["meshURL"] = meshURL.absoluteString
+      } else {
+        bsExtras["meshURL"] = ""
+      }
+      resolve(bsExtras)
     }
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extension NSObject {
-  /// Recieves the download size in bytes and returns the conversion in MB.
-  ///
-  /// Use the iOS native ByteFormatter to convert the bytes value to a MB String.
-  public func convertBytesToMBString(_ bytes: Int) -> String {
-    let byteFormatter = ByteCountFormatter()
-    byteFormatter.allowedUnits = .useMB
-    byteFormatter.countStyle = .binary
-    return byteFormatter.string(fromByteCount: Int64(bytes))
-  }
-}
-
-
-
-
-extension MultiScanModule {
-  // DEBUG
-  @objc func passValueFromReact(_ value : String) -> String {
-    debugPrint(" Print Here \(value)")
-    return "Thanks braaaaaaa, ALL GOOD!!"
-  }
-  @objc
-  func increment( _ resolve: RCTPromiseResolveBlock,
-                  rejecter reject: RCTPromiseRejectBlock
-  ) -> Void {
-    count += 1
-    resolve("count was incremented, count: \(count)")
   }
   
   @objc
-  func decrement(
-    _ resolve: RCTPromiseResolveBlock,
-    rejecter reject: RCTPromiseRejectBlock
-  ) -> Void {
-    if (count == 0) {
-      let error = NSError(domain: "", code: 200, userInfo: nil)
-      reject("E_COUNT", "count cannot be negative", error)
-    } else {
-      count -= 1
-      resolve("count was decremented, count: \(count)")
+  func getMultiScanStatus(_ resolve: @escaping RCTPromiseResolveBlock,
+                          rejecter reject: @escaping RCTPromiseRejectBlock){
+    ahi.status {  multiScanStatus in
+      resolve(multiScanStatus)
     }
   }
-  // DEBUG
+  @objc
+  func getMultiScanDetails(_ resolve: @escaping RCTPromiseResolveBlock,
+                           rejecter reject: @escaping RCTPromiseRejectBlock){
+    if let details = ahi.getDetails(){
+      resolve(details)
+    }else {
+      resolve(nil)
+    }
+  }
+  
+  @objc
+  func getUserAuthorizedState(_ userId:Any?,
+                              resolver resolve: @escaping RCTPromiseResolveBlock,
+                              rejecter reject: @escaping RCTPromiseRejectBlock){
+    guard let userId = userId as? String else {
+      let err = NSError(domain: "com.ahi.ios.ahi_multiscan_react_native_wrapper", code: -11, userInfo: [NSLocalizedDescriptionKey: "User are not authorized"])
+      reject("\(err.code)", err.localizedDescription, err)
+      return
+    }
+    ahi.userIsAuthorized(forId: userId) { isAuthorized in
+      resolve(isAuthorized)
+    }
+  }
+  
+  @objc
+  func deauthorizeUser(_ resolve: @escaping RCTPromiseResolveBlock,
+                       rejecter reject: @escaping RCTPromiseRejectBlock){
+    ahi.userDeauthorize{error in
+      resolve(error)
+    }
+  }
+  @objc
+  func releaseMultiScanSDK(_ resolve: @escaping RCTPromiseResolveBlock,
+                           rejecter reject: @escaping RCTPromiseRejectBlock){
+    ahi.releaseSDK { error in
+      resolve(error)
+    }
+  }
+  @objc
+  func setMultiScanPersistenceDelegate(){
+    
+  }
 }
+
+extension MultiScanModule:AHIDelegatePersistence{
+  public func setBodyScanResults(results: Any?) {
+          guard let bsResults = results as? [[String: Any]] else {
+              print("AHI: Results must not be nil and must conform to an Array of Map results.")
+              return
+          }
+          ahi.setPersistenceDelegate(self)
+          bodyScanResults = bsResults
+      }
+
+      func requestScanType(_ scan: String, options: [String : Any] = [:], completion completionBlock: @escaping (Error?, [[String : Any]]?) -> Void) {
+          // Call the completion block to return the results to the SDK.
+          completionBlock(nil, bodyScanResults)
+      }
+  
+}
+
+// MARK: - ViewController Helper
+extension NSObject {
+    /// Return topmost viewController to initiate face and bodyscan
+    public func topMostVC() -> UIViewController? {
+        let keyWindow = UIApplication.shared.windows.filter {$0.isKeyWindow}.first
+        if var topController = keyWindow?.rootViewController {
+            while let presentedViewController = topController.presentedViewController {
+                topController = presentedViewController
+            }
+            return topController
+        }
+        return nil
+    }
+}
+
+
 

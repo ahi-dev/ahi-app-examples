@@ -33,11 +33,11 @@ interface MultiScanInterface {
   // Will return an integer for the bytes size.
   checkAHIResourcesDownloadSize(): Promise<string>;
   // Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG").
-  startFaceScan(msPaymentType: string, avatarValues: Object): Promise<string>;
+  startFaceScan(userInputValues: Object, msPaymentType: string): Promise<Map<String, any>>;
   // Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG").
-  startBodyScan(msPaymentType: string, avatarValues: Object): Promise<string>;
+  startBodyScan(userInputValues: Object, msPaymentType: string): Promise<Map<String, any>>;
   // Requires a map object of the body scan results and returns a Map object.
-  getBodyScanExtras(id: string): Promise<string>;
+  getBodyScanExtras(scanResults: Map<String, any>): Promise<Map<String, any>>;
   // Returns the SDK status.
   getMultiScanStatus(): Promise<string>;
   // Returns a Map containing the SDK details.
@@ -50,5 +50,6 @@ interface MultiScanInterface {
   releaseMultiScanSDK(): Promise<void>
   // Use the AHIMultiScan persistence delegate and set historical body scan results
   setMultiScanPersistenceDelegate(result: Array<any>): void;
+  test(): void;
 }
 export default MultiScanModule as MultiScanInterface;

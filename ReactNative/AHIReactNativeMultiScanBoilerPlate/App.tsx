@@ -41,18 +41,15 @@ enum MSPaymentType {
   SUBS = "SUBS"
 }
 
-
 let userInput = {
-  'sex': 'M',
-  'smoker': 'F',
-  'diabetic': 'none',
-  'hypertension': 'F',
-  'bpmeds': 'F',
-  'height': 180,
-  'weight': 85,
-  'age': 35,
-  'height_units': 'CENTIMETRES',
-  'weight_units': 'KILOGRAMS'
+  "enum_ent_sex": "male",
+  "cm_ent_height": 180,
+  "kg_ent_weight": 85,
+  "yr_ent_age": 35,
+  "bool_ent_smoker": false,
+  "bool_ent_hypertension": false,
+  "bool_ent_bloodPressureMedication": false,
+  "enum_ent_diabetic": "none"
 }
 
 const App: () => ReactNode = () => {
@@ -100,8 +97,8 @@ const App: () => ReactNode = () => {
       console.log("AHI ERROR: Face Scan inputs")
       return;
     }
-    MultiScanModule.startFaceScan(MSPaymentType.PAYG, userInput).then((value: any) => {
-      console.log("AHI: SCAN RESULTS: " + value);
+    MultiScanModule.startFaceScan(userInput, MSPaymentType.PAYG).then((faceScanResults: Map<String, any>) => {
+      console.log("AHI: SCAN RESULTS: " + JSON.stringify(faceScanResults));
     });
   }
 
@@ -111,13 +108,14 @@ const App: () => ReactNode = () => {
     if (!areBodyScanConfigOptionsValid(objectToMap(userInput))) {
       console.log("AHI ERROR: Body Scan inputs invalid.");
     }
-    MultiScanModule.startBodyScan(MSPaymentType.PAYG, userInput).then((value: any) => {
-      console.log("AHI: SCAN RESULTS: " + value);
-      var result = JSON.parse(value);
+    MultiScanModule.startBodyScan(userInput, MSPaymentType.PAYG).then((bodyScanResults: Map<String, any>) => {
+      console.log("AHI: SCAN RESULTS: " + JSON.stringify(bodyScanResults));
+      var result = JSON.parse(JSON.stringify(bodyScanResults));
       if (areBodyScanSmoothingResultsValid(result)) {
-        id = result['id'];
-        MultiScanModule.getBodyScanExtras(id).then((path: any) => {
-          console.log("AHI 3D Mesh path: " + path);
+        console.log("GETTING EXTRAS");
+        MultiScanModule.getBodyScanExtras(bodyScanResults).then((path: any) => {
+          console.log("AHI 3D Mesh : " + path["meshURL"]);
+          console.log("AHI 3D Mesh : " + JSON.stringify(path));
         });
       }
     });
@@ -126,7 +124,8 @@ const App: () => ReactNode = () => {
 
   // download resources
   const didTapDownloadResources = async () => {
-    MultiScanModule.areAHIResourcesAvailable().then((value: any) => {
+    MultiScanModule.areAHIResourcesAvailable().then((value: boolean) => {
+      console.log(value)
       if (!value) {
         console.log("AHI INFO: Resources are not downloaded");
         // start download.
@@ -152,16 +151,14 @@ const App: () => ReactNode = () => {
     if (!areSharedScanConfigOptionsValid(avatarValues)) {
       return false;
     }
-    var sex = avatarValues.get('sex');
-    var smoke = avatarValues.get('smoker');
-    var isDiabetic = avatarValues.get('diabetic');
-    var hypertension = avatarValues.get('hypertension');
-    var blood = avatarValues.get('bpmeds');
-    var height = avatarValues.get('height');
-    var weight = avatarValues.get('weight');
-    var age = avatarValues.get('age');
-    var heightUnits = avatarValues.get('height_units');
-    var weightUnits = avatarValues.get('weight_units');
+    var sex = avatarValues.get('enum_ent_sex');
+    var smoke = avatarValues.get('bool_ent_smoker');
+    var isDiabetic = avatarValues.get('enum_ent_diabetic');
+    var hypertension = avatarValues.get('bool_ent_hypertension');
+    var blood = avatarValues.get('bool_ent_bloodPressureMedication');
+    var height = avatarValues.get('cm_ent_height');
+    var weight = avatarValues.get('kg_ent_weight');
+    var age = avatarValues.get('yr_ent_age');
     if (sex != null &&
       smoke != null &&
       isDiabetic != null &&
@@ -169,9 +166,7 @@ const App: () => ReactNode = () => {
       blood != null &&
       height != null &&
       weight != null &&
-      age != null &&
-      heightUnits != null &&
-      weightUnits != null
+      age != null
     ) {
       return ['none', 'type1', 'type2'].includes(isDiabetic);
     } else {
@@ -187,9 +182,9 @@ const App: () => ReactNode = () => {
     if (!areSharedScanConfigOptionsValid(avatarValues)) {
       return false
     }
-    var sex = avatarValues.get('sex');
-    var height = avatarValues.get('height');
-    var weight = avatarValues.get('weight');
+    var sex = avatarValues.get('enum_ent_sex');
+    var height = avatarValues.get('cm_ent_height');
+    var weight = avatarValues.get('kg_ent_weight');
     if (sex != null &&
       height != null &&
       weight != null &&
@@ -238,11 +233,11 @@ const App: () => ReactNode = () => {
   * https://docs.advancedhumanimaging.io/MultiScan%20SDK/FaceScan/Schemas/
   */
   function areSharedScanConfigOptionsValid(avatarValues: Map<string, any>): boolean {
-    var sex = avatarValues.get('sex');
-    var height = avatarValues.get('height');
-    var weight = avatarValues.get('weight');
+    var sex = avatarValues.get('enum_ent_sex');
+    var height = avatarValues.get('cm_ent_height');
+    var weight = avatarValues.get('kg_ent_weight');
     if (sex != null && height != null && weight != null) {
-      return ['M', 'F'].includes(sex);
+      return ['male', 'female'].includes(sex);
     }
     return false;
   }
