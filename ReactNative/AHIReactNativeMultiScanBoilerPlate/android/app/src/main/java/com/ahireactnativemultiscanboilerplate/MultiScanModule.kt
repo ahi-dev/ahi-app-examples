@@ -99,7 +99,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     @ReactMethod
     fun checkAHIResourcesDownloadSize(promise: Promise) {
         MultiScan.waitForResult(MultiScan.shared().totalEstimatedDownloadSizeInBytes()) {
-            promise.resolve(it)
+            promise.resolve("$it")
         }
     }
 
