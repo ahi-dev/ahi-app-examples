@@ -1,7 +1,8 @@
-import 'package:ahi_flutter_multiscan_boilerplate/screens/home_page.dart';
+import 'package:ahi_flutter_multiscan_boilerplate/screens/home.dart';
 import 'package:flutter/material.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -16,7 +17,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(),
+      home: const Home(),
     );
   }
 }
