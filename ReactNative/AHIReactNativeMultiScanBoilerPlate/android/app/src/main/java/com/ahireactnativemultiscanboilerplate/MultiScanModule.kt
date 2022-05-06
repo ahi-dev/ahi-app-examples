@@ -110,7 +110,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     }
 
     @ReactMethod
-    fun startFaceScan(paymentType: String, userInputAvatarMap: ReadableMap, promise: Promise) {
+    fun startFaceScan(userInputAvatarMap: ReadableMap, paymentType: String, promise: Promise) {
         val pType =
             when (paymentType) {
                 "PAYG" -> MSPaymentType.PAYG
@@ -121,15 +121,14 @@ class MultiScanModule(private val context: ReactApplicationContext) :
             promise.reject("-99", "invalid payment type.")
             return
         }
-        // Before we feed to SDK we need to mapping the keys and values to reach the sdk needs.
-        val sdkStandradSchema = userInputConverter(userInputAvatarMap)
+        val faceScanValues = userInputConverter(userInputAvatarMap)
         MultiScan.waitForResult(
-            MultiScan.shared().initiateScan(MSScanType.FACE, pType, sdkStandradSchema)
+            MultiScan.shared().initiateScan(MSScanType.FACE, pType, faceScanValues)
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
-                    val resultsMap = convertJSONStringToMap(it.result)
-                    promise.resolve(resultsMap)
+                    val result = convertJSONStringToMap(it.result)
+                    promise.resolve(result)
                 }
                 SdkResultCode.ERROR -> {
                     promise.reject(it.resultCode.toString(), it.message)
@@ -139,7 +138,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     }
 
     @ReactMethod
-    fun startBodyScan(paymentType: String, userInputAvatarMap: ReadableMap, promise: Promise) {
+    fun startBodyScan(userInputAvatarMap: ReadableMap, paymentType: String, promise: Promise) {
         val pType =
             when (paymentType) {
                 "PAYG" -> MSPaymentType.PAYG
@@ -151,10 +150,10 @@ class MultiScanModule(private val context: ReactApplicationContext) :
             return
         }
         // Before we feed to SDK we need to mapping the keys and values to reach the sdk needs.
-        val sdkStandradSchema = userInputConverter(userInputAvatarMap)
         MultiScan.shared().registerDelegate(AHIPersistenceDelegate)
+        val bodyScanValues = userInputConverter(userInputAvatarMap)
         MultiScan.waitForResult(
-            MultiScan.shared().initiateScan(MSScanType.BODY, pType, sdkStandradSchema)
+            MultiScan.shared().initiateScan(MSScanType.BODY, pType, bodyScanValues)
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
@@ -173,7 +172,9 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      * time. We recommend doing this on successful completion of a body scan with the results.
      */
     @ReactMethod
-    fun getBodyScanExtras(id: String, promise: Promise) {
+    fun getBodyScanExtras(bodyScanResult: ReadableMap, promise: Promise) {
+        val result = bodyScanResult.toHashMap()
+        val id = result["id"].toString()
         val parameters: MutableMap<String, Any> = HashMap()
         parameters["operation"] = MultiScanOperation.BodyGetMeshObj.name
         parameters["id"] = id
@@ -182,8 +183,10 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         MultiScan.waitForResult(MultiScan.shared().getScanExtra(MSScanType.BODY, parameters)) {
             /** Print the 3D mesh path */
             saveAvatarToFile(it, objFile)
+            val map = WritableNativeMap()
+            map.putString("meshURL",objFile.path.toString())
+            promise.resolve(map)
         }
-        promise.resolve(objFile.path)
     }
 
     /** Check if MultiScan is on or offline. */
@@ -289,29 +292,44 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     private fun userInputConverter(userInputAvatarMap: ReadableMap): Map<String, Any?> {
         // Convert the schema and feed to SDK
         val inputAvatarValues = userInputAvatarMap.toHashMap()
-        val newSchema = mapOf(
-            "TAG_ARG_GENDER" to inputAvatarValues["sex"],
-            "TAG_ARG_SMOKER" to inputAvatarValues["smoker"],
-            "TAG_ARG_DIABETIC" to inputAvatarValues["diabetic"],
-            "TAG_ARG_HYPERTENSION" to inputAvatarValues["hypertension"],
-            "TAG_ARG_BPMEDS" to inputAvatarValues["bpmeds"],
-            "TAG_ARG_HEIGHT_IN_CM" to inputAvatarValues["height"],
-            "TAG_ARG_WEIGHT_IN_KG" to inputAvatarValues["weight"],
-            "TAG_ARG_AGE" to inputAvatarValues["age"],
-            "TAG_ARG_PREFERRED_HEIGHT_UNITS" to inputAvatarValues["height_units"],
-            "TAG_ARG_PREFERRED_WEIGHT_UNITS" to inputAvatarValues["weight_units"],
+        val sex = when (inputAvatarValues["enum_ent_sex"]) {
+            "male" -> "M"
+            else -> "F"
+        }
+        val smoker = when (inputAvatarValues["bool_ent_smoker"]) {
+            true -> "T"
+            else -> "F"
+        }
+        val hypertension = when (inputAvatarValues["bool_ent_hypertension"]) {
+            true -> "T"
+            else -> "F"
+        }
+        val bpmds = when (inputAvatarValues["bool_ent_bloodPressureMedication"]) {
+            true -> "T"
+            else -> "F"
+        }
+
+        val convertedSchema = mapOf(
+            "TAG_ARG_GENDER" to sex,
+            "TAG_ARG_SMOKER" to smoker,
+            "TAG_ARG_DIABETIC" to inputAvatarValues["enum_ent_diabetic"],
+            "TAG_ARG_HYPERTENSION" to hypertension,
+            "TAG_ARG_BPMEDS" to bpmds,
+            "TAG_ARG_HEIGHT_IN_CM" to inputAvatarValues["cm_ent_height"],
+            "TAG_ARG_WEIGHT_IN_KG" to inputAvatarValues["kg_ent_weight"],
+            "TAG_ARG_AGE" to inputAvatarValues["yr_ent_age"],
         )
-        return newSchema
+        return convertedSchema
     }
 
-    private fun convertJSONStringToMap(result: String?): Map<String, Any> {
+    private fun convertJSONStringToMap(result: String?): WritableNativeMap {
         if (result == null || result!!.isEmpty()) {
-            return emptyMap()
+            return WritableNativeMap()
         }
         val jsonMap =  JSONObject("${result}")
-        var resultsMap = mutableMapOf<String, Any>()
+        var resultsMap = WritableNativeMap()
         for (key in jsonMap.keys()) {
-            resultsMap[key] = jsonMap[key]
+            resultsMap.putString(key,jsonMap[key].toString())
         }
         return resultsMap
     }

@@ -19,6 +19,7 @@ import React, { useState } from 'react';
 import type { ReactNode } from 'react';
 import MultiScanModule from './Modules/MultiScanModule';
 import {
+  Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -112,7 +113,6 @@ const App: () => ReactNode = () => {
       console.log("AHI: SCAN RESULTS: " + JSON.stringify(bodyScanResults));
       var result = JSON.parse(JSON.stringify(bodyScanResults));
       if (areBodyScanSmoothingResultsValid(result)) {
-        console.log("GETTING EXTRAS");
         MultiScanModule.getBodyScanExtras(bodyScanResults).then((path: any) => {
           console.log("AHI 3D Mesh : " + path["meshURL"]);
           console.log("AHI 3D Mesh : " + JSON.stringify(path));
@@ -257,9 +257,9 @@ const App: () => ReactNode = () => {
             </TouchableOpacity> : null
           }
           {
-            isSetup && !resourcesDownloaded ? <TouchableOpacity onPress={didTapDownloadResources} style={styles.button}>
+            isSetup && !resourcesDownloaded ? <Pressable disabled={false}><TouchableOpacity onPress={didTapDownloadResources} style={styles.button}>
               <Text style={styles.text}>Download Resources</Text>
-            </TouchableOpacity> : null
+            </TouchableOpacity></Pressable> : null
           }
           {
             resourcesDownloaded ? <TouchableOpacity onPress={didTapStartBodyScan} style={styles.button}>
@@ -269,7 +269,7 @@ const App: () => ReactNode = () => {
           }
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 };
 
