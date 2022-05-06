@@ -20,8 +20,6 @@ const { MultiScanModule } = NativeModules;
 
 // SDK
 interface MultiScanInterface {
-  // Default
-  unknow(): Promise<void>
   // Requires a token String to be provided as an argument.
   setupMultiScanSDK(token: string): Promise<string>;
   // Requires a Map object to be passed in containing 3 arguments.
