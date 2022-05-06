@@ -52,7 +52,7 @@ private const val TAG = "MainActivityAHI"
 
 /** The required tokens for the MultiScan Setup and Authorization. */
 object AHIConfigTokens {
-    /**Your AHI MultiScan DEV token */
+    /** Your AHI MultiScan DEV token */
     const val AHI_MULTI_SCAN_TOKEN = ""
 
     /** Your user id. Hardcode a valid user id for testing purposes. */
@@ -116,7 +116,9 @@ class MainActivity : ComponentActivity() {
                             .fillMaxWidth()
                             .height(buttonHeight), visible = !viewModel.isSetupState.value
                     ) {
-                        Button(modifier = Modifier.height(buttonHeight),onClick = { didTapSetup() }) { Text(text = "Setup SDK") }
+                        Button(
+                            modifier = Modifier.height(buttonHeight),
+                            onClick = { didTapSetup() }) { Text(text = "Setup SDK") }
                     }
                     AnimatedVisibility(
                         modifier = Modifier
@@ -124,7 +126,9 @@ class MainActivity : ComponentActivity() {
                             .fillMaxWidth()
                             .height(buttonHeight), visible = viewModel.isSetupState.value
                     ) {
-                        Button(modifier = Modifier.height(buttonHeight),onClick = { didTapStartFaceScan() }) { Text(text = "Start Facescan") }
+                        Button(
+                            modifier = Modifier.height(buttonHeight),
+                            onClick = { didTapStartFaceScan() }) { Text(text = "Start Facescan") }
                     }
                     AnimatedVisibility(
                         modifier = Modifier
