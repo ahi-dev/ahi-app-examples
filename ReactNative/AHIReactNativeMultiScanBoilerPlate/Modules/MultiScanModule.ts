@@ -18,7 +18,7 @@
 import { NativeModules } from 'react-native';
 const { MultiScanModule } = NativeModules;
 
-// SDK
+/** Multi Scan SDK */
 interface MultiScanInterface {
   // Requires a token String to be provided as an argument.
   setupMultiScanSDK(token: string): Promise<string>;
@@ -48,6 +48,5 @@ interface MultiScanInterface {
   releaseMultiScanSDK(): Promise<void>
   // Use the AHIMultiScan persistence delegate and set historical body scan results
   setMultiScanPersistenceDelegate(result: Array<any>): void;
-  test(): void;
 }
 export default MultiScanModule as MultiScanInterface;

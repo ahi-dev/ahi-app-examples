@@ -19,7 +19,6 @@ package com.ahireactnativemultiscanboilerplate;
 
 import android.app.Application;
 import android.content.Context;
-
 import com.ahireactnativemultiscanboilerplate.newarchitecture.MainApplicationReactNativeHost;
 import com.facebook.react.PackageList;
 import com.facebook.react.ReactApplication;

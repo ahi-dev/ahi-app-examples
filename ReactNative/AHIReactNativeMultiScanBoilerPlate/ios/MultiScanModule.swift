@@ -109,7 +109,7 @@ extension MultiScanModule {
     var pType = AHIMultiScanPaymentType.PAYG
     if msPaymentType == "PAYG" {
       pType = AHIMultiScanPaymentType.PAYG
-    }else if msPaymentType == "SUBS" {
+    }else if msPaymentType == "SUBSCRIBER" {
       pType = AHIMultiScanPaymentType.subscriber
     }
     guard let vc = topMostVC() else {return }
@@ -141,7 +141,7 @@ extension MultiScanModule {
     var pType = AHIMultiScanPaymentType.PAYG
     if msPaymentType == "PAYG" {
       pType = AHIMultiScanPaymentType.PAYG
-    }else if msPaymentType == "SUBS" {
+    }else if msPaymentType == "SUBSCRIBER" {
       pType = AHIMultiScanPaymentType.subscriber
     }
     guard let vc = topMostVC() else {return }

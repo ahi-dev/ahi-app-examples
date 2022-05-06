@@ -99,21 +99,16 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     @ReactMethod
     fun checkAHIResourcesDownloadSize(promise: Promise) {
         MultiScan.waitForResult(MultiScan.shared().totalEstimatedDownloadSizeInBytes()) {
-            promise.resolve("$it")
+            promise.resolve(it)
         }
     }
 
     @ReactMethod
     fun startFaceScan(userInput: ReadableMap, paymentType: String, promise: Promise) {
-        val pType =
-            when (paymentType) {
-                "PAYG" -> MSPaymentType.PAYG
-                "SUBS" -> MSPaymentType.SUBS
-                else -> null
-            }
-        if (pType == null) {
-            promise.reject("-99", "invalid payment type.")
-            return
+        val pType = if (paymentType == "PAYG") {
+            MSPaymentType.PAYG
+        } else {
+            MSPaymentType.SUBS
         }
         val faceScanUserInput = userInputConverter(userInput)
         MultiScan.waitForResult(
@@ -133,15 +128,10 @@ class MultiScanModule(private val context: ReactApplicationContext) :
 
     @ReactMethod
     fun startBodyScan(userInput: ReadableMap, paymentType: String, promise: Promise) {
-        val pType =
-            when (paymentType) {
-                "PAYG" -> MSPaymentType.PAYG
-                "SUBS" -> MSPaymentType.SUBS
-                else -> null
-            }
-        if (pType == null) {
-            promise.reject("-99", "invalid payment type.")
-            return
+        val pType = if (paymentType == "PAYG") {
+            MSPaymentType.PAYG
+        } else {
+            MSPaymentType.SUBS
         }
         // Before we feed to SDK we need to mapping the keys and values to reach the sdk needs.
         MultiScan.shared().registerDelegate(AHIPersistenceDelegate)
@@ -178,7 +168,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
             // Print the 3D mesh path
             saveAvatarToFile(it, objFile)
             val map = WritableNativeMap()
-            map.putString("meshURL",objFile.path.toString())
+            map.putString("meshURL", objFile.path.toString())
             promise.resolve(map)
         }
     }
@@ -214,7 +204,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         }
     }
 
-    /** Deuathorize the user. */
+    /** Deauthorize the user. */
     @ReactMethod
     fun deauthorizeUser(promise: Promise) {
         MultiScan.waitForResult(MultiScan.shared().userDeauthorize()) {
@@ -305,7 +295,6 @@ class MultiScanModule(private val context: ReactApplicationContext) :
             true -> "T"
             else -> "F"
         }
-
         val convertedSchema = mapOf(
             "TAG_ARG_GENDER" to sex,
             "TAG_ARG_SMOKER" to smoker,
@@ -323,10 +312,10 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         if (result == null || result!!.isEmpty()) {
             return WritableNativeMap()
         }
-        val jsonMap =  JSONObject("${result}")
+        val jsonMap = JSONObject("${result}")
         var resultsMap = WritableNativeMap()
         for (key in jsonMap.keys()) {
-            resultsMap.putString(key,jsonMap[key].toString())
+            resultsMap.putString(key, jsonMap[key].toString())
         }
         return resultsMap
     }
