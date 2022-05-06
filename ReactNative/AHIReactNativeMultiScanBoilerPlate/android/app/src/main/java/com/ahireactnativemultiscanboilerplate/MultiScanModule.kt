@@ -38,12 +38,6 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         return "MultiScanModule"
     }
 
-    // Default.
-    @ReactMethod
-    fun unknow(promise: Promise) {
-        promise.resolve(null)
-    }
-
     /**
      * Setup the MultiScan SDK This must happen before requesting a scan. We recommend doing this on
      * successful load of your application.
@@ -110,7 +104,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     }
 
     @ReactMethod
-    fun startFaceScan(userInputAvatarMap: ReadableMap, paymentType: String, promise: Promise) {
+    fun startFaceScan(userInput: ReadableMap, paymentType: String, promise: Promise) {
         val pType =
             when (paymentType) {
                 "PAYG" -> MSPaymentType.PAYG
@@ -121,9 +115,9 @@ class MultiScanModule(private val context: ReactApplicationContext) :
             promise.reject("-99", "invalid payment type.")
             return
         }
-        val faceScanValues = userInputConverter(userInputAvatarMap)
+        val faceScanUserInput = userInputConverter(userInput)
         MultiScan.waitForResult(
-            MultiScan.shared().initiateScan(MSScanType.FACE, pType, faceScanValues)
+            MultiScan.shared().initiateScan(MSScanType.FACE, pType, faceScanUserInput)
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
@@ -138,7 +132,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     }
 
     @ReactMethod
-    fun startBodyScan(userInputAvatarMap: ReadableMap, paymentType: String, promise: Promise) {
+    fun startBodyScan(userInput: ReadableMap, paymentType: String, promise: Promise) {
         val pType =
             when (paymentType) {
                 "PAYG" -> MSPaymentType.PAYG
@@ -151,9 +145,9 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         }
         // Before we feed to SDK we need to mapping the keys and values to reach the sdk needs.
         MultiScan.shared().registerDelegate(AHIPersistenceDelegate)
-        val bodyScanValues = userInputConverter(userInputAvatarMap)
+        val bodyScanUserInput = userInputConverter(userInput)
         MultiScan.waitForResult(
-            MultiScan.shared().initiateScan(MSScanType.BODY, pType, bodyScanValues)
+            MultiScan.shared().initiateScan(MSScanType.BODY, pType, bodyScanUserInput)
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
@@ -178,10 +172,10 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         val parameters: MutableMap<String, Any> = HashMap()
         parameters["operation"] = MultiScanOperation.BodyGetMeshObj.name
         parameters["id"] = id
-        /** Write the mesh to a directory */
+        // Write the mesh to a directory
         val objFile = File(context.filesDir, "$id.obj")
         MultiScan.waitForResult(MultiScan.shared().getScanExtra(MSScanType.BODY, parameters)) {
-            /** Print the 3D mesh path */
+            // Print the 3D mesh path
             saveAvatarToFile(it, objFile)
             val map = WritableNativeMap()
             map.putString("meshURL",objFile.path.toString())
@@ -289,8 +283,11 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         writer.close()
     }
 
+    /**
+     * This function converts the AHI Face Scan Input Schema to the AHI FaceScan SDK input schema and returns a map.
+     */
     private fun userInputConverter(userInputAvatarMap: ReadableMap): Map<String, Any?> {
-        // Convert the schema and feed to SDK
+        // Convert the input and feed to SDK
         val inputAvatarValues = userInputAvatarMap.toHashMap()
         val sex = when (inputAvatarValues["enum_ent_sex"]) {
             "male" -> "M"
