@@ -39,18 +39,7 @@ const AHI_TEST_USER_CLAIMS = ['test'];
 /// Payment type
 enum MSPaymentType {
   PAYG = "PAYG",
-  SUBS = "SUBS"
-}
-
-let userInput = {
-  "enum_ent_sex": "male",
-  "cm_ent_height": 180,
-  "kg_ent_weight": 85,
-  "yr_ent_age": 35,
-  "bool_ent_smoker": false,
-  "bool_ent_hypertension": false,
-  "bool_ent_bloodPressureMedication": false,
-  "enum_ent_diabetic": "none"
+  SUBS = "SUBSCRIBER"
 }
 
 const App: () => ReactNode = () => {
@@ -58,15 +47,6 @@ const App: () => ReactNode = () => {
   const [downloadingButtonVisibility, setdownloadingButtonVisibility] = useState(true);
   const [resourcesDownloaded, setResourcesDownloaded] = useState(false);
   const [resourcesDownloading, setResourcesDownloading] = useState(false);
-  const map = new Map();
-  const objectToMap = (avatarValues: any) => {
-    const keys = Object.keys(avatarValues);
-    const map = new Map();
-    for (let i = 0; i < keys.length; i++) {
-      map.set(keys[i], avatarValues[keys[i]]);
-    };
-    return map
-  };
 
   // setup sdk
   const didTapSetup = async () => {
@@ -74,42 +54,64 @@ const App: () => ReactNode = () => {
       let res = await MultiScanModule.setupMultiScanSDK(AHI_MULTI_SCAN_TOKEN);
       if (res !== 'SUCCESS') {
         return;
+      } else {
+        authorizeUser();
       }
-      let auth = await MultiScanModule.authorizeUser(
-        AHI_TEST_USER_ID,
-        AHI_TEST_USER_SALT,
-        AHI_TEST_USER_CLAIMS
-      );
-      if (auth !== 'SUCCESS') {
-        console.log("AHI: Auth Error: " + auth);
-        console.log("AHI: Confirm you are using a valid user id, salt and claims.");
-        return;
-      }
-      setIsSetup(true);
-      console.log("AHI: Setup user successfully");
     } catch (e) {
       console.log(e);
     }
   };
 
+  // authorize user
+  const authorizeUser = async () => {
+    let auth = await MultiScanModule.authorizeUser(
+      AHI_TEST_USER_ID,
+      AHI_TEST_USER_SALT,
+      AHI_TEST_USER_CLAIMS
+    );
+    if (auth !== 'SUCCESS') {
+      console.log("AHI: Auth Error: " + auth);
+      console.log("AHI: Confirm you are using a valid user id, salt and claims.");
+      return;
+    }
+    setIsSetup(true);
+    console.log("AHI: Setup user successfully");
+  }
+
   // start facescan
   const didTapStartFaceScan = async () => {
-    if (!areFaceScanConfigOptionsValid(objectToMap(userInput))) {
+    let userFaceScanInput = {
+      "enum_ent_sex": "male",
+      "cm_ent_height": 180,
+      "kg_ent_weight": 85,
+      "yr_ent_age": 35,
+      "bool_ent_smoker": false,
+      "bool_ent_hypertension": false,
+      "bool_ent_bloodPressureMedication": false,
+      "enum_ent_diabetic": "none"
+    }
+    if (!areFaceScanConfigOptionsValid(objectToMap(userFaceScanInput))) {
       console.log("AHI ERROR: Face Scan inputs")
       return;
     }
-    MultiScanModule.startFaceScan(userInput, MSPaymentType.PAYG).then((faceScanResults: Map<String, any>) => {
+    MultiScanModule.startFaceScan(userFaceScanInput, MSPaymentType.PAYG).then((faceScanResults: Map<String, any>) => {
       console.log("AHI: SCAN RESULTS: " + JSON.stringify(faceScanResults));
     });
   }
 
   // start bodyscan
   const didTapStartBodyScan = () => {
+    let userBodyScanInput = {
+      "enum_ent_sex": "male",
+      "cm_ent_height": 180,
+      "kg_ent_weight": 85,
+      "yr_ent_age": 35
+    }
     var id;
-    if (!areBodyScanConfigOptionsValid(objectToMap(userInput))) {
+    if (!areBodyScanConfigOptionsValid(objectToMap(userBodyScanInput))) {
       console.log("AHI ERROR: Body Scan inputs invalid.");
     }
-    MultiScanModule.startBodyScan(userInput, MSPaymentType.PAYG).then((bodyScanResults: Map<String, any>) => {
+    MultiScanModule.startBodyScan(userBodyScanInput, MSPaymentType.PAYG).then((bodyScanResults: Map<String, any>) => {
       console.log("AHI: SCAN RESULTS: " + JSON.stringify(bodyScanResults));
       var result = JSON.parse(JSON.stringify(bodyScanResults));
       if (areBodyScanSmoothingResultsValid(result)) {
@@ -119,14 +121,12 @@ const App: () => ReactNode = () => {
         });
       }
     });
-
   }
 
   // download resources
   const didTapDownloadResources = async () => {
-    MultiScanModule.areAHIResourcesAvailable().then((value: boolean) => {
-      console.log(value)
-      if (!value) {
+    MultiScanModule.areAHIResourcesAvailable().then((areAvailable: boolean) => {
+      if (!areAvailable) {
         console.log("AHI INFO: Resources are not downloaded");
         // start download.
         MultiScanModule.downloadAHIResources();
@@ -241,6 +241,16 @@ const App: () => ReactNode = () => {
     }
     return false;
   }
+
+  const map = new Map();
+  const objectToMap = (scanResult: any) => {
+    const keys = Object.keys(scanResult);
+    const map = new Map();
+    for (let i = 0; i < keys.length; i++) {
+      map.set(keys[i], scanResult[keys[i]]);
+    };
+    return map
+  };
 
   return (
     <SafeAreaView>

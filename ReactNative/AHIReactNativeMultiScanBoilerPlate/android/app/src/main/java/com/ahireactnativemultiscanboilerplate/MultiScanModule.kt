@@ -110,7 +110,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         } else {
             MSPaymentType.SUBS
         }
-        val faceScanUserInput = userInputConverter(userInput)
+        val faceScanUserInput = userInputFaceScanConverter(userInput)
         MultiScan.waitForResult(
             MultiScan.shared().initiateScan(MSScanType.FACE, pType, faceScanUserInput)
         ) {
@@ -133,9 +133,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         } else {
             MSPaymentType.SUBS
         }
-        // Before we feed to SDK we need to mapping the keys and values to reach the sdk needs.
-        MultiScan.shared().registerDelegate(AHIPersistenceDelegate)
-        val bodyScanUserInput = userInputConverter(userInput)
+        val bodyScanUserInput = userInputBodyScanConverter(userInput)
         MultiScan.waitForResult(
             MultiScan.shared().initiateScan(MSScanType.BODY, pType, bodyScanUserInput)
         ) {
@@ -276,7 +274,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     /**
      * This function converts the AHI Face Scan Input Schema to the AHI FaceScan SDK input schema and returns a map.
      */
-    private fun userInputConverter(userInputAvatarMap: ReadableMap): Map<String, Any?> {
+    private fun userInputFaceScanConverter(userInputAvatarMap: ReadableMap): Map<String, Any?> {
         // Convert the input and feed to SDK
         val inputAvatarValues = userInputAvatarMap.toHashMap()
         val sex = when (inputAvatarValues["enum_ent_sex"]) {
@@ -301,6 +299,25 @@ class MultiScanModule(private val context: ReactApplicationContext) :
             "TAG_ARG_DIABETIC" to inputAvatarValues["enum_ent_diabetic"],
             "TAG_ARG_HYPERTENSION" to hypertension,
             "TAG_ARG_BPMEDS" to bpmds,
+            "TAG_ARG_HEIGHT_IN_CM" to inputAvatarValues["cm_ent_height"],
+            "TAG_ARG_WEIGHT_IN_KG" to inputAvatarValues["kg_ent_weight"],
+            "TAG_ARG_AGE" to inputAvatarValues["yr_ent_age"],
+        )
+        return convertedSchema
+    }
+
+    /**
+     * This function converts the AHI Body Scan Input Schema to the AHI FaceScan SDK input schema and returns a map.
+     */
+    private fun userInputBodyScanConverter(userInputAvatarMap: ReadableMap): Map<String, Any?> {
+        // Convert the input and feed to SDK
+        val inputAvatarValues = userInputAvatarMap.toHashMap()
+        val sex = when (inputAvatarValues["enum_ent_sex"]) {
+            "male" -> "M"
+            else -> "F"
+        }
+        val convertedSchema = mapOf(
+            "TAG_ARG_GENDER" to sex,
             "TAG_ARG_HEIGHT_IN_CM" to inputAvatarValues["cm_ent_height"],
             "TAG_ARG_WEIGHT_IN_KG" to inputAvatarValues["kg_ent_weight"],
             "TAG_ARG_AGE" to inputAvatarValues["yr_ent_age"],
