@@ -445,7 +445,7 @@ class MainActivity : ComponentActivity() {
             "cm_raw_waist",
             "kg_raw_weightPredict",
             "percent_raw_bodyFat",
-            "ml_gen_fitness",
+            "ml_raw_fitness",
             "id",
             "date"
         )
