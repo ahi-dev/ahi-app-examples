@@ -28,45 +28,76 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  dynamic _bodyScanResults;
   bool _isSDKSetup = false;
   bool _isUserAuthorized = false;
-  bool _areResourcesAvailable = false;
+  bool _resourcesAreAvailable = false;
   bool _downloadResourcesButtonEnabled = true;
   // Communicate with native layer
   final platform = const MethodChannel('ahi_multiscan_flutter_wrapper');
   Map<String, dynamic> ahiConfigTokens = {
-    "AHI_TEST_USER_ID": "AHI_TEST_USER",
-    "AHI_TEST_USER_SALT": "user",
-    "AHI_TEST_USER_CLAIMS": ['test'],
+    "USER_ID": "AHI_TEST_USER",
+    "SALT": "user",
+    "CLAIMS": ['test'],
   };
-  var token = "";
+  static const ahiMultiScanToken = "";
+
+  didTapSetup() {
+    setupMultiScanSDK();
+  }
+
+  didTapStartFaceScan() {
+    startFaceScan();
+  }
+
+  didTapStartBodyScan() {
+    startBodyScan();
+  }
+
+  didTapCheckDownloadSize() {
+    checkAHIResourcesDownloadSize();
+  }
+
+  didTapDownloadResources() {
+    downloadAHIResources();
+    areAHIResourcesAvailable();
+    checkAHIResourcesDownloadSize();
+    setState(() {
+      _downloadResourcesButtonEnabled = false;
+    });
+  }
 
   /// Setup the MultiScan SDK
   ///
   /// This must happen before requesting a scan.
   /// We recommend doing this on successful load of your application.
   void setupMultiScanSDK() async {
-    var setupSDKResult = await platform.invokeMethod("setupMultiScanSDK", token);
-    if (setupSDKResult != null) {
-      print("AHI: Error setting up: $setupSDKResult");
+    try {
+      await platform.invokeMethod("setupMultiScanSDK", ahiMultiScanToken);
+      setState(() {
+        _isSDKSetup = true;
+      });
+      authorizeUser();
+    } on PlatformException catch (error) {
+      print("AHI: Error setting up: $error");
       print("AHI: Confirm you have a valid token.");
-      return;
     }
-    setState(() {
-      _isSDKSetup = true;
-    });
-    authorizeUser();
   }
 
   /// Once successfully setup, you should authorize your user with our service.
   ///
   /// With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
   void authorizeUser() async {
-    var authorizeUserResult = await platform.invokeMethod("authorizeUser", ahiConfigTokens);
-    if (authorizeUserResult != null) {
-      print("AHI: Auth Error: $authorizeUserResult");
-      print("AHI: Confirm you are using a valid user id, salt and claims.");
+    try {
+      await platform.invokeMethod("authorizeUser", ahiConfigTokens).then((response) => {handleAuthorizeUser(response)});
+    } on PlatformException catch (error) {
+      print("AHI ERROR: authorizeUser $error}");
+    }
+  }
+
+  void handleAuthorizeUser(dynamic response) {
+    if (response != null) {
+      print("AHI: Auth Error: $response");
+      print("AHI: Confirm you are using a valid user id, salt and claims");
       return;
     }
     setState(() {
@@ -80,25 +111,23 @@ class _HomeState extends State<Home> {
   /// We have remote resources that exceed 100MB that enable our scans to work.
   /// You are required to download them inorder to obtain a body scan.
   void areAHIResourcesAvailable() async {
-    platform.invokeMethod("areAHIResourcesAvailable").then((areAHIResourcesAvailable) => {
-          print(areAHIResourcesAvailable),
-          if (!areAHIResourcesAvailable)
-            {
-              print("AHI INFO: Resources are not downloaded."),
-              // We recommend polling to check resource state.
-              Future.delayed(const Duration(milliseconds: 3000), () {
-                checkAHIResourcesDownloadSize();
-                this.areAHIResourcesAvailable();
-              }),
-            }
-          else
-            {
-              setState(() {
-                _areResourcesAvailable = true;
-              }),
-              print("AHI: Resources ready")
-            }
-        });
+    platform.invokeMethod("areAHIResourcesAvailable").then((resourcesAvailable) => {handleResourcesAvailable(resourcesAvailable)});
+  }
+
+  void handleResourcesAvailable(bool resourcesAvailable) {
+    if (!resourcesAvailable) {
+      print("AHI INFO: Resources are not downloaded.");
+      // We recommend polling to check resource state.
+      Future.delayed(const Duration(milliseconds: 30000), () {
+        checkAHIResourcesDownloadSize();
+        areAHIResourcesAvailable();
+      });
+      return;
+    }
+    setState(() {
+      _resourcesAreAvailable = true;
+    });
+    print("AHI: Resources ready");
   }
 
   /// Download scan resources.
@@ -109,16 +138,18 @@ class _HomeState extends State<Home> {
   }
 
   /// Check the size of the AHI resources that require downloading.
+  ///
+  /// Resource size is returned from the MultiScan SDK in bytes.
+  /// We are demonstrating the conversion into MB.
   void checkAHIResourcesDownloadSize() {
-    platform.invokeMethod("checkAHIResourcesDownloadSize").then(
-          (size) => {
-            print("AHI INFO: Size of download is ${(size as num) / 1024 / 1024}"),
-          },
-        );
+    platform.invokeMethod("checkAHIResourcesDownloadSize").then((size) => {
+          print("AHI INFO: Size of download is ${(size as num) / 1024 / 1024}"),
+        });
   }
 
   void startFaceScan() async {
-    // All required face scan options.
+    // All required face scan options and the payment type.
+    // Payment type options are either PAYG or SUBSCRIBER.
     Map<String, dynamic> options = {
       "enum_ent_sex": "male",
       "cm_ent_height": 180,
@@ -134,31 +165,60 @@ class _HomeState extends State<Home> {
       print("AHI ERROR: Face Scan inputs invalid.");
       return;
     }
-    var faceScanResult = await platform.invokeMethod("startFaceScan", options);
-    print("AHI: SCAN RESULTS: $faceScanResult");
+    try {
+      await platform.invokeMethod("startFaceScan", options).then((value) => {handleFaceScanResults(value)});
+    } on PlatformException catch (error) {
+      // Error code 4 is the code for the SDK interaction that cancels the scan.
+      if (error.code == "7") {
+        print("AHI: INFO: User cancelled the session.");
+        return;
+      }
+      print("AHI: ERROR WITH FACE SCAN: $error");
+    }
   }
 
-  // Initiate native module BodyScan
+  void handleFaceScanResults(dynamic result) {
+    if (result is Map<String, dynamic>) {
+      // Handle body scan results
+      print("AHI: SCAN RESULTS: $result");
+      return;
+    }
+    print("AHI: UNKNOWN ERROR WITH FACE SCAN RESULT: $result");
+  }
+
+  /// Initiate native module BodyScan
   void startBodyScan() async {
     // All required body scan options
-    Map<String, dynamic> options = {"enum_ent_sex": "male", "cm_ent_height": 180, "kg_ent_weight": 85, "paymentType": 'PAYG'};
+    // Payment type options are either PAYG or SUBSCRIBER.
+    Map<String, dynamic> options = {"enum_ent_sex": "male", "cm_ent_height": 180, "kg_ent_weight": 85, "paymentType": "PAYG"};
     if (!areBodyScanConfigOptionsValid(options)) {
       print("AHI ERROR: Body Scan inputs invalid.");
       return;
     }
-    var bodyScanResult = await platform.invokeMethod("startBodyScan", options);
-    if (bodyScanResult != null) {
-      // Handle results
-      print("AHI: SCAN RESULTS: $bodyScanResult");
-      setState(() {
-        _bodyScanResults = bodyScanResult;
-      });
+    try {
+      await platform.invokeMethod("startBodyScan", options).then((bodyScanResult) => {handleBodyScanResults(bodyScanResult)});
+    } on PlatformException catch (error) {
+      // Error code 4 is the code for the SDK interaction that cancels the scan.
+      if (error.code == "4") {
+        print("AHI: INFO: User cancelled the session.");
+        return;
+      }
+      print("AHI: ERROR WITH BODY SCAN: $error");
+    }
+  }
+
+  void handleBodyScanResults(dynamic result) {
+    if (result is Map<String, dynamic>) {
+      // Update the historical results
+      setMultiScanPersistenceDelegate(result);
+      // Handle body scan results
+      print("AHI: SCAN RESULTS: $result");
       // Consider getting the 3D mesh here
       // This is an optional feature.
-      getBodyScanExtras(Map<String, dynamic>.from(bodyScanResult));
+      getBodyScanExtras(Map<String, dynamic>.from(result));
       return;
     }
-    print("AHI: ERROR WITH BODY SCAN: $bodyScanResult");
+    print("AHI: UNKNOWN ERROR WITH BODY SCAN RESULT: $result");
   }
 
   /// Use this function to fetch the 3D avatar mesh.
@@ -167,17 +227,151 @@ class _HomeState extends State<Home> {
   /// We recommend doing this on successful completion of a body scan with the results.
   // getBodyScanExtras(Map<String, dynamic> result) async {
   void getBodyScanExtras(Map<String, dynamic> result) async {
-    if (result == "error") {
-      print("AHI: ERROR GETTING BODY SCAN EXTRAS. \$error");
+    try {
+      await platform.invokeMethod("getBodyScanExtras", result).then((value) => {handleBodyScanExtras(value)});
+    } on PlatformException catch (error) {
+      print("AHI: ERROR GETTING BODY SCAN EXTRAS. $error");
+    }
+  }
+
+  void handleBodyScanExtras(dynamic extras) {
+    print("AHI EXTRAS: ${extras}");
+    if (extras is Map<String, dynamic>) {
+      var path = extras["meshURL"];
+      print("AHI 3D Mesh path: $path");
+    }
+  }
+
+  // Check if MultiScan is on or offline.
+  void getMultiScanStatus() async {
+    platform.invokeMethod("getMultiScanStatus").then((status) => print("AHI INFO: Status: $status"));
+  }
+
+  /// Check your AHI MultiScan organisation  details.
+  void getMultiScanDetails() async {
+    try {
+      await platform.invokeMethod("getMultiScanDetails").then((details) => print("AHI INFO: MultiScan details: $details"));
+    } on PlatformException catch (error) {
+      print("AHI ERROR: getMultiScanDetails $error}");
+    }
+  }
+
+  /// Check if the user is authorized to use the MuiltScan service.
+  void getUserAuthorizedState() async {
+    try {
+      await platform
+          .invokeMethod("getUserAuthorizedState", ahiConfigTokens["AHI_TEST_USER_ID"])
+          .then((isAuthorized) => {print("AHI INFO: User is ${isAuthorized ? "authorized" : "not authorized"}")});
+    } on PlatformException catch (error) {
+      print("AHI ERROR: getUserAuthorizedState $error}");
+    }
+  }
+
+  /// Deauthorize the user.
+  void deAuthorizeUser() async {
+    try {
+      await platform.invokeMethod("deauthorizeUser").then((deAuthorizeResult) => {
+            if (deAuthorizeResult != null)
+              {
+                print("AHI ERROR: Failed to deuathorize user with error: $deAuthorizeResult)"),
+              }
+            else
+              {
+                print("AHI INFO: User is deauthorized."),
+              }
+          });
+    } on PlatformException catch (error) {
+      print("AHI ERROR: deAuthorizeUser $error");
+    }
+  }
+
+  /// Release the MultiScan SDK session.
+  ///
+  /// If you  use this, you will need to call setupSDK again.
+  void releaseMultiScanSDK() async {
+    var releaseSDKResult = await platform.invokeMethod("releaseMultiScanSDK");
+    if (releaseSDKResult != null) {
+      print("AHI ERROR: Failed to release SDK with error: $releaseSDKResult");
       return;
     }
-    if (areBodyScanSmoothingResultsValid(result)) {
-      var extrasResult = await platform.invokeMethod("getBodyScanExtras", result);
-      var path = extrasResult["meshURL"];
-      print("AHI 3D Mesh path: $path");
-    } else {
-      print("no path specified yet");
+    print("AHI INFO: SDK has been released successfully.");
+  }
+
+  // If you choose to use this, you will obtain two sets of results - one containing the "raw" output and another set containing "adj" output.
+  // "adj" means adjusted and is used to help provide historical results as a reference for the newest result to provide results tailored to the user.
+  // We recommend using this for individual users results; avoid using this if the app is a single user ID with multiple users results.
+  // More info found here: https://docs.advancedhumanimaging.io/MultiScan%20SDK/Data/
+  void setMultiScanPersistenceDelegate(Map<String, dynamic>? bodyScanResults) {
+    if (bodyScanResults == null) {
+      print("AHI: Results must not be nil and must conform to an Array of Map results.");
+      return;
     }
+    if (!areBodyScanSmoothingResultsValid(bodyScanResults)) {
+      print("AHI WARN: Results are not valid for the persistence delegate. Please compare your results against the schema for more information.");
+      return;
+    }
+    platform.invokeMethod("setMultiScanPersistenceDelegate", bodyScanResults);
+  }
+
+  /// All MultiScan scan configs require this information.
+  ///
+  /// Please see the Schemas for more information:
+  /// BodyScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/BodyScan/Schemas/
+  /// FaceScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FaceScan/Schemas/
+  bool areSharedScanConfigOptionsValid(Map<String, dynamic> inputValues) {
+    var height = inputValues["cm_ent_height"];
+    var weight = inputValues["cm_ent_weight"];
+    var sex = inputValues["enum_ent_sex"];
+    if (height is! int && weight is! int && sex is! String) {
+      return false;
+    }
+    return ['male', 'female'].contains(sex);
+  }
+
+  bool _areFaceScanConfigOptionsValid(Map<String, dynamic> inputValues) {
+    if (!areSharedScanConfigOptionsValid(inputValues)) {
+      return false;
+    }
+    var sex = inputValues["enum_ent_sex"];
+    var smoke = inputValues["bool_ent_smoker"];
+    var isDiabetic = inputValues["enum_ent_diabetic"];
+    var hypertension = inputValues["bool_ent_hypertension"];
+    var blood = inputValues["bool_ent_bloodPressureMedication"];
+    var height = inputValues["cm_ent_height"];
+    var weight = inputValues["kg_ent_weight"];
+    var age = inputValues["yr_ent_age"];
+    if (sex is! String &&
+        smoke is! String &&
+        isDiabetic is! String &&
+        hypertension is! String &&
+        blood is! String &&
+        height is! int &&
+        weight is! int &&
+        age is! int &&
+        height < 25 &&
+        height > 300 &&
+        weight < 25 &&
+        weight > 300) {
+      return false;
+    } else {
+      return ["none", "type1", "type2"].contains(isDiabetic);
+    }
+  }
+
+  /// BodyScan config requirements validation.
+  ///
+  /// Please see the Schemas for more information:
+  /// BodyScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/BodyScan/Schemas/
+  bool areBodyScanConfigOptionsValid(Map<String, dynamic> inputValues) {
+    if (!areSharedScanConfigOptionsValid(inputValues)) {
+      return false;
+    }
+    var height = inputValues["cm_ent_height"];
+    var weight = inputValues["kg_ent_weight"];
+    if (height is! int && weight is! int && height < 50 && height > 255 && weight < 16 && weight > 300) {
+      return false;
+    }
+    return true;
   }
 
   bool areBodyScanSmoothingResultsValid(Map<String, dynamic> result) {
@@ -207,134 +401,6 @@ class _HomeState extends State<Home> {
     return isValid;
   }
 
-  /// BodyScan config requirements validation.
-  ///
-  /// Please see the Schemas for more information:
-  /// BodyScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/BodyScan/Schemas/
-  bool areBodyScanConfigOptionsValid(Map<String, dynamic> configs) {
-    if (!areSharedScanConfigOptionsValid(configs)) {
-      return false;
-    }
-    return true;
-  }
-
-  /// All MultiScan scan configs require this information.
-  ///
-  /// Please see the Schemas for more information:
-  /// BodyScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/BodyScan/Schemas/
-  /// FaceScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FaceScan/Schemas/
-  bool areSharedScanConfigOptionsValid(Map<String, dynamic> configs) {
-    var height = configs["cm_ent_height"];
-    var weight = configs["cm_ent_weight"];
-    var sex = configs["enum_ent_sex"];
-    if (height is! int && weight is! int && sex is! String) {
-      return false;
-    }
-    return ['male', 'female'].contains(sex);
-  }
-
-  bool _areFaceScanConfigOptionsValid(Map<String, dynamic> inputValues) {
-    if (!areSharedScanConfigOptionsValid(inputValues)) {
-      return false;
-    }
-    var sex = inputValues["enum_ent_sex"];
-    var smoke = inputValues["bool_ent_smoker"];
-    var isDiabetic = inputValues["enum_ent_diabetic"];
-    var hypertension = inputValues["bool_ent_hypertension"];
-    var blood = inputValues["bool_ent_bloodPressureMedication"];
-    var height = inputValues["cm_ent_height"];
-    var weight = inputValues["kg_ent_weight"];
-    var age = inputValues["yr_ent_age"];
-    if (sex is! String &&
-        smoke is! String &&
-        isDiabetic is! String &&
-        hypertension is! String &&
-        blood is! String &&
-        height is! int &&
-        weight is! int &&
-        age is! int) {
-      return false;
-    } else {
-      return ["none", "type1", "type2"].contains(isDiabetic);
-    }
-  }
-
-  // Check if MultiScan is on or offline.
-  void getMultiScanStatus() async {
-    var status = await platform.invokeMethod("getMultiScanStatus");
-    print("AHI INFO: Status: $status");
-  }
-
-  /// Check your AHI MultiScan organisation  details.
-  getMultiScanDetails() async {
-    var details = await platform.invokeMethod("getMultiScanDetails");
-    print("AHI INFO: MultiScan details: $details");
-  }
-
-  /// Check if the user is authorized to use the MuiltScan service.
-  void getUserAuthorizedState() async {
-    var isAuthorized = await platform.invokeMethod("getUserAuthorizedState", ahiConfigTokens["AHI_TEST_USER_ID"]);
-    print("AHI INFO: User is ${isAuthorized ? "authorized" : "not authorized"}");
-  }
-
-  /// Deauthorize the user.
-  void deAuthorizeUser() async {
-    var deAuthorizeResult = await platform.invokeMethod("deauthorizeUser");
-    if (deAuthorizeResult != null) {
-      print("AHI ERROR: Failed to deuathorize user with error: $deAuthorizeResult)");
-    }
-    print("AHI INFO: User is deauthorized.");
-  }
-
-  /// Release the MultiScan SDK session.
-  ///
-  /// If you  use this, you will need to call setupSDK again.
-  void releaseMultiScanSDK() async {
-    var releaseSDKResult = await platform.invokeMethod("releaseMultiScanSDK");
-    if (releaseSDKResult != null) {
-      print("AHI ERROR: Failed to release SDK with error: $releaseSDKResult");
-      return;
-    }
-    print("AHI INFO: SDK has been released successfully.");
-  }
-
-  // If you choose to use this, you will obtain two sets of results - one containing the "raw" output and another set containing "adj" output.
-  // "adj" means adjusted and is used to help provide historical results as a reference for the newest result to provide tailored to the user results.
-  // We recommend using this for individual users results; avoid using this if the app is a single user ID with multiple users results.
-  // More info found here: https://docs.advancedhumanimaging.io/MultiScan%20SDK/Data/
-  void setMultiScanPersistenceDelegate() {
-    if (_bodyScanResults != null) {
-      platform.invokeMethod("setMultiScanPersistenceDelegate", _bodyScanResults);
-      return;
-    }
-    print("AHI: Results must not be nil and must conform to an Array of Map results.");
-  }
-
-  didTapSetup() {
-    setupMultiScanSDK();
-  }
-
-  didTapStartFaceScan() {
-    startFaceScan();
-  }
-
-  didTapStartBodyScan() {
-    startBodyScan();
-  }
-
-  didTapCheckDownloadSize() {
-    checkAHIResourcesDownloadSize();
-  }
-
-  didTapDownloadResources() {
-    downloadAHIResources();
-    areAHIResourcesAvailable();
-    checkAHIResourcesDownloadSize();
-    setState(() {
-      _downloadResourcesButtonEnabled = false;
-    });
-  }
-
   // Component
   @override
   Widget build(BuildContext context) {
@@ -348,9 +414,9 @@ class _HomeState extends State<Home> {
           padding: const EdgeInsets.only(left: 12, right: 12),
           children: [
             if (!_isSDKSetup) defaultButton("Setup SDK", () => {didTapSetup()}),
-            if (_isUserAuthorized && _downloadResourcesButtonEnabled) defaultButton("Download Resources", () => {didTapDownloadResources()}),
             if (_isUserAuthorized) defaultButton("Start FaceScan", () => {didTapStartFaceScan()}),
-            if (_areResourcesAvailable) defaultButton("Start BodyScan", () => {didTapStartBodyScan()}),
+            if (_isUserAuthorized && _downloadResourcesButtonEnabled) defaultButton("Download Resources", () => {didTapDownloadResources()}),
+            if (_isUserAuthorized && _resourcesAreAvailable) defaultButton("Start BodyScan", () => {didTapStartBodyScan()}),
           ],
         ),
       ),
@@ -361,6 +427,7 @@ class _HomeState extends State<Home> {
 Widget defaultButton(String title, Function action) {
   return SizedBox(
     width: double.infinity,
+    height: 55.0,
     child: TextButton(
       child: Text(
         title,

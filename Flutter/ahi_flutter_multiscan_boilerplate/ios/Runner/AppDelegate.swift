@@ -149,17 +149,18 @@ extension AppDelegate {
 
     fileprivate func authorizeUser(arguments: Any?, resultHandler: @escaping FlutterResult) {
         guard let args = arguments as? [String: Any],
-              let userID = args["AHI_TEST_USER_ID"] as? String,
-              let salt = args["AHI_TEST_USER_SALT"] as? String,
-              let claims = args["AHI_TEST_USER_CLAIMS"] as? [String]
+              let userID = args["USER_ID"] as? String,
+              let salt = args["SALT"] as? String,
+              let claims = args["CLAIMS"] as? [String]
         else {
-            resultHandler("\(NSError(domain: "com.ahi.ios.\(CHANNEL)", code: -2, userInfo: [NSLocalizedDescriptionKey: "Missing user authorization details."]))")
+            resultHandler(FlutterError(code: "-2", message: "Missing user authorization details.", details: nil))
             return
         }
         multiScan.authorizeUser(userID: userID, salt: salt, claims: claims, resultHandler: resultHandler)
     }
 
     fileprivate func startFaceScan(arguments: Any?, resultHandler: @escaping FlutterResult) {
+        // Need to separate the payment type content from the Map.
         guard let args = arguments as? [String: Any],
               let enum_ent_sex = args["enum_ent_sex"] as? String,
                 let cm_ent_height = args["cm_ent_height"] as? Int,
@@ -170,11 +171,11 @@ extension AppDelegate {
                 let bool_ent_bloodPressureMedication = args["bool_ent_bloodPressureMedication"] as? Bool,
                 let enum_ent_diabetic = args["enum_ent_diabetic"] as? String
         else {
-            resultHandler("\(NSError(domain: "com.ahi.ios.\(CHANNEL)", code: -3, userInfo: [NSLocalizedDescriptionKey: "Missing user face scan input details."]))")
+            resultHandler(FlutterError(code: "-3", message: "Missing user face scan input details.", details: nil))
             return
         }
         guard let paymentType = args["paymentType"] as? String else {
-            resultHandler("\(NSError(domain: "com.ahi.ios.\(CHANNEL)", code: -4, userInfo: [NSLocalizedDescriptionKey: "Missing user face scan payment type."]))")
+            resultHandler(FlutterError(code: "-4", message: "Missing user face scan payment type.", details: nil))
             return
         }
         let userInputs: [String : Any] = [
@@ -191,16 +192,17 @@ extension AppDelegate {
     }
 
     fileprivate func startBodyScan(arguments: Any?, resultHandler: @escaping FlutterResult) {
+        // Need to separate the payment type content from the Map.
         guard let args = arguments as? [String: Any],
               let enum_ent_sex = args["enum_ent_sex"] as? String,
               let cm_ent_height = args["cm_ent_height"] as? Int,
               let kg_ent_weight = args["kg_ent_weight"] as? Int
         else {
-            resultHandler("\(NSError(domain: "com.ahi.ios.\(CHANNEL)", code: -5, userInfo: [NSLocalizedDescriptionKey: "Missing user body scan input details."]))")
+            resultHandler(FlutterError(code: "-5", message: "Missing user body scan input details.", details: nil))
             return
         }
         guard let paymentType = args["paymentType"] as? String else {
-            resultHandler("\(NSError(domain: "com.ahi.ios.\(CHANNEL)", code: -6, userInfo: [NSLocalizedDescriptionKey: "Missing user body scan payment type."]))")
+            resultHandler(FlutterError(code: "-6", message: "Missing user body scan payment type.", details: nil))
             return
         }
         let userInputs: [String : Any] = [
@@ -241,12 +243,12 @@ extension AHIMultiScanModule {
     /// We recommend doing this on successfuil load of your application.
     fileprivate func setupMultiScanSDK(token: Any?, resultHandler: @escaping FlutterResult) {
         guard let token = token as? String else {
-            resultHandler("\(NSError(domain: "com.ahi.ios.\(CHANNEL)", code: -1, userInfo: [NSLocalizedDescriptionKey: "Missing multi scan token"]))")
+            resultHandler(FlutterError(code: "-1", message: "Missing multi scan token", details: nil))
             return
         }
         ahi.setup(withConfig: ["TOKEN": token], scans: [faceScan, bodyScan]) { [weak self] error in
-            if let err = error as NSError? {
-                resultHandler(self?.createSafeError(fromError:err))
+            if let err = error {
+                resultHandler(self?.createFlutterError(fromError: err))
                 return
             }
             resultHandler(nil)
@@ -257,9 +259,9 @@ extension AHIMultiScanModule {
     ///
     /// With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
     fileprivate func authorizeUser(userID: String, salt: String, claims: [String], resultHandler: @escaping FlutterResult) {
-        ahi.userAuthorize(forId: userID, withSalt: salt, withClaims: claims) { authError in
+        ahi.userAuthorize(forId: userID, withSalt: salt, withClaims: claims) { [weak self] authError in
             if let err = authError {
-                resultHandler("\(err)")
+                resultHandler(self?.createFlutterError(fromError: err))
                 return
             }
             resultHandler(nil)
@@ -290,7 +292,7 @@ extension AHIMultiScanModule {
     /// Check the size of the AHI resources that require downloading.
     fileprivate func checkAHIResourcesDownloadSize(resultHandler: @escaping FlutterResult) {
         ahi.totalEstimatedDownloadSizeInBytes { bytes in
-            resultHandler(Int(bytes))
+            resultHandler(Int64(bytes))
         }
     }
 }
@@ -305,26 +307,24 @@ extension AHIMultiScanModule {
         } else if paymentType == "SUBSCRIBER" {
             pType = .subscriber
         } else {
-            resultHandler("\(NSError(domain: "com.ahi.ios.\(CHANNEL)", code: -7, userInfo: [NSLocalizedDescriptionKey: "Missing valid payment type."]))")
+            resultHandler(FlutterError(code: "-7", message: "Missing valid payment type.", details: nil))
             return
         }
         // Ensure the view controller being used is the top one.
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
         guard let vc = topMostVC() else { return }
-        ahi.initiateScan("face", paymentType: pType, withOptions: userInputs, from: vc) { scanTask, error in
+        ahi.initiateScan("face", paymentType: pType, withOptions: userInputs, from: vc) { [weak self] scanTask, error in
             guard let task = scanTask, error == nil else {
-                resultHandler(error)
+                resultHandler(self?.createFlutterError(fromError: error))
                 return
             }
             task.continueWith(block: { resultsTask in
                 if let results = resultsTask.result as? [String : Any] {
-                    // Handle results
                     resultHandler(results)
                 } else {
                     resultHandler(nil)
                 }
-                /// Handle failure.
                 return nil
             })
         }
@@ -341,7 +341,7 @@ extension AHIMultiScanModule {
         } else if paymentType == "SUBSCRIBER" {
             pType = .subscriber
         } else {
-            resultHandler("\(NSError(domain: "com.ahi.ios.\(CHANNEL)", code: -7, userInfo: [NSLocalizedDescriptionKey: "Missing valid payment type."]))")
+            resultHandler(FlutterError(code: "-7", message: "Missing valid payment type.", details: nil))
             return
         }
         // Ensure the view controller being used is the top one.
@@ -349,14 +349,13 @@ extension AHIMultiScanModule {
         // you may have issues.
         guard let vc = topMostVC() else { return }
         ahi.initiateScan("body", paymentType: pType, withOptions: userInputs, from: vc) {
-            scanTask, error in
+            [weak self] scanTask, error in
             guard let task = scanTask, error == nil else {
-                resultHandler(error)
+                resultHandler(self?.createFlutterError(fromError: error))
                 return
             }
             task.continueWith(block: { resultsTask in
                 if let results = resultsTask.result as? [String : Any] {
-                    // Handle results
                     resultHandler(results)
                 } else {
                     resultHandler(nil)
@@ -377,16 +376,18 @@ extension AHIMultiScanModule {
     /// We recommend doing this on successful completion of a body scan with the results.
     fileprivate func getBodyScanExtras(withBodyScanResult result: Any?, resultHandler: @escaping FlutterResult) {
         guard let bodyScanResult = result as? [String: Any] else {
-            resultHandler("\(NSError(domain: "com.ahi.ios.\(CHANNEL)", code: -8, userInfo: [NSLocalizedDescriptionKey: "Missing valid body scan result."]))")
+            resultHandler(FlutterError(code: "-8", message: "Missing valid body scan result.", details: nil))
             return
         }
-        ahi.getExtra(bodyScanResult, options: nil) { error, extras in
+        ahi.getExtra(bodyScanResult, options: nil) { [weak self] error, extras in
             guard let extras = extras, error == nil else {
-                resultHandler("\(String(describing: error))")
+                resultHandler(self?.createFlutterError(fromError: error))
                 return
             }
             var bsExtras = [String: String]()
             if let meshURL = extras["meshURL"] as? URL {
+                // This may require being relative path over absoluteString.
+                // Would recommend in session moving the mesh to another file controlled by the app.
                 bsExtras["meshURL"] = meshURL.absoluteString
             } else {
                 bsExtras["meshURL"] = ""
@@ -418,7 +419,7 @@ extension AHIMultiScanModule {
     /// Check if the userr is authorized to use the MuiltScan service.
     fileprivate func getUserAuthorizedState(userId: Any?, resultHandler: @escaping FlutterResult) {
         guard let userID = userId as? String else {
-            resultHandler("\(NSError(domain: "com.ahi.ios.\(CHANNEL)", code: -9, userInfo: [NSLocalizedDescriptionKey: "Missing user ID."]))")
+            resultHandler(FlutterError(code: "-9", message: "Missing user ID.", details: nil))
             return
         }
         ahi.userIsAuthorized(forId: userID) { isAuthorized in
@@ -437,8 +438,8 @@ extension AHIMultiScanModule {
     ///
     /// If you  use this, you will need to call setupSDK again.
     fileprivate func releaseMultiScanSDK(resultHandler: @escaping FlutterResult) {
-        ahi.releaseSDK { error in
-            resultHandler(error)
+        ahi.releaseSDK { [weak self] error in
+            resultHandler(self?.createFlutterError(fromError: error))
         }
     }
 }
@@ -469,14 +470,16 @@ extension AHIMultiScanModule: AHIDelegatePersistence {
 // MARK: - Error Safety
 
 extension AHIMultiScanModule {
-    private func createSafeError(fromError error: NSError) -> String {
-        let errCode = error.code
-        let errDomain = error.domain
-        var errMessage = error.localizedDescription
+    private func createFlutterError(fromError error: Error?) -> FlutterError? {
+        guard let err = error as? NSError else {
+            return nil
+        }
+        let errCode = err.code
+        var errMessage = err.localizedDescription
         if errMessage.isEmpty {
             errMessage = "Unknown error occurred. Please contact developer support."
         }
-        return "\(NSError(domain: errDomain, code: errCode, userInfo: [NSLocalizedDescriptionKey: errMessage]))"
+        return FlutterError(code: "\(errCode)", message: errMessage, details: nil)
     }
 }
 
