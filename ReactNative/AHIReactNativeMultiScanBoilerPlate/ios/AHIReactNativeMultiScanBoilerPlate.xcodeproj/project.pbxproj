@@ -33,7 +33,7 @@
 		00E356F11AD99517003FC87E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		00E356F21AD99517003FC87E /* AHIReactNativeMultiScanBoilerPlateTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AHIReactNativeMultiScanBoilerPlateTests.m; sourceTree = "<group>"; };
 		027778D927FC2F72002981F0 /* AHIReactNativeMultiScanBoilerPlate-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "AHIReactNativeMultiScanBoilerPlate-Bridging-Header.h"; sourceTree = "<group>"; };
-		027778DA27FC2F72002981F0 /* MultiScanModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiScanModule.swift; sourceTree = "<group>"; };
+		027778DA27FC2F72002981F0 /* MultiScanModule.swift */ = {isa = PBXFileReference; indentWidth = 4; lastKnownFileType = sourcecode.swift; path = MultiScanModule.swift; sourceTree = "<group>"; tabWidth = 4; };
 		027778DC27FC3177002981F0 /* MultiScanModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MultiScanModule.m; sourceTree = "<group>"; };
 		0380372775FA6440C1F0C986 /* Pods_AHIReactNativeMultiScanBoilerPlate.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_AHIReactNativeMultiScanBoilerPlate.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07F961A680F5B00A75B9A /* AHIReactNativeMultiScanBoilerPlate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AHIReactNativeMultiScanBoilerPlate.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -472,7 +472,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_BUNDLE_IDENTIFIER = "tech.ahi.react-native-boilerplate";
 				PRODUCT_NAME = AHIReactNativeMultiScanBoilerPlate;
 				SWIFT_OBJC_BRIDGING_HEADER = "AHIReactNativeMultiScanBoilerPlate-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -499,7 +499,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_BUNDLE_IDENTIFIER = "tech.ahi.react-native-boilerplate";
 				PRODUCT_NAME = AHIReactNativeMultiScanBoilerPlate;
 				SWIFT_OBJC_BRIDGING_HEADER = "AHIReactNativeMultiScanBoilerPlate-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;

@@ -27,8 +27,8 @@ RCT_EXTERN_METHOD(
 
 RCT_EXTERN_METHOD(
                   authorizeUser:(NSString *)userID
-                  salt:(NSString *)salt
-                  claims:(NSArray *)claims
+                  salt:(NSString *)aSalt
+                  claims:(NSArray *)aClaims
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject
                   )
@@ -70,7 +70,7 @@ RCT_EXTERN_METHOD(
                   rejecter:(RCTPromiseRejectBlock)reject
                   )
 RCT_EXTERN_METHOD(
-                  getUserAuthorizedState:(NSString *)userId
+                  getUserAuthorizedState:(NSString *)userID
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject
                   )

@@ -65,13 +65,13 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      * payment method.
      */
     @ReactMethod
-    fun authorizeUser(userId: String, salt: String, claims: ReadableArray, promise: Promise) {
+    fun authorizeUser(userID: String, salt: String, claims: ReadableArray, promise: Promise) {
         // Convert claims to an Array<String>
         val claimsArray: Array<String> = claims.toArrayList().map { it.toString() }.toTypedArray()
-        MultiScan.waitForResult(MultiScan.shared().userAuthorize(userId, salt, claimsArray)) {
+        MultiScan.waitForResult(MultiScan.shared().userAuthorize(userID, salt, claimsArray)) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
-                    promise.resolve(it.resultCode.toString())
+                    promise.resolve(null)
                 }
                 SdkResultCode.ERROR -> {
                     promise.reject(it.resultCode.toString(), it.message)
@@ -99,7 +99,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     @ReactMethod
     fun checkAHIResourcesDownloadSize(promise: Promise) {
         MultiScan.waitForResult(MultiScan.shared().totalEstimatedDownloadSizeInBytes()) {
-            promise.resolve("$it")
+            promise.resolve(it)
         }
     }
 
@@ -107,16 +107,19 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     fun startFaceScan(userInput: ReadableMap, paymentType: String, promise: Promise) {
         val pType = if (paymentType == "PAYG") {
             MSPaymentType.PAYG
-        } else {
+        } else if (paymentType == "SUBSCRIBER") {
             MSPaymentType.SUBS
+        } else {
+            promise.reject("-4", "Missing user face scan payment type.")
+            return
         }
-        val faceScanUserInput = userInputFaceScanConverter(userInput)
+        val faceScanUserInput = userFaceInputConverter(userInput)
         MultiScan.waitForResult(
             MultiScan.shared().initiateScan(MSScanType.FACE, pType, faceScanUserInput)
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
-                    val result = convertJSONStringToMap(it.result)
+                    val result = scanResultsToMap(it.result)
                     promise.resolve(result)
                 }
                 SdkResultCode.ERROR -> {
@@ -130,16 +133,19 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     fun startBodyScan(userInput: ReadableMap, paymentType: String, promise: Promise) {
         val pType = if (paymentType == "PAYG") {
             MSPaymentType.PAYG
-        } else {
+        } else if (paymentType == "SUBSCRIBER") {
             MSPaymentType.SUBS
+        } else {
+            promise.reject("-6", "Missing user body scan payment type.")
+            return
         }
-        val bodyScanUserInput = userInputBodyScanConverter(userInput)
+        val bodyScanUserInput = userBodyInputConverter(userInput)
         MultiScan.waitForResult(
             MultiScan.shared().initiateScan(MSScanType.BODY, pType, bodyScanUserInput)
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
-                    val resultsMap = convertJSONStringToMap(it.result)
+                    val resultsMap = scanResultsToMap(it.result)
                     promise.resolve(resultsMap)
                 }
                 SdkResultCode.ERROR -> {
@@ -155,26 +161,33 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      */
     @ReactMethod
     fun getBodyScanExtras(bodyScanResult: ReadableMap, promise: Promise) {
-        val result = bodyScanResult.toHashMap()
-        val id = result["id"].toString()
+        if (bodyScanResult == null) {
+            promise.reject("-8", "Missing valid body scan result.")
+            return
+        }
+        val resultID = bodyScanResult["id"] as? String ?: run {
+            promise.reject("-8", "Missing valid body scan result.")
+            return
+        }
         val parameters: MutableMap<String, Any> = HashMap()
         parameters["operation"] = MultiScanOperation.BodyGetMeshObj.name
-        parameters["id"] = id
-        // Write the mesh to a directory
-        val objFile = File(context.filesDir, "$id.obj")
+        parameters["id"] = resultID
+        /** Write the mesh to a directory */
+        val objFilePath = File(context.filesDir, "$resultID.obj")
         MultiScan.waitForResult(MultiScan.shared().getScanExtra(MSScanType.BODY, parameters)) {
-            // Print the 3D mesh path
-            saveAvatarToFile(it, objFile)
-            val map = WritableNativeMap()
-            map.putString("meshURL", objFile.path.toString())
-            promise.resolve(map)
+            var bsExtras = mutableMapOf<String, String>()
+            when (saveAvatarToFile(it, objFilePath)) {
+                true -> bsExtras["meshURL"] = objFilePath.path
+                false -> bsExtras["meshURL"] = ""
+            }
+            promise.resolve(bsExtras)
         }
     }
 
     /** Check if MultiScan is on or offline. */
     @ReactMethod
     fun getMultiScanStatus(promise: Promise) {
-        MultiScan.waitForResult(MultiScan.shared().state) { promise.resolve(it.result) }
+        MultiScan.waitForResult(MultiScan.shared().state) { promise.resolve(it.result.toString()) }
     }
 
     /** Check your AHI MultiScan organisation details. */
@@ -185,12 +198,12 @@ class MultiScanModule(private val context: ReactApplicationContext) :
 
     /** Check if the userr is authorized to use the MuiltScan service. */
     @ReactMethod
-    fun getUserAuthorizedState(userId: String?, promise: Promise) {
-        if (userId.isNullOrEmpty()) {
-            promise.reject("ERROR", "Missing user ID")
+    fun getUserAuthorizedState(userID: String?, promise: Promise) {
+        if (userID.isNullOrEmpty()) {
+            promise.reject("-9", "Missing user ID")
             return
         }
-        MultiScan.waitForResult(MultiScan.shared().userIsAuthorized(userId)) {
+        MultiScan.waitForResult(MultiScan.shared().userIsAuthorized(userID)) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
                     promise.resolve(it.result)
@@ -206,7 +219,14 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     @ReactMethod
     fun deauthorizeUser(promise: Promise) {
         MultiScan.waitForResult(MultiScan.shared().userDeauthorize()) {
-            promise.reject(it.resultCode.toString(), it.message)
+            when (it.resultCode) {
+                SdkResultCode.SUCCESS -> {
+                    prmoise.resolve(null)
+                }
+                SdkResultCode.ERROR -> {
+                    prmoise.reject(it.resultCode.toString(), it.message)
+                }
+            }
         }
     }
 
@@ -258,50 +278,56 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     }
 
     /** Save 3D avatar mesh result on local device. */
-    private fun saveAvatarToFile(res: SdkResultParcelable, objFile: File) {
-        val meshResObj = JSONObject(res.result)
-        val objString = meshResObj["mesh"].toString()
-        val words: List<String> = objString.split(",")
-        val stream = FileOutputStream(objFile)
-        val writer = BufferedWriter(OutputStreamWriter(stream))
-        for (word in words) {
-            writer.write(word)
-            writer.newLine()
+    private fun saveAvatarToFile(res: SdkResultParcelable, objFile: File): Boolean {
+        return try {
+            val meshResObj = JSONObject(res.result)
+            val objString = meshResObj["mesh"].toString()
+            val words: List<String> = objString.split(",")
+            val stream = FileOutputStream(objFile)
+            val writer = BufferedWriter(OutputStreamWriter(stream))
+            for (word in words) {
+                writer.write(word)
+                writer.newLine()
+            }
+            writer.close()
+            true
+        } catch (e: Exception) {
+            print("AHI ERROR: KOTLIN: Exception when attempting to write file: $e")
+            false
         }
-        writer.close()
     }
 
     /**
      * This function converts the AHI Face Scan Input Schema to the AHI FaceScan SDK input schema and returns a map.
      */
-    private fun userInputFaceScanConverter(userInputAvatarMap: ReadableMap): Map<String, Any?> {
+    private fun userFaceInputConverter(userScanInputs: ReadableMap): Map<String, Any?> {
         // Convert the input and feed to SDK
-        val inputAvatarValues = userInputAvatarMap.toHashMap()
-        val sex = when (inputAvatarValues["enum_ent_sex"]) {
+        val userScanInputValues = userScanInputs.toHashMap()
+        val sex = when (userScanInputValues["enum_ent_sex"]) {
             "male" -> "M"
             else -> "F"
         }
-        val smoker = when (inputAvatarValues["bool_ent_smoker"]) {
+        val smoker = when (userScanInputValues["bool_ent_smoker"]) {
             true -> "T"
             else -> "F"
         }
-        val hypertension = when (inputAvatarValues["bool_ent_hypertension"]) {
+        val hypertension = when (userScanInputValues["bool_ent_hypertension"]) {
             true -> "T"
             else -> "F"
         }
-        val bpmds = when (inputAvatarValues["bool_ent_bloodPressureMedication"]) {
+        val bpmds = when (userScanInputValues["bool_ent_bloodPressureMedication"]) {
             true -> "T"
             else -> "F"
         }
         val convertedSchema = mapOf(
             "TAG_ARG_GENDER" to sex,
             "TAG_ARG_SMOKER" to smoker,
-            "TAG_ARG_DIABETIC" to inputAvatarValues["enum_ent_diabetic"],
+            "TAG_ARG_DIABETIC" to userScanInputValues["enum_ent_diabetic"],
             "TAG_ARG_HYPERTENSION" to hypertension,
             "TAG_ARG_BPMEDS" to bpmds,
-            "TAG_ARG_HEIGHT_IN_CM" to inputAvatarValues["cm_ent_height"],
-            "TAG_ARG_WEIGHT_IN_KG" to inputAvatarValues["kg_ent_weight"],
-            "TAG_ARG_AGE" to inputAvatarValues["yr_ent_age"],
+            "TAG_ARG_HEIGHT_IN_CM" to userScanInputValues["cm_ent_height"],
+            "TAG_ARG_WEIGHT_IN_KG" to userScanInputValues["kg_ent_weight"],
+            "TAG_ARG_AGE" to userScanInputValues["yr_ent_age"],
         )
         return convertedSchema
     }
@@ -309,31 +335,31 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     /**
      * This function converts the AHI Body Scan Input Schema to the AHI FaceScan SDK input schema and returns a map.
      */
-    private fun userInputBodyScanConverter(userInputAvatarMap: ReadableMap): Map<String, Any?> {
+    private fun userBodyInputConverter(userScanInputs: ReadableMap): Map<String, Any?> {
         // Convert the input and feed to SDK
-        val inputAvatarValues = userInputAvatarMap.toHashMap()
-        val sex = when (inputAvatarValues["enum_ent_sex"]) {
+        val userScanInputValues = userScanInputs.toHashMap()
+        val sex = when (userScanInputValues["enum_ent_sex"]) {
             "male" -> "M"
             else -> "F"
         }
         val convertedSchema = mapOf(
             "TAG_ARG_GENDER" to sex,
-            "TAG_ARG_HEIGHT_IN_CM" to inputAvatarValues["cm_ent_height"],
-            "TAG_ARG_WEIGHT_IN_KG" to inputAvatarValues["kg_ent_weight"],
-            "TAG_ARG_AGE" to inputAvatarValues["yr_ent_age"],
+            "TAG_ARG_HEIGHT_IN_CM" to userScanInputValues["cm_ent_height"],
+            "TAG_ARG_WEIGHT_IN_KG" to userScanInputValues["kg_ent_weight"],
+            "TAG_ARG_AGE" to userScanInputValues["yr_ent_age"],
         )
         return convertedSchema
     }
 
-    private fun convertJSONStringToMap(result: String?): WritableNativeMap {
-        if (result == null || result!!.isEmpty()) {
-            return WritableNativeMap()
+    private fun scanResultsToMap(results: String?): Map<String, Any> {
+        if (results == null) {
+            return emptyMap<String, Any>()
         }
-        val jsonMap = JSONObject("${result}")
-        var resultsMap = WritableNativeMap()
-        for (key in jsonMap.keys()) {
-            resultsMap.putString(key, jsonMap[key].toString())
+        val jsonObject = JSONObject("""${results}""")
+        var map = mutableMapOf<String, Any>()
+        for (key in jsonObject.keys()) {
+            map[key] = jsonObject[key]
         }
-        return resultsMap
+        return map
     }
 }
