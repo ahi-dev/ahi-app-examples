@@ -276,6 +276,8 @@ extension AHIMultiScanModule {
     ///
     /// We have remote resources that exceed 100MB that enable our scans to work.
     /// You are required to download them inorder to obtain a body scan.
+    ///
+    /// This function checks if they are already downloaded and available for use.
     fileprivate func areAHIResourcesAvailable(resultHandler: @escaping FlutterResult) {
         ahi.areResourcesDownloaded { success in
             resultHandler(success)
@@ -416,7 +418,7 @@ extension AHIMultiScanModule {
         }
     }
     
-    /// Check if the userr is authorized to use the MuiltScan service.
+    /// Check if the user is authorized to use the MuiltScan service.
     fileprivate func getUserAuthorizedState(userId: Any?, resultHandler: @escaping FlutterResult) {
         guard let userID = userId as? String else {
             resultHandler(FlutterError(code: "-9", message: "Missing user ID.", details: nil))
@@ -427,10 +429,10 @@ extension AHIMultiScanModule {
         }
     }
     
-    /// Deuathorize the user.
+    /// Deuauthorize the user.
     fileprivate func deauthorizeUser(resultHandler: @escaping FlutterResult) {
-        ahi.userDeauthorize { error in
-            resultHandler(error)
+        ahi.userDeauthorize { [weak self] error in
+            resultHandler(self?.createFlutterError(fromError: error))
         }
     }
     
