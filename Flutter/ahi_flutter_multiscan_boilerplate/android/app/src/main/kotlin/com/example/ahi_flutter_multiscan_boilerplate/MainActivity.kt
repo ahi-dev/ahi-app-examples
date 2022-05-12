@@ -96,7 +96,7 @@ class MainActivity : FlutterActivity() {
             flutterEngine.dartExecutor.binaryMessenger,
             CHANNEL
         ).setMethodCallHandler { call, result ->
-            var method = AHIMultiScanMethod.valueOf(call.method)
+            val method = AHIMultiScanMethod.valueOf(call.method)
             when (method) {
                 AHIMultiScanMethod.setupMultiScanSDK -> {
                     setupMultiScanSDK(
@@ -114,7 +114,7 @@ class MainActivity : FlutterActivity() {
                     areAHIResourcesAvailable(result = result)
                 }
                 AHIMultiScanMethod.downloadAHIResources -> {
-                    downloadAHIResources();
+                    downloadAHIResources()
                 }
                 AHIMultiScanMethod.checkAHIResourcesDownloadSize -> {
                     checkAHIResourcesDownloadSize(result = result)
@@ -177,8 +177,10 @@ class MainActivity : FlutterActivity() {
                 SdkResultCode.SUCCESS -> {
                     result.success(null)
                 }
-                SdkResultCode.ERROR -> {
-                    result.error(it.resultCode.toString(), it.message, null)
+                else -> {
+                    result.error(
+                        it.resultCode.toString(), it.message, null
+                    )
                 }
             }
         }
@@ -211,7 +213,11 @@ class MainActivity : FlutterActivity() {
         val claims = arguments["CLAIMS"] as? ArrayList<String> ?: run {
             val claimsArgs = arguments["CLAIMS"]!!
             val typeOfClaimsArgs = claimsArgs.javaClass
-            result.error("-2", "Missing user authorization details.", "Claims is not correct format: $claimsArgs and $typeOfClaimsArgs")
+            result.error(
+                "-2",
+                "Missing user authorization details.",
+                "Claims is not correct format: $claimsArgs and $typeOfClaimsArgs"
+            )
             return
         }
         val claimsArray: Array<String> = claims.toTypedArray()
@@ -222,8 +228,10 @@ class MainActivity : FlutterActivity() {
                 SdkResultCode.SUCCESS -> {
                     result.success(null)
                 }
-                SdkResultCode.ERROR -> {
-                    result.error(it.resultCode.toString(), it.message, null)
+                else -> {
+                    result.error(
+                        it.resultCode.toString(), it.message, null
+                    )
                 }
             }
         }
@@ -320,7 +328,7 @@ class MainActivity : FlutterActivity() {
                         scanResultsMap
                     )
                 }
-                SdkResultCode.ERROR -> {
+                else -> {
                     result.error(
                         it.resultCode.toString(), it.message, null
                     )
@@ -347,13 +355,11 @@ class MainActivity : FlutterActivity() {
         arguments: Any?,
         result: MethodChannel.Result
     ) {
-
         val userInput = getBodyScanUserInput(arguments)
         if (userInput == null) {
             result.error("-5", "Missing user body scan input details", null)
             return
         }
-        
         val pType = when (getPaymentType(arguments)) {
             "PAYG" -> MSPaymentType.PAYG
             "SUBSCRIBER" -> MSPaymentType.SUBS
@@ -376,7 +382,7 @@ class MainActivity : FlutterActivity() {
                         scanResultsMap
                     )
                 }
-                SdkResultCode.ERROR -> {
+                else -> {
                     result.error(
                         it.resultCode.toString(), it.message, null
                     )
@@ -432,7 +438,7 @@ class MainActivity : FlutterActivity() {
 
     /** Check if the user is authorized to use the MuiltScan service. */
     private fun getUserAuthorizedState(userId: Any?, result: MethodChannel.Result) {
-        val userID = userId as? String ?: null
+        val userID = userId as? String
         if (userID.isNullOrEmpty()) {
             result.error("-9", "Missing user ID", null)
             return
@@ -442,8 +448,10 @@ class MainActivity : FlutterActivity() {
                 SdkResultCode.SUCCESS -> {
                     result.success(it.result)
                 }
-                SdkResultCode.ERROR -> {
-                    result.error(it.resultCode.toString(), it.message, null)
+                else -> {
+                    result.error(
+                        it.resultCode.toString(), it.message, null
+                    )
                 }
             }
         }
@@ -458,8 +466,10 @@ class MainActivity : FlutterActivity() {
                 SdkResultCode.SUCCESS -> {
                     result.success(null)
                 }
-                SdkResultCode.ERROR -> {
-                    result.error(it.resultCode.toString(), it.message, null)
+                else -> {
+                    result.error(
+                        it.resultCode.toString(), it.message, null
+                    )
                 }
             }
         }
@@ -546,19 +556,18 @@ class MainActivity : FlutterActivity() {
 
     /** Body Scan user input converter */
     private fun userBodyInputConverter(userInputAvatarMap: HashMap<String, Any>): Map<String, Any?> {
-        val sex = when(userInputAvatarMap["sex"].toString()){
+        val sex = when (userInputAvatarMap["sex"].toString()) {
             "male" -> "M"
             else -> "F"
         }
-        
+
         // Convert the schema and feed to SDK
-        val newSchema = mapOf(
+        return mapOf(
             "TAG_ARG_GENDER" to sex,
             "TAG_ARG_HEIGHT_IN_CM" to userInputAvatarMap["cm_ent_height"],
             "TAG_ARG_WEIGHT_IN_KG" to userInputAvatarMap["kg_ent_weight"],
             "TAG_ARG_AGE" to userInputAvatarMap["yr_ent_age"]
         )
-        return newSchema
     }
 
     private fun scanResultsToMap(results: String?): Map<String, Any> {
@@ -566,7 +575,7 @@ class MainActivity : FlutterActivity() {
             return emptyMap<String, Any>()
         }
         val jsonObject = JSONObject("""${results}""")
-        var map = mutableMapOf<String, Any>()
+        val map = mutableMapOf<String, Any>()
         for (key in jsonObject.keys()) {
             map[key] = jsonObject[key]
         }
