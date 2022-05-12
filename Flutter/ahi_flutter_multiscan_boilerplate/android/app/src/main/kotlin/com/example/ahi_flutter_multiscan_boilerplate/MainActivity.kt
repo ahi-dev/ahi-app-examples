@@ -208,12 +208,15 @@ class MainActivity : FlutterActivity() {
             result.error("-2", "Missing user authorization details.", null)
             return
         }
-        val claims = arguments["CLAIMS"] as? Array<String> ?: run {
-            result.error("-2", "Missing user authorization details.", null)
+        val claims = arguments["CLAIMS"] as? ArrayList<String> ?: run {
+            val claimsArgs = arguments["CLAIMS"]!!
+            val typeOfClaimsArgs = claimsArgs.javaClass
+            result.error("-2", "Missing user authorization details.", "Claims is not correct format: $claimsArgs and $typeOfClaimsArgs")
             return
         }
+        val claimsArray: Array<String> = claims.toTypedArray()
         MultiScan.waitForResult(
-            MultiScan.shared().userAuthorize(userID, salt, claims)
+            MultiScan.shared().userAuthorize(userID, salt, claimsArray)
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
@@ -344,11 +347,14 @@ class MainActivity : FlutterActivity() {
         arguments: Any?,
         result: MethodChannel.Result
     ) {
-        val userInput = getFaceScanUserInput(arguments)
+
+        val userInput = getBodyScanUserInput(arguments)
+        Log.d(TAG, "startBodyScan: $userInput");
         if (userInput == null) {
             result.error("-5", "Missing user body scan input details", null)
             return
         }
+        
         val pType = when (getPaymentType(arguments)) {
             "PAYG" -> MSPaymentType.PAYG
             "SUBSCRIBER" -> MSPaymentType.SUBS
@@ -435,7 +441,7 @@ class MainActivity : FlutterActivity() {
         MultiScan.waitForResult(MultiScan.shared().userIsAuthorized(userID)) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
-                    result.success(null)
+                    result.success(it.result)
                 }
                 SdkResultCode.ERROR -> {
                     result.error(it.resultCode.toString(), it.message, null)
@@ -543,12 +549,17 @@ class MainActivity : FlutterActivity() {
 
     /** Body Scan user input converter */
     private fun userBodyInputConverter(userInputAvatarMap: HashMap<String, Any>): Map<String, Any?> {
+        val sex = when(userInputAvatarMap["sex"].toString()){
+            "male" -> "M"
+            else -> "F"
+        }
+        
         // Convert the schema and feed to SDK
-        val inputAvatarValues = userInputAvatarMap
         val newSchema = mapOf(
-            "TAG_ARG_GENDER" to inputAvatarValues["sex"],
-            "TAG_ARG_HEIGHT_IN_CM" to inputAvatarValues["height"],
-            "TAG_ARG_WEIGHT_IN_KG" to inputAvatarValues["weight"]
+            "TAG_ARG_GENDER" to sex,
+            "TAG_ARG_HEIGHT_IN_CM" to userInputAvatarMap["cm_ent_height"],
+            "TAG_ARG_WEIGHT_IN_KG" to userInputAvatarMap["kg_ent_weight"],
+            "TAG_ARG_AGE" to userInputAvatarMap["yr_ent_age"]
         )
         return newSchema
     }
