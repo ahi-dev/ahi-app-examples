@@ -23,11 +23,6 @@ import MyFiziqSDKCoreLite
 // The FaceScan SDK
 import MFZFaceScan
 
-
-// DEBUG - TODO
-// 1. ALWAYS GO WITH ERROR CASE FIRST
-// 2. Extract config tokens into react side and pass in as arguments
-
 @objc(MultiScanModule)
 class MultiScanModule: NSObject {
     // Start SDK init
@@ -66,7 +61,9 @@ extension MultiScanModule {
     }
 
     @objc
-    func authorizeUser(_ userID: String, salt aSalt:String, claims aClaims:[String],
+    func authorizeUser(_ userID: String,
+                       salt aSalt:String,
+                       claims aClaims:[String],
                        resolver resolve: @escaping RCTPromiseResolveBlock,
                        rejecter reject: @escaping RCTPromiseRejectBlock) {
         ahi.userAuthorize(forId: userID, withSalt: aSalt, withClaims: aClaims) { error in
@@ -119,6 +116,8 @@ extension MultiScanModule {
                 // Error code 4 is the code for the SDK interaction that cancels the scan.
                 if let err = error as? NSError {
                     reject("\(err.code)", err.localizedDescription, err)
+                } else {
+                    reject("-10", "Error performing face scan.", nil)
                 }
                 return
             }
@@ -135,7 +134,8 @@ extension MultiScanModule {
     }
 
     @objc
-    func startBodyScan(_ userInputs: [String: Any], paymentType msPaymentType: String,
+    func startBodyScan(_ userInputs: [String: Any],
+                       paymentType msPaymentType: String,
                        resolver resolve: @escaping RCTPromiseResolveBlock,
                        rejecter reject: @escaping RCTPromiseRejectBlock) {
         var pType = AHIMultiScanPaymentType.PAYG
@@ -151,9 +151,10 @@ extension MultiScanModule {
         ahi.initiateScan("body", paymentType: pType, withOptions: userInputs, from:vc) { scanTask, error in
             guard let task = scanTask,
                   error == nil else {
-                // Error code 4 is the code for the SDK interaction that cancels the scan.
                 if let err = error as? NSError {
                     reject("\(err.code)", err.localizedDescription, err)
+                } else {
+                    reject("-12", "Error performing body scan.", nil)
                 }
                 return
             }
@@ -170,7 +171,7 @@ extension MultiScanModule {
     }
 
     @objc
-    func getBodyScanExtras(_ bodyScanResult:[String: Any],
+    func getBodyScanExtras(_ bodyScanResult: [String: Any],
                            resolver resolve: @escaping RCTPromiseResolveBlock,
                            rejecter reject: @escaping RCTPromiseRejectBlock){
         ahi.getExtra(bodyScanResult, options: nil) { error, bodyExtras in
@@ -210,7 +211,7 @@ extension MultiScanModule {
     }
 
     @objc
-    func getUserAuthorizedState(_ userId:Any?,
+    func getUserAuthorizedState(_ userId: Any?,
                                 resolver resolve: @escaping RCTPromiseResolveBlock,
                                 rejecter reject: @escaping RCTPromiseRejectBlock){
         guard let userId = userId as? String else {
