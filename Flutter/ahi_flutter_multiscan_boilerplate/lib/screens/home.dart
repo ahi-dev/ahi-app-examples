@@ -37,7 +37,7 @@ class _HomeState extends State<Home> {
   Map<String, dynamic> ahiConfigTokens = {
     "USER_ID": "AHI_TEST_USER",
     "SALT": "user",
-    "CLAIMS": ['test'],
+    "CLAIMS": ["test"],
   };
   static const ahiMultiScanToken = "";
 
@@ -177,7 +177,8 @@ class _HomeState extends State<Home> {
     }
   }
 
-  void handleFaceScanResults(dynamic result) {
+  void handleFaceScanResults(dynamic data) {
+    Map<String, dynamic> result = Map.from(data);
     if (result is Map<String, dynamic>) {
       // Handle body scan results
       print("AHI: SCAN RESULTS: $result");
@@ -190,7 +191,7 @@ class _HomeState extends State<Home> {
   void startBodyScan() async {
     // All required body scan options
     // Payment type options are either PAYG or SUBSCRIBER.
-    Map<String, dynamic> options = {"enum_ent_sex": "male", "cm_ent_height": 180, "kg_ent_weight": 85, "paymentType": "PAYG"};
+    Map<String, dynamic> options = {"enum_ent_sex": "male", "yr_ent_age":30,"cm_ent_height": 180, "kg_ent_weight": 85, "paymentType": "PAYG"};
     if (!areBodyScanConfigOptionsValid(options)) {
       print("AHI ERROR: Body Scan inputs invalid.");
       return;
@@ -207,7 +208,8 @@ class _HomeState extends State<Home> {
     }
   }
 
-  void handleBodyScanResults(dynamic result) {
+  void handleBodyScanResults(dynamic data) {
+    Map<String, dynamic> result = Map.from(data);
     if (result is Map<String, dynamic>) {
       // Update the historical results
       setMultiScanPersistenceDelegate(result);
