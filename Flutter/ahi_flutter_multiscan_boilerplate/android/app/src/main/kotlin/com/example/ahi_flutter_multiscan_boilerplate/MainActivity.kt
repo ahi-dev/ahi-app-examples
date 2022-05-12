@@ -349,7 +349,6 @@ class MainActivity : FlutterActivity() {
     ) {
 
         val userInput = getBodyScanUserInput(arguments)
-        Log.d(TAG, "startBodyScan: $userInput");
         if (userInput == null) {
             result.error("-5", "Missing user body scan input details", null)
             return
@@ -533,18 +532,16 @@ class MainActivity : FlutterActivity() {
     /** Face Scan user input converter */
     private fun userFaceInputConverter(userInputAvatarMap: HashMap<String, Any>): Map<String, Any?> {
         // Convert the schema and feed to SDK
-        val inputAvatarValues = userInputAvatarMap
-        val newSchema = mapOf(
-            "TAG_ARG_GENDER" to inputAvatarValues["sex"],
-            "TAG_ARG_SMOKER" to inputAvatarValues["smoker"],
-            "TAG_ARG_DIABETIC" to inputAvatarValues["diabetic"],
-            "TAG_ARG_HYPERTENSION" to inputAvatarValues["hypertension"],
-            "TAG_ARG_BPMEDS" to inputAvatarValues["bpmeds"],
-            "TAG_ARG_HEIGHT_IN_CM" to inputAvatarValues["height"],
-            "TAG_ARG_WEIGHT_IN_KG" to inputAvatarValues["weight"],
-            "TAG_ARG_AGE" to inputAvatarValues["age"]
+        return mapOf(
+            "TAG_ARG_GENDER" to userInputAvatarMap["enum_ent_sex"],
+            "TAG_ARG_SMOKER" to userInputAvatarMap["bool_ent_smoker"],
+            "TAG_ARG_DIABETIC" to userInputAvatarMap["enum_ent_diabetic"],
+            "TAG_ARG_HYPERTENSION" to userInputAvatarMap["bool_ent_hypertension"],
+            "TAG_ARG_BPMEDS" to userInputAvatarMap["bool_ent_bloodPressureMedication"],
+            "TAG_ARG_HEIGHT_IN_CM" to userInputAvatarMap["cm_ent_height"],
+            "TAG_ARG_WEIGHT_IN_KG" to userInputAvatarMap["kg_ent_weight"],
+            "TAG_ARG_AGE" to userInputAvatarMap["yr_ent_age"]
         )
-        return newSchema
     }
 
     /** Body Scan user input converter */
