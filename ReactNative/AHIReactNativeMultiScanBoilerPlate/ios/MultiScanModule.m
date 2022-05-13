@@ -83,7 +83,7 @@ RCT_EXTERN_METHOD(
                   rejecter:(RCTPromiseRejectBlock)reject
                   )
 RCT_EXTERN_METHOD(
-                  setMultiScanPersistenceDelegate
+                  setMultiScanPersistenceDelegate:(id)results
                   )
 
 

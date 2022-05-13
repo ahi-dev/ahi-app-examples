@@ -57,6 +57,6 @@ interface MultiScanInterface {
   // Released the actively registered SDK session.
   releaseMultiScanSDK(): Promise<void>;
   // Use the AHIMultiScan persistence delegate and set historical body scan results
-  setMultiScanPersistenceDelegate(result: Array<any>): void;
+  setMultiScanPersistenceDelegate(result: any): void;
 }
 export default MultiScanModule as MultiScanInterface;

@@ -50,10 +50,10 @@ class MultiScanModule(private val context: ReactApplicationContext) :
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
                     MultiScan.shared().registerDelegate(AHIPersistenceDelegate)
-                    promise.resolve(it.resultCode.toString())
+                    promise.resolve("")
                 }
-                SdkResultCode.ERROR -> {
-                    promise.reject(it.resultCode.toString(), it.message)
+                else -> {
+                    handleFailedResult(it, promise)
                 }
             }
         }
@@ -71,10 +71,10 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         MultiScan.waitForResult(MultiScan.shared().userAuthorize(userID, salt, claimsArray)) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
-                    promise.resolve(null)
+                    promise.resolve("")
                 }
-                SdkResultCode.ERROR -> {
-                    promise.reject(it.resultCode.toString(), it.message)
+                else -> {
+                    handleFailedResult(it, promise)
                 }
             }
         }
@@ -83,7 +83,9 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     /** Check if the AHI resources are downloaded. */
     @ReactMethod
     fun areAHIResourcesAvailable(promise: Promise) {
-        MultiScan.waitForResult(MultiScan.shared().areResourcesDownloaded()) { promise.resolve(it) }
+        MultiScan.waitForResult(MultiScan.shared().areResourcesDownloaded()) {
+            promise.resolve(it)
+        }
     }
 
     /**
@@ -99,7 +101,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     @ReactMethod
     fun checkAHIResourcesDownloadSize(promise: Promise) {
         MultiScan.waitForResult(MultiScan.shared().totalEstimatedDownloadSizeInBytes()) {
-            promise.resolve(it)
+            promise.resolve(it.toDouble())
         }
     }
 
@@ -115,15 +117,15 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         }
         val faceScanUserInput = userFaceInputConverter(userInput)
         MultiScan.waitForResult(
-            MultiScan.shared().initiateScan(MSScanType.FACE, pType, faceScanUserInput)
+                MultiScan.shared().initiateScan(MSScanType.FACE, pType, faceScanUserInput)
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
                     val result = scanResultsToMap(it.result)
                     promise.resolve(result)
                 }
-                SdkResultCode.ERROR -> {
-                    promise.reject(it.resultCode.toString(), it.message)
+                else -> {
+                    handleFailedResult(it, promise)
                 }
             }
         }
@@ -141,15 +143,15 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         }
         val bodyScanUserInput = userBodyInputConverter(userInput)
         MultiScan.waitForResult(
-            MultiScan.shared().initiateScan(MSScanType.BODY, pType, bodyScanUserInput)
+                MultiScan.shared().initiateScan(MSScanType.BODY, pType, bodyScanUserInput)
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
                     val resultsMap = scanResultsToMap(it.result)
                     promise.resolve(resultsMap)
                 }
-                SdkResultCode.ERROR -> {
-                    promise.reject(it.resultCode.toString(), it.message)
+                else -> {
+                    handleFailedResult(it, promise)
                 }
             }
         }
@@ -165,7 +167,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
             promise.reject("-8", "Missing valid body scan result.")
             return
         }
-        val resultID = bodyScanResult["id"] as? String ?: run {
+        val resultID = bodyScanResult.toHashMap()["id"] as? String ?: run {
             promise.reject("-8", "Missing valid body scan result.")
             return
         }
@@ -175,10 +177,10 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         /** Write the mesh to a directory */
         val objFilePath = File(context.filesDir, "$resultID.obj")
         MultiScan.waitForResult(MultiScan.shared().getScanExtra(MSScanType.BODY, parameters)) {
-            var bsExtras = mutableMapOf<String, String>()
+            var bsExtras = WritableNativeMap()
             when (saveAvatarToFile(it, objFilePath)) {
-                true -> bsExtras["meshURL"] = objFilePath.path
-                false -> bsExtras["meshURL"] = ""
+                true -> bsExtras.putString("meshURL", objFilePath.path)
+                false -> bsExtras.putString("meshURL", "")
             }
             promise.resolve(bsExtras)
         }
@@ -193,10 +195,13 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     /** Check your AHI MultiScan organisation details. */
     @ReactMethod
     fun getMultiScanDetails(promise: Promise) {
-        promise.resolve(null)
+        promise.resolve(WritableNativeMap())
     }
 
-    /** Check if the userr is authorized to use the MuiltScan service. */
+    /** Check if the user is authorized to use the MultiScan service.
+     *
+     * The expected result for <= v21.1.3 is an error called "NO_OP".
+     * */
     @ReactMethod
     fun getUserAuthorizedState(userID: String?, promise: Promise) {
         if (userID.isNullOrEmpty()) {
@@ -208,8 +213,12 @@ class MultiScanModule(private val context: ReactApplicationContext) :
                 SdkResultCode.SUCCESS -> {
                     promise.resolve(it.result)
                 }
-                SdkResultCode.ERROR -> {
-                    promise.reject(it.resultCode.toString(), it.message)
+                else -> {
+                    if (it.resultCode == SdkResultCode.NO_OP) {
+                        promise.reject("-15", "AHI MultiScan SDK functionality not implemented.")
+                    } else {
+                        handleFailedResult(it, promise)
+                    }
                 }
             }
         }
@@ -221,10 +230,14 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         MultiScan.waitForResult(MultiScan.shared().userDeauthorize()) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
-                    prmoise.resolve(null)
+                    promise.resolve("")
                 }
-                SdkResultCode.ERROR -> {
-                    prmoise.reject(it.resultCode.toString(), it.message)
+                else -> {
+                    if (it.resultCode == SdkResultCode.NO_OP) {
+                        promise.reject("-15", "AHI MultiScan SDK functionality not implemented.")
+                    } else {
+                        handleFailedResult(it, promise)
+                    }
                 }
             }
         }
@@ -237,7 +250,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      */
     @ReactMethod
     fun releaseMultiScanSDK(promise: Promise) {
-        promise.resolve(null)
+        promise.resolve("")
     }
 
     /**
@@ -247,7 +260,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      */
     @ReactMethod
     fun setMultiScanPersistenceDelegate(results: ReadableArray) {
-        AHIPersistenceDelegate.let {
+        AHIPersistenceDelegate.let { it ->
             it.bodyScanResults = results.toArrayList().map { it.toString() }.toMutableList()
             MultiScan.shared().registerDelegate(it)
         }
@@ -351,15 +364,24 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         return convertedSchema
     }
 
-    private fun scanResultsToMap(results: String?): Map<String, Any> {
-        if (results == null) {
-            return emptyMap<String, Any>()
+    private fun scanResultsToMap(result: String?): WritableNativeMap {
+        if (result == null || result!!.isEmpty()) {
+            return WritableNativeMap()
         }
-        val jsonObject = JSONObject("""${results}""")
-        var map = mutableMapOf<String, Any>()
-        for (key in jsonObject.keys()) {
-            map[key] = jsonObject[key]
+        val jsonMap = JSONObject("${result}")
+        var resultsMap = WritableNativeMap()
+        for (key in jsonMap.keys()) {
+            resultsMap.putString(key, jsonMap[key].toString())
         }
-        return map
+        return resultsMap
+    }
+
+    /** There is no guarantee that the SDK will return a valid result code or message.
+     * This function handles that scenario and rejects the promise.
+     */
+    private fun handleFailedResult(sdkResult: SdkResultParcelable, promise: Promise) {
+        val message = sdkResult.message ?: "Unknown response."
+        val errorCode = sdkResult.resultCode.toString()
+        promise.reject(errorCode, message)
     }
 }

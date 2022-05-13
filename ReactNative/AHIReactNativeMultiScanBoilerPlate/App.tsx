@@ -43,28 +43,50 @@ enum MSPaymentType {
 }
 
 const App: () => ReactNode = () => {
-  const [isSetup, setIsSetup] = useState(false);
-  const [downloadingButtonVisibility, setdownloadingButtonVisibility] =
-    useState(true);
   const [resourcesDownloaded, setResourcesDownloaded] = useState(false);
   const [resourcesDownloading, setResourcesDownloading] = useState(false);
+  const [isSDKSetup, setIsSDKSetup] = useState(false);
+
+  function didTapSetup() {
+    setupMultiScanSDK();
+  }
+
+  function didTapStartFaceScan() {
+    startFaceScan();
+  }
+
+  function didTapStartBodyScan() {
+    startBodyScan();
+  }
+
+  function didTapCheckDownloadSize() {
+    checkAHIResourcesDownloadSize();
+  }
+
+  function didTapDownloadResources() {
+    downloadAHIResources();
+    areAHIResourcesAvailable();
+    checkAHIResourcesDownloadSize();
+  }
 
   /// Setup the MultiScan SDK
   ///
   /// This must happen before requesting a scan.
   /// We recommend doing this on successfuil load of your application.
-  const setupSDK = async () => {
-      await MultiScanModule.setupMultiScanSDK(AHI_MULTI_SCAN_TOKEN).then(
-        result => {
-          if (result !== null) {
-            return;
-          }
-          authorizeUser();
-        },
-      ).catch((error) {
-      console.log('AHI: Error setting up: ' + error);
-      console.log('AHI: Confirm you have a valid token.');
-    });
+  const setupMultiScanSDK = async () => {
+    await MultiScanModule.setupMultiScanSDK(AHI_MULTI_SCAN_TOKEN)
+      .then((result: any) => {
+        console.log(result);
+        if (result !== '') {
+          return;
+        }
+        setIsSDKSetup(true);
+        authorizeUser();
+      })
+      .catch(error => {
+        console.log('AHI: Error setting up: ' + error);
+        console.log('AHI: Confirm you have a valid token.');
+      });
   };
 
   // authorize user
@@ -73,37 +95,35 @@ const App: () => ReactNode = () => {
       AHI_TEST_USER_ID,
       AHI_TEST_USER_SALT,
       AHI_TEST_USER_CLAIMS,
-    ).then((auth) => {
-      if (auth !== null) {
-        console.log('AHI: Auth Error: ' + auth);
+    )
+      .then(auth => {
+        if (auth !== '') {
+          console.log('AHI: Auth Error: ' + auth);
+          console.log(
+            'AHI: Confirm you are using a valid user id, salt and claims.',
+          );
+          return;
+        }
+        console.log('AHI: Setup user successfully');
+      })
+      .catch(error => {
+        console.log('AHI: Auth Error: ' + error);
         console.log(
           'AHI: Confirm you are using a valid user id, salt and claims.',
         );
-        return;
-      }
-      setIsSetup(true);
-      console.log('AHI: Setup user successfully');
-    }).catch((error) => {
-      console.log('AHI: Auth Error: ' + error);
-      console.log(
-      'AHI: Confirm you are using a valid user id, salt and claims.',
-      );
-    });
+      });
   };
 
-   // download resources
-  const didTapDownloadResources = async () => {
+  // download resources
+  const areAHIResourcesAvailable = async () => {
     MultiScanModule.areAHIResourcesAvailable().then((areAvailable: boolean) => {
       if (!areAvailable) {
+        setResourcesDownloading(true);
         console.log('AHI INFO: Resources are not downloaded');
         // start download.
-        MultiScanModule.downloadAHIResources();
-        MultiScanModule.checkAHIResourcesDownloadSize().then((size: any) => {
-          console.log(
-            'AHI INFO: Size of download is ' + Number(size) / 1024 / 1024,
-          );
-        });
-        setTimeout(() => didTapDownloadResources(), 30000);
+        downloadAHIResources();
+        checkAHIResourcesDownloadSize();
+        setTimeout(() => areAHIResourcesAvailable(), 30000);
       } else {
         console.log('AHI: Resources ready');
         // control view state
@@ -112,8 +132,24 @@ const App: () => ReactNode = () => {
     });
   };
 
+  /// Download scan resources.
+  ///
+  /// We recomment only calling this function once per session to prevent duplicate background resource calls.
+  function downloadAHIResources() {
+    MultiScanModule.downloadAHIResources();
+  }
+
+  /// Check the size of the AHI resources that require downloading.
+  function checkAHIResourcesDownloadSize() {
+    MultiScanModule.checkAHIResourcesDownloadSize().then((size: any) => {
+      console.log(
+        'AHI INFO: Size of download is ' + Number(size) / 1024 / 1024,
+      );
+    });
+  }
+
   // start facescan
-  const didTapStartFaceScan = async () => {
+  const startFaceScan = async () => {
     let userFaceScanInput = {
       enum_ent_sex: 'male',
       cm_ent_height: 180,
@@ -138,7 +174,7 @@ const App: () => ReactNode = () => {
   };
 
   // start bodyscan
-  const didTapStartBodyScan = () => {
+  const startBodyScan = () => {
     let userBodyScanInput = {
       enum_ent_sex: 'male',
       cm_ent_height: 180,
@@ -149,23 +185,139 @@ const App: () => ReactNode = () => {
     if (!areBodyScanConfigOptionsValid(objectToMap(userBodyScanInput))) {
       console.log('AHI ERROR: Body Scan inputs invalid.');
     }
-    MultiScanModule.startBodyScan(userBodyScanInput, MSPaymentType.PAYG).then(
-      (bodyScanResults: Map<String, any>) => {
+    MultiScanModule.startBodyScan(userBodyScanInput, MSPaymentType.PAYG)
+      .then((bodyScanResults: Map<String, any>) => {
         console.log('AHI: SCAN RESULTS: ' + JSON.stringify(bodyScanResults));
-        var result = JSON.parse(JSON.stringify(bodyScanResults));
-        if (areBodyScanSmoothingResultsValid(result)) {
-          MultiScanModule.getBodyScanExtras(bodyScanResults).then(
-            (path: any) => {
-              console.log('AHI 3D Mesh : ' + path['meshURL']);
-              console.log('AHI 3D Mesh : ' + JSON.stringify(path));
-            },
-          );
-        }
-      },
-    ).catch(error => {
-      console.log('AHI ERROR: Body Scan error: ' + error);
-    });
+        getBodyScanExtras(bodyScanResults);
+      })
+      .catch(error => {
+        console.log('AHI ERROR: Body Scan error: ' + error);
+      });
   };
+
+  /// Use this function to fetch the 3D avatar mesh.
+  ///
+  /// The 3D mesh can be created and returned at any time.
+  /// We recommend doing this on successful completion of a body scan with the results.
+  function getBodyScanExtras(bodyScanResults: Map<String, any>) {
+    if (bodyScanResults == null) {
+      console.log('AHI ERROR: Body scan results must not be null.');
+      return;
+    }
+    var results = JSON.parse(JSON.stringify(bodyScanResults));
+    if (!areBodyScanSmoothingResultsValid(bodyScanResults)) {
+      console.log('AHI ERROR: Body scan results not valid for extras.');
+      return;
+    }
+    MultiScanModule.getBodyScanExtras(results).then((path: any) => {
+      console.log('AHI 3D Mesh : ' + path['meshURL']);
+      console.log('AHI 3D Mesh : ' + JSON.stringify(path));
+    });
+  }
+
+  // Check if MultiScan is on or offline.
+  function getMultiScanStatus() {
+    MultiScanModule.getMultiScanStatus().then(status =>
+      console.log('AHI INFO: Status: ', status),
+    );
+  }
+
+  /// Check your AHI MultiScan organisation  details.
+  function getMultiScanDetails() {
+    MultiScanModule.getMultiScanDetails()
+      .then(details => {
+        console.log('AHI INFO: MultiScan details: ', details);
+      })
+      .catch(error => {
+        console.log('AHI ERROR: getMultiScanDetails ', error);
+      });
+  }
+
+  /// Check if the user is authorized to use the MuiltScan service.
+  function getUserAuthorizedState() {
+    MultiScanModule.getUserAuthorizedState(AHI_TEST_USER_ID)
+      .then(isAuthorized => {
+        console.log(
+          'AHI INFO: User is ',
+          isAuthorized ? 'authorized' : 'not authorized',
+        );
+      })
+      .catch(error => {
+        console.log('AHI ERROR: getUserAuthorizedState ', error);
+      });
+  }
+
+  /// Deauthorize the user.
+  function deauthorizeUser() {
+    MultiScanModule.deauthorizeUser()
+      .then(deAuthorizeResult => {
+        if (deAuthorizeResult !== '') {
+          console.log(
+            'AHI ERROR: Failed to deuathorize user with error: ',
+            deAuthorizeResult,
+          );
+        } else {
+          console.log('AHI INFO: User is deauthorized.');
+        }
+      })
+      .catch(error => {
+        console.log('AHI ERROR: deAuthorizeUser ', error);
+      });
+  }
+  /// Release the MultiScan SDK session.
+  ///
+  /// If you  use this, you will need to call setupSDK again.
+  function releaseMultiScanSDK() {
+    MultiScanModule.releaseMultiScanSDK().then(releaseSDKResult => {
+      if (releaseSDKResult !== '') {
+        console.log(
+          'AHI ERROR: Failed to release SDK with error: ',
+          releaseSDKResult,
+        );
+        return;
+      }
+      console.log('AHI INFO: SDK has been released successfully.');
+    });
+  }
+
+  // If you choose to use this, you will obtain two sets of results - one containing the "raw" output and another set containing "adj" output.
+  // "adj" means adjusted and is used to help provide historical results as a reference for the newest result to provide results tailored to the user.
+  // We recommend using this for individual users results; avoid using this if the app is a single user ID with multiple users results.
+  // More info found here: https://docs.advancedhumanimaging.io/MultiScan%20SDK/Data/
+  function setMultiScanPersistenceDelegate(scanResult?: any) {
+    // / Each result requires:
+    // - _ent_ values
+    // - _raw_ values
+    // - id value
+    // - date value
+    // Your token may only provide you access to a smaller subset of results.
+    // The persistence delegate will still work with your results provided you adhere to the validation check.
+    var exampleResult = {
+      enum_ent_sex: 'male',
+      cm_ent_height: 180,
+      kg_ent_weight: 85,
+      cm_raw_chest: 104.5213096618652,
+      cm_raw_hips: 100.4377449035645,
+      cm_raw_inseam: 82.3893051147461,
+      cm_raw_thigh: 60.23823547363281,
+      cm_raw_waist: 84.81353988647462,
+      kg_raw_weightPredict: 82.55660247802734,
+      ml_raw_fitness: 0.8,
+      percent_raw_bodyFat: 17.3342390826027,
+      id: 'ee2367211649040093',
+      date: 1649040093,
+    };
+    var exampleResults = [exampleResult];
+    for (var result of exampleResults) {
+      if (!areBodyScanSmoothingResultsValid(result)) {
+        console.log(
+          'AHI WARN: Results are not valid for the persistence delegate. Please compare your results against the schema for more information.',
+        );
+        return;
+      }
+    }
+    MultiScanModule.setMultiScanPersistenceDelegate(exampleResults);
+  }
 
   /**
    * All MultiScan scan configs require this information.
@@ -180,7 +332,14 @@ const App: () => ReactNode = () => {
     var height = inputValues.get('cm_ent_height');
     var weight = inputValues.get('kg_ent_weight');
     var numbers = new AHINumbers();
-    return (sex != null && height != null && numbers.isValidNumber(height) && weight != null && numbers.isValidNumber(weight) && ['male', 'female'].includes(sex));
+    return (
+      sex != null &&
+      height != null &&
+      numbers.isValidNumber(height) &&
+      weight != null &&
+      numbers.isValidNumber(weight) &&
+      ['male', 'female'].includes(sex)
+    );
   }
 
   /**
@@ -209,7 +368,7 @@ const App: () => ReactNode = () => {
       blood != null &&
       height != null &&
       weight != null &&
-      age != null && 
+      age != null &&
       height >= 25 &&
       height <= 300 &&
       weight >= 25 &&
@@ -231,17 +390,19 @@ const App: () => ReactNode = () => {
     var sex = inputValues.get('enum_ent_sex');
     var height = inputValues.get('cm_ent_height');
     var weight = inputValues.get('kg_ent_weight');
-    return (sex != null &&
+    return (
+      sex != null &&
       height != null &&
       weight != null &&
       height >= 50 &&
       height <= 255 &&
       weight >= 16 &&
-      weight <= 300);
+      weight <= 300
+    );
   }
 
   /** Confirm results have correct set of keys. */
-  function areBodyScanSmoothingResultsValid(result: Map<string, any>): boolean {
+  function areBodyScanSmoothingResultsValid(result: Object): boolean {
     // Your token may only provide you access to a smaller subset of results.
     // You should modify this list based on your available config options.
     var sdkResultSchema = [
@@ -259,17 +420,15 @@ const App: () => ReactNode = () => {
       'date',
     ];
     var isValid = true;
-    // Iterate over results
-    for (let i = 0; i < sdkResultSchema.length; i++) {
+    for (var key of sdkResultSchema) {
       // Check if keys in result contains the required keys.
-      if (!(sdkResultSchema[i] in result)) {
+      if (!result.hasOwnProperty(key)) {
         isValid = false;
       }
     }
     return isValid;
   }
 
-  const map = new Map();
   const objectToMap = (scanResult: any) => {
     const keys = Object.keys(scanResult);
     const map = new Map();
@@ -283,34 +442,35 @@ const App: () => ReactNode = () => {
     <SafeAreaView>
       <ScrollView>
         <View>
-          {isSetup ? null : (
-            <TouchableOpacity onPress={setupSDK} style={styles.button}>
-              <Text style={styles.text}>Setup SDK</Text>
-            </TouchableOpacity>
+          {!isSDKSetup ? (
+            <DefaultButton action={didTapSetup} buttonText={'Setup SDK'} />
+          ) : (
+            <>
+              <DefaultButton
+                action={didTapStartFaceScan}
+                buttonText={'Start FaceScan'}
+              />
+              {resourcesDownloaded ? (
+                <>
+                  <DefaultButton
+                    action={didTapStartBodyScan}
+                    buttonText={'Start BodyScan'}
+                  />
+                  <DefaultButton
+                    action={authorizeUser}
+                    buttonText={'authorizeUser'}
+                  />
+                </>
+              ) : (
+                <Pressable disabled={resourcesDownloading}>
+                  <DefaultButton
+                    action={didTapDownloadResources}
+                    buttonText={'Download Resources'}
+                  />
+                </Pressable>
+              )}
+            </>
           )}
-          {isSetup ? (
-            <TouchableOpacity
-              onPress={didTapStartFaceScan}
-              style={styles.button}>
-              <Text style={styles.text}>Start Facescan</Text>
-            </TouchableOpacity>
-          ) : null}
-          {isSetup && !resourcesDownloaded ? (
-            <Pressable disabled={false}>
-              <TouchableOpacity
-                onPress={didTapDownloadResources}
-                style={styles.button}>
-                <Text style={styles.text}>Download Resources</Text>
-              </TouchableOpacity>
-            </Pressable>
-          ) : null}
-          {resourcesDownloaded ? (
-            <TouchableOpacity
-              onPress={didTapStartBodyScan}
-              style={styles.button}>
-              <Text style={styles.text}>Start BodyScan</Text>
-            </TouchableOpacity>
-          ) : null}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -333,9 +493,10 @@ const styles = StyleSheet.create({
 });
 
 export default App;
-const SDKButton = ({callbackFunction, buttonText}: any) => {
+
+const DefaultButton = ({action, buttonText}: any) => {
   return (
-    <TouchableOpacity onPress={callbackFunction} style={styles.button}>
+    <TouchableOpacity onPress={action} style={styles.button}>
       <Text style={styles.text}>{buttonText}</Text>
     </TouchableOpacity>
   );
@@ -347,10 +508,10 @@ export class AHINumbers {
       return (
         value !== null &&
         value !== undefined &&
-        typeof value === "number" &&
+        typeof value === 'number' &&
         minimumValue > 0
       );
     }
-    return value !== null && value !== undefined && typeof value === "number";
+    return value !== null && value !== undefined && typeof value === 'number';
   };
 }
