@@ -434,8 +434,9 @@ class _HomeState extends State<Home> {
 }
 
 Widget defaultButton(String title, Function action) {
-  return SizedBox(
+  return Container(
     width: double.infinity,
+    padding: const EdgeInsets.only(top: 5),
     height: 55.0,
     child: TextButton(
       child: Text(
