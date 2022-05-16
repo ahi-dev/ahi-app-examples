@@ -20,43 +20,43 @@ const {MultiScanModule} = NativeModules;
 
 /** Multi Scan SDK */
 interface MultiScanInterface {
-  // Requires a token String to be provided as an argument.
+  /** Requires a token String to be provided as an argument. */
   setupMultiScanSDK(token: string): Promise<string>;
-  // Requires a Map object to be passed in containing 3 arguments.
+  /** Requires a Map object to be passed in containing 3 arguments. */
   authorizeUser(
     userID: string,
     salt: string,
     claims: string[],
   ): Promise<string>;
-  // Will return a boolean.
+  /** Will return a boolean. */
   areAHIResourcesAvailable(): Promise<boolean>;
-  // A void function that will invoke the download of remote resources.
+  /** A void function that will invoke the download of remote resources. */
   downloadAHIResources(): void;
-  // Will return an integer for the bytes size.
+  /** Will return an integer for the bytes size. */
   checkAHIResourcesDownloadSize(): Promise<string>;
-  // Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG").
+  /** Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG"). */
   startFaceScan(
     userInput: Object,
     paymentType: string,
   ): Promise<Map<String, any>>;
-  // Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG").
+  /** Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG"). */
   startBodyScan(
     userInput: Object,
     paymentType: string,
   ): Promise<Map<String, any>>;
-  // Requires a map object of the body scan results and returns a Map object.
+  /** Requires a map object of the body scan results and returns a Map object. */
   getBodyScanExtras(scanResults: Map<String, any>): Promise<Map<String, any>>;
-  // Returns the SDK status.
+  /** Returns the SDK status. */
   getMultiScanStatus(): Promise<string>;
-  // Returns a Map containing the SDK details.
+  /** Returns a Map containing the SDK details. */
   getMultiScanDetails(): Promise<Map<string, any>>;
-  // Returns the user authorization status of the SDK.
+  /** Returns the user authorization status of the SDK. */
   getUserAuthorizedState(userID: string): Promise<string>;
-  // Will deuathorize the user from the SDK.
+  /** Will deuathorize the user from the SDK. */
   deauthorizeUser(): Promise<string>;
-  // Released the actively registered SDK session.
-  releaseMultiScanSDK(): Promise<void>;
-  // Use the AHIMultiScan persistence delegate and set historical body scan results
+  /** Released the actively registered SDK session. */
+  releaseMultiScanSDK(): Promise<string>;
+  /** Use the AHIMultiScan persistence delegate and set historical body scan results */
   setMultiScanPersistenceDelegate(result: any): void;
 }
 export default MultiScanModule as MultiScanInterface;

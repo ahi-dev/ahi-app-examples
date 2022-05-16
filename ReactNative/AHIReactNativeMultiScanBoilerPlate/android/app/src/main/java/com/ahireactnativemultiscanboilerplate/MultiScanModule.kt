@@ -66,7 +66,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      */
     @ReactMethod
     fun authorizeUser(userID: String, salt: String, claims: ReadableArray, promise: Promise) {
-        // Convert claims to an Array<String>
+        /* Convert claims to an Array<String> */
         val claimsArray: Array<String> = claims.toArrayList().map { it.toString() }.toTypedArray()
         MultiScan.waitForResult(MultiScan.shared().userAuthorize(userID, salt, claimsArray)) {
             when (it.resultCode) {
@@ -174,7 +174,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         val parameters: MutableMap<String, Any> = HashMap()
         parameters["operation"] = MultiScanOperation.BodyGetMeshObj.name
         parameters["id"] = resultID
-        /** Write the mesh to a directory */
+        /* Write the mesh to a directory */
         val objFilePath = File(context.filesDir, "$resultID.obj")
         MultiScan.waitForResult(MultiScan.shared().getScanExtra(MSScanType.BODY, parameters)) {
             var bsExtras = WritableNativeMap()
@@ -314,7 +314,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      * This function converts the AHI Face Scan Input Schema to the AHI FaceScan SDK input schema and returns a map.
      */
     private fun userFaceInputConverter(userScanInputs: ReadableMap): Map<String, Any?> {
-        // Convert the input and feed to SDK
+        /* Convert the input and feed to SDK */
         val userScanInputValues = userScanInputs.toHashMap()
         val sex = when (userScanInputValues["enum_ent_sex"]) {
             "male" -> "M"
@@ -349,7 +349,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      * This function converts the AHI Body Scan Input Schema to the AHI FaceScan SDK input schema and returns a map.
      */
     private fun userBodyInputConverter(userScanInputs: ReadableMap): Map<String, Any?> {
-        // Convert the input and feed to SDK
+        /* Convert the input and feed to SDK */
         val userScanInputValues = userScanInputs.toHashMap()
         val sex = when (userScanInputValues["enum_ent_sex"]) {
             "male" -> "M"

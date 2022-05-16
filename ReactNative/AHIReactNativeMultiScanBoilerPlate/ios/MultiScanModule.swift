@@ -62,8 +62,8 @@ extension MultiScanModule {
 
     @objc
     func authorizeUser(_ userID: String,
-                       salt aSalt:String,
-                       claims aClaims:[String],
+                       salt aSalt: String,
+                       claims aClaims: [String],
                        resolver resolve: @escaping RCTPromiseResolveBlock,
                        rejecter reject: @escaping RCTPromiseRejectBlock) {
         var hasReturned = false
@@ -83,6 +83,7 @@ extension MultiScanModule {
     @objc
     func areAHIResourcesAvailable(_ resolve: @escaping RCTPromiseResolveBlock,
                                   rejecter reject: @escaping RCTPromiseRejectBlock){
+        // This is a temporary solution to prevent multiple callbacks being invoked on null pointer promise and resolve blocks. 
         var hasReturned = false
         ahi.areResourcesDownloaded{ success in
             if hasReturned {
@@ -139,7 +140,7 @@ extension MultiScanModule {
                         resolve("")
                     }
                     // Handle failure.
-                    return ""
+                    return nil
                 })
             }
         }
@@ -156,7 +157,7 @@ extension MultiScanModule {
         } else if msPaymentType == "SUBSCRIBER" {
             pType = AHIMultiScanPaymentType.subscriber
         } else {
-            reject("-6", "Missing user face scan payment type.", "" as? Error)
+            reject("-6", "Missing user body scan payment type.", "" as? Error)
             return
         }
         DispatchQueue.main.async {
@@ -178,7 +179,7 @@ extension MultiScanModule {
                         resolve("")
                     }
                     // Handle failure.
-                    return ""
+                    return nil
                 })
             }
         }

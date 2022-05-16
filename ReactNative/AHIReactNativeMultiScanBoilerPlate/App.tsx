@@ -28,15 +28,15 @@ import {
   View,
 } from 'react-native';
 
-/// The required tokens for the MultiScan Setup and Authorization.
+/* The required tokens for the MultiScan Setup and Authorization. */
 const AHI_MULTI_SCAN_TOKEN = '';
-/// Your user id. Hardcode a valid user id for testing purposes.
+/* Your user id. Hardcode a valid user id for testing purposes. */
 const AHI_TEST_USER_ID = 'AHI_TEST_USER';
-/// Your salt token.
+/* Your salt token. */
 const AHI_TEST_USER_SALT = 'user';
-/// Any claims you require passed to the SDK.
+/* Any claims you require passed to the SDK. */
 const AHI_TEST_USER_CLAIMS = ['test'];
-/// Payment type
+/* Payment type */
 enum MSPaymentType {
   PAYG = 'PAYG',
   SUBS = 'SUBSCRIBER',
@@ -69,10 +69,12 @@ const App: () => ReactNode = () => {
     checkAHIResourcesDownloadSize();
   }
 
-  /// Setup the MultiScan SDK
-  ///
-  /// This must happen before requesting a scan.
-  /// We recommend doing this on successfuil load of your application.
+  /**
+   * Setup the MultiScan SDK
+   *
+   * This must happen before requesting a scan.
+   * We recommend doing this on successfuil load of your application.
+   */
   const setupMultiScanSDK = async () => {
     await MultiScanModule.setupMultiScanSDK(AHI_MULTI_SCAN_TOKEN)
       .then((result: any) => {
@@ -89,7 +91,11 @@ const App: () => ReactNode = () => {
       });
   };
 
-  // authorize user
+  /**
+   * Once successfully setup, you should authorize your user with our service.
+   *
+   * With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
+   */
   const authorizeUser = async () => {
     await MultiScanModule.authorizeUser(
       AHI_TEST_USER_ID,
@@ -114,7 +120,12 @@ const App: () => ReactNode = () => {
       });
   };
 
-  // download resources
+  /**
+   * Check if the AHI resources are downloaded.
+   *
+   * We have remote resources that exceed 100MB that enable our scans to work.
+   * You are required to download them inorder to obtain a body scan.
+   */
   const areAHIResourcesAvailable = async () => {
     MultiScanModule.areAHIResourcesAvailable().then((areAvailable: boolean) => {
       if (!areAvailable) {
@@ -132,14 +143,18 @@ const App: () => ReactNode = () => {
     });
   };
 
-  /// Download scan resources.
-  ///
-  /// We recomment only calling this function once per session to prevent duplicate background resource calls.
+  /**
+   * Download scan resources.
+   *
+   * We recomment only calling this function once per session to prevent duplicate background resource calls.
+   */
   function downloadAHIResources() {
     MultiScanModule.downloadAHIResources();
   }
 
-  /// Check the size of the AHI resources that require downloading.
+  /**
+   * Check the size of the AHI resources that require downloading.
+   */
   function checkAHIResourcesDownloadSize() {
     MultiScanModule.checkAHIResourcesDownloadSize().then((size: any) => {
       console.log(
@@ -148,7 +163,6 @@ const App: () => ReactNode = () => {
     });
   }
 
-  // start facescan
   const startFaceScan = async () => {
     let userFaceScanInput = {
       enum_ent_sex: 'male',
@@ -173,7 +187,6 @@ const App: () => ReactNode = () => {
       });
   };
 
-  // start bodyscan
   const startBodyScan = () => {
     let userBodyScanInput = {
       enum_ent_sex: 'male',
@@ -181,9 +194,9 @@ const App: () => ReactNode = () => {
       kg_ent_weight: 85,
       yr_ent_age: 35,
     };
-    var id;
     if (!areBodyScanConfigOptionsValid(objectToMap(userBodyScanInput))) {
       console.log('AHI ERROR: Body Scan inputs invalid.');
+      return;
     }
     MultiScanModule.startBodyScan(userBodyScanInput, MSPaymentType.PAYG)
       .then((bodyScanResults: Map<String, any>) => {
@@ -195,10 +208,12 @@ const App: () => ReactNode = () => {
       });
   };
 
-  /// Use this function to fetch the 3D avatar mesh.
-  ///
-  /// The 3D mesh can be created and returned at any time.
-  /// We recommend doing this on successful completion of a body scan with the results.
+  /**
+   * Use this function to fetch the 3D avatar mesh.
+   *
+   * The 3D mesh can be created and returned at any time.
+   * We recommend doing this on successful completion of a body scan with the results.
+   */
   function getBodyScanExtras(bodyScanResults: Map<String, any>) {
     if (bodyScanResults == null) {
       console.log('AHI ERROR: Body scan results must not be null.');
@@ -215,14 +230,18 @@ const App: () => ReactNode = () => {
     });
   }
 
-  // Check if MultiScan is on or offline.
+  /**
+   * Check if MultiScan is on or offline.
+   */
   function getMultiScanStatus() {
     MultiScanModule.getMultiScanStatus().then(status =>
       console.log('AHI INFO: Status: ', status),
     );
   }
 
-  /// Check your AHI MultiScan organisation  details.
+  /**
+   * Check your AHI MultiScan organisation  details.
+   */
   function getMultiScanDetails() {
     MultiScanModule.getMultiScanDetails()
       .then(details => {
@@ -233,7 +252,9 @@ const App: () => ReactNode = () => {
       });
   }
 
-  /// Check if the user is authorized to use the MuiltScan service.
+  /**
+   * Check if the user is authorized to use the MuiltScan service.
+   */
   function getUserAuthorizedState() {
     MultiScanModule.getUserAuthorizedState(AHI_TEST_USER_ID)
       .then(isAuthorized => {
@@ -247,7 +268,9 @@ const App: () => ReactNode = () => {
       });
   }
 
-  /// Deauthorize the user.
+  /**
+   * Deauthorize the user.
+   */
   function deauthorizeUser() {
     MultiScanModule.deauthorizeUser()
       .then(deAuthorizeResult => {
@@ -264,9 +287,12 @@ const App: () => ReactNode = () => {
         console.log('AHI ERROR: deAuthorizeUser ', error);
       });
   }
-  /// Release the MultiScan SDK session.
-  ///
-  /// If you  use this, you will need to call setupSDK again.
+  /**
+   * Release the MultiScan SDK session.
+   *
+   * If you  use this, you will need to call setupSDK again.
+   * The Android MultiScan SDK does not yet have this functionality implemented. This will be available in future versions of the AHIMultiScan module.
+   */
   function releaseMultiScanSDK() {
     MultiScanModule.releaseMultiScanSDK().then(releaseSDKResult => {
       if (releaseSDKResult !== '') {
@@ -280,18 +306,21 @@ const App: () => ReactNode = () => {
     });
   }
 
-  // If you choose to use this, you will obtain two sets of results - one containing the "raw" output and another set containing "adj" output.
-  // "adj" means adjusted and is used to help provide historical results as a reference for the newest result to provide results tailored to the user.
-  // We recommend using this for individual users results; avoid using this if the app is a single user ID with multiple users results.
-  // More info found here: https://docs.advancedhumanimaging.io/MultiScan%20SDK/Data/
+  /**
+   * If you choose to use this, you will obtain two sets of results - one containing the "raw" output and another set containing "adj" output.
+   * "adj" means adjusted and is used to help provide historical results as a reference for the newest result to provide results tailored to the user.
+   * We recommend using this for individual users results; avoid using this if the app is a single user ID with multiple users results.
+   * More info found here: https://docs.advancedhumanimaging.io/MultiScan%20SDK/Data/
+   */
   function setMultiScanPersistenceDelegate(scanResult?: any) {
-    // / Each result requires:
-    // - _ent_ values
-    // - _raw_ values
-    // - id value
-    // - date value
-    // Your token may only provide you access to a smaller subset of results.
-    // The persistence delegate will still work with your results provided you adhere to the validation check.
+    /* Each result requires: 
+     * - _ent_ values 
+     * - _raw_ values 
+     * - id value 
+     * - date value 
+     * Your token may only provide you access to a smaller subset of results.
+       The persistence delegate will still work with your results provided you adhere to the validation check. 
+     */
     var exampleResult = {
       enum_ent_sex: 'male',
       cm_ent_height: 180,
@@ -403,8 +432,8 @@ const App: () => ReactNode = () => {
 
   /** Confirm results have correct set of keys. */
   function areBodyScanSmoothingResultsValid(result: Object): boolean {
-    // Your token may only provide you access to a smaller subset of results.
-    // You should modify this list based on your available config options.
+    /* Your token may only provide you access to a smaller subset of results. */
+    /* You should modify this list based on your available config options. */
     var sdkResultSchema = [
       'enum_ent_sex',
       'cm_ent_height',
@@ -421,7 +450,7 @@ const App: () => ReactNode = () => {
     ];
     var isValid = true;
     for (var key of sdkResultSchema) {
-      // Check if keys in result contains the required keys.
+      /* Check if keys in result contains the required keys. */
       if (!result.hasOwnProperty(key)) {
         isValid = false;
       }
