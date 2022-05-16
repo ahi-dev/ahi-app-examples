@@ -560,7 +560,6 @@ class MainActivity : FlutterActivity() {
             "male" -> "M"
             else -> "F"
         }
-
         // Convert the schema and feed to SDK
         return mapOf(
             "TAG_ARG_GENDER" to sex,
@@ -569,7 +568,7 @@ class MainActivity : FlutterActivity() {
             "TAG_ARG_AGE" to userInputAvatarMap["yr_ent_age"]
         )
     }
-
+    /** The Android MultiScan SDK is currently returning results and a JSONString which needs to be converted to a Map to ensure consistency with Flutter and iOS. */ 
     private fun scanResultsToMap(results: String?): Map<String, Any> {
         if (results == null) {
             return emptyMap<String, Any>()

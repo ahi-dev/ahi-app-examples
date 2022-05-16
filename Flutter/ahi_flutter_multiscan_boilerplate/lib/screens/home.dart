@@ -16,7 +16,6 @@
 //  limitations under the License.
 
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -28,19 +27,26 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  // Display UI buttons based on SDK state
   bool _isSDKSetup = false;
   bool _isUserAuthorized = false;
   bool _resourcesAreAvailable = false;
   bool _downloadResourcesButtonEnabled = true;
-
   // Communicate with native layer
   final platform = const MethodChannel('ahi_multiscan_flutter_wrapper');
+
+  /// The required tokens for the MultiScan Setup and Authorization.
   Map<String, dynamic> ahiConfigTokens = {
+    /// Your user id. Hardcode a valid user id for testing purposes.
     "USER_ID": "AHI_TEST_USER",
+    /// Your salt token.
     "SALT": "user",
+    /// Any claims you require passed to the SDK.
     "CLAIMS": ["test"],
+    /// Your AHI MultiScan DEV token
+    "AHI_MULTI_SCAN_TOKEN":
+        "",
   };
-  static const ahiMultiScanToken = "";
 
   didTapSetup() {
     setupMultiScanSDK();
@@ -73,7 +79,7 @@ class _HomeState extends State<Home> {
   /// We recommend doing this on successful load of your application.
   void setupMultiScanSDK() async {
     try {
-      await platform.invokeMethod("setupMultiScanSDK", ahiMultiScanToken);
+      await platform.invokeMethod("setupMultiScanSDK", ahiConfigTokens['AHI_MULTI_SCAN_TOKEN']);
       setState(() {
         _isSDKSetup = true;
       });
@@ -89,9 +95,7 @@ class _HomeState extends State<Home> {
   /// With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
   void authorizeUser() async {
     try {
-      await platform
-          .invokeMethod("authorizeUser", ahiConfigTokens)
-          .then((response) => {handleAuthorizeUser(response)});
+      await platform.invokeMethod("authorizeUser", ahiConfigTokens).then((response) => {handleAuthorizeUser(response)});
     } on PlatformException catch (error) {
       print("AHI ERROR: authorizeUser $error}");
     }
@@ -114,8 +118,7 @@ class _HomeState extends State<Home> {
   /// We have remote resources that exceed 100MB that enable our scans to work.
   /// You are required to download them inorder to obtain a body scan.
   void areAHIResourcesAvailable() async {
-    platform.invokeMethod("areAHIResourcesAvailable").then(
-        (resourcesAvailable) => {handleResourcesAvailable(resourcesAvailable)});
+    platform.invokeMethod("areAHIResourcesAvailable").then((resourcesAvailable) => {handleResourcesAvailable(resourcesAvailable)});
   }
 
   void handleResourcesAvailable(bool resourcesAvailable) {
@@ -170,9 +173,7 @@ class _HomeState extends State<Home> {
       return;
     }
     try {
-      await platform
-          .invokeMethod("startFaceScan", options)
-          .then((value) => {handleFaceScanResults(value)});
+      await platform.invokeMethod("startFaceScan", options).then((value) => {handleFaceScanResults(value)});
     } on PlatformException catch (error) {
       // Error code 7 is the code for the SDK interaction that cancels the scan.
       if (error.code == "7" || error.code == "USER_CANCELLED") {
@@ -197,21 +198,13 @@ class _HomeState extends State<Home> {
   void startBodyScan() async {
     // All required body scan options
     // Payment type options are either PAYG or SUBSCRIBER.
-    Map<String, dynamic> options = {
-      "enum_ent_sex": "male",
-      "yr_ent_age": 30,
-      "cm_ent_height": 180,
-      "kg_ent_weight": 85,
-      "paymentType": "PAYG"
-    };
+    Map<String, dynamic> options = {"enum_ent_sex": "male", "yr_ent_age": 30, "cm_ent_height": 180, "kg_ent_weight": 85, "paymentType": "PAYG"};
     if (!areBodyScanConfigOptionsValid(options)) {
       print("AHI ERROR: Body Scan inputs invalid.");
       return;
     }
     try {
-      await platform
-          .invokeMethod("startBodyScan", options)
-          .then((bodyScanResult) => {handleBodyScanResults(bodyScanResult)});
+      await platform.invokeMethod("startBodyScan", options).then((bodyScanResult) => {handleBodyScanResults(bodyScanResult)});
     } on PlatformException catch (error) {
       // Error code 4 is the code for the SDK interaction that cancels the scan.
       if (error.code == "4" || error.code == "USER_CANCELLED") {
@@ -244,9 +237,7 @@ class _HomeState extends State<Home> {
   // getBodyScanExtras(Map<String, dynamic> result) async {
   void getBodyScanExtras(Map<String, dynamic> result) async {
     try {
-      await platform
-          .invokeMethod("getBodyScanExtras", result)
-          .then((value) => {handleBodyScanExtras(value)});
+      await platform.invokeMethod("getBodyScanExtras", result).then((value) => {handleBodyScanExtras(value)});
     } on PlatformException catch (error) {
       print("AHI: ERROR GETTING BODY SCAN EXTRAS. $error");
     }
@@ -262,17 +253,13 @@ class _HomeState extends State<Home> {
 
   // Check if MultiScan is on or offline.
   void getMultiScanStatus() async {
-    platform
-        .invokeMethod("getMultiScanStatus")
-        .then((status) => print("AHI INFO: Status: $status"));
+    platform.invokeMethod("getMultiScanStatus").then((status) => print("AHI INFO: Status: $status"));
   }
 
   /// Check your AHI MultiScan organisation  details.
   void getMultiScanDetails() async {
     try {
-      await platform
-          .invokeMethod("getMultiScanDetails")
-          .then((details) => print("AHI INFO: MultiScan details: $details"));
+      await platform.invokeMethod("getMultiScanDetails").then((details) => print("AHI INFO: MultiScan details: $details"));
     } on PlatformException catch (error) {
       print("AHI ERROR: getMultiScanDetails $error}");
     }
@@ -282,12 +269,8 @@ class _HomeState extends State<Home> {
   void getUserAuthorizedState() async {
     try {
       await platform
-          .invokeMethod(
-              "getUserAuthorizedState", ahiConfigTokens["AHI_TEST_USER_ID"])
-          .then((isAuthorized) => {
-                print(
-                    "AHI INFO: User is ${isAuthorized ? "authorized" : "not authorized"}")
-              });
+          .invokeMethod("getUserAuthorizedState", ahiConfigTokens["AHI_TEST_USER_ID"])
+          .then((isAuthorized) => {print("AHI INFO: User is ${isAuthorized ? "authorized" : "not authorized"}")});
     } on PlatformException catch (error) {
       print("AHI ERROR: getUserAuthorizedState $error}");
     }
@@ -296,19 +279,16 @@ class _HomeState extends State<Home> {
   /// Deauthorize the user.
   void deAuthorizeUser() async {
     try {
-      await platform
-          .invokeMethod("deauthorizeUser")
-          .then((deAuthorizeResult) => {
-                if (deAuthorizeResult != null)
-                  {
-                    print(
-                        "AHI ERROR: Failed to deuathorize user with error: $deAuthorizeResult)"),
-                  }
-                else
-                  {
-                    print("AHI INFO: User is deauthorized."),
-                  }
-              });
+      await platform.invokeMethod("deauthorizeUser").then((deAuthorizeResult) => {
+            if (deAuthorizeResult != null)
+              {
+                print("AHI ERROR: Failed to deuathorize user with error: $deAuthorizeResult)"),
+              }
+            else
+              {
+                print("AHI INFO: User is deauthorized."),
+              }
+          });
     } on PlatformException catch (error) {
       print("AHI ERROR: deAuthorizeUser $error");
     }
@@ -332,13 +312,11 @@ class _HomeState extends State<Home> {
   // More info found here: https://docs.advancedhumanimaging.io/MultiScan%20SDK/Data/
   void setMultiScanPersistenceDelegate(Map<String, dynamic>? bodyScanResults) {
     if (bodyScanResults == null) {
-      print(
-          "AHI: Results must not be nil and must conform to an Array of Map results.");
+      print("AHI: Results must not be nil and must conform to an Array of Map results.");
       return;
     }
     if (!areBodyScanSmoothingResultsValid(bodyScanResults)) {
-      print(
-          "AHI WARN: Results are not valid for the persistence delegate. Please compare your results against the schema for more information.");
+      print("AHI WARN: Results are not valid for the persistence delegate. Please compare your results against the schema for more information.");
       return;
     }
     platform.invokeMethod("setMultiScanPersistenceDelegate", bodyScanResults);
@@ -399,12 +377,7 @@ class _HomeState extends State<Home> {
     }
     var height = inputValues["cm_ent_height"];
     var weight = inputValues["kg_ent_weight"];
-    if (height is! int &&
-        weight is! int &&
-        height < 50 &&
-        height > 255 &&
-        weight < 16 &&
-        weight > 300) {
+    if (height is! int && weight is! int && height < 50 && height > 255 && weight < 16 && weight > 300) {
       return false;
     }
     return true;
@@ -450,13 +423,9 @@ class _HomeState extends State<Home> {
           padding: const EdgeInsets.only(left: 12, right: 12),
           children: [
             if (!_isSDKSetup) defaultButton("Setup SDK", () => {didTapSetup()}),
-            if (_isUserAuthorized)
-              defaultButton("Start FaceScan", () => {didTapStartFaceScan()}),
-            if (_isUserAuthorized && _downloadResourcesButtonEnabled)
-              defaultButton(
-                  "Download Resources", () => {didTapDownloadResources()}),
-            if (_isUserAuthorized && _resourcesAreAvailable)
-              defaultButton("Start BodyScan", () => {didTapStartBodyScan()}),
+            if (_isUserAuthorized) defaultButton("Start FaceScan", () => {didTapStartFaceScan()}),
+            if (_isUserAuthorized && _downloadResourcesButtonEnabled) defaultButton("Download Resources", () => {didTapDownloadResources()}),
+            if (_isUserAuthorized && _resourcesAreAvailable) defaultButton("Start BodyScan", () => {didTapStartBodyScan()}),
           ],
         ),
       ),
@@ -473,8 +442,7 @@ Widget defaultButton(String title, Function action) {
         title,
         style: const TextStyle(color: Colors.white),
       ),
-      style:
-          ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.black)),
+      style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.black)),
       onPressed: () {
         action();
       },
