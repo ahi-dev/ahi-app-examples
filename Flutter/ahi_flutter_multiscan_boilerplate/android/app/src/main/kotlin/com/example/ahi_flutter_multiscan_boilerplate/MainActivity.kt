@@ -30,13 +30,13 @@ import com.myfiziq.sdk.vo.SdkResultParcelable
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-import kotlinx.coroutines.DelicateCoroutinesApi
 import org.json.JSONObject
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStreamWriter
 import java.lang.Exception
+import java.util.*
 import java.util.concurrent.CompletableFuture
 
 enum class AHIMultiScanMethod(val methodKeys: String) {
@@ -244,7 +244,6 @@ class MainActivity : FlutterActivity() {
      *
      * This function checks if they are already downloaded and available for use.
      * */
-    @OptIn(DelicateCoroutinesApi::class)
     private fun areAHIResourcesAvailable(result: MethodChannel.Result) {
         MultiScan.waitForResult(MultiScan.shared().areResourcesDownloaded()) {
             result.success(it)
@@ -430,7 +429,7 @@ class MainActivity : FlutterActivity() {
     }
 
     /**
-     * Check your AHI MultiScan organisation  details.
+     * Check your AHI MultiScan organisation details.
      * */
     private fun getMultiScanDetails(result: MethodChannel.Result) {
         result.success(null)
@@ -489,11 +488,9 @@ class MainActivity : FlutterActivity() {
      * Optionally call this function on load of the SDK.
      * */
     private fun setPersistenceDelegate(results: Any?) {
-        val bodyScanResults = results as? ArrayList<String> ?: null ?: return
+        val bodyScanResults = convertBodyScanResultsToSDKFormat(results)
         AHIPersistenceDelegate.let { it ->
-            it.bodyScanResults = bodyScanResults.map {
-                it
-            }.toMutableList()
+            it.bodyScanResults = bodyScanResults
             MultiScan.shared().registerDelegate(it)
         }
     }
@@ -579,5 +576,17 @@ class MainActivity : FlutterActivity() {
             map[key] = jsonObject[key]
         }
         return map
+    }
+
+    private fun convertBodyScanResultsToSDKFormat(result: Any?): MutableList<String> {
+        val resultsList = result as? List<Map<String, Any>> ?: emptyList<Map<String, Any>>()
+        if (resultsList == null) {
+            Log.d("AHI ERROR:", "AHI ERROR: KOTLIN: Body Scan results format was not [ {String: Any} ].")
+            return arrayListOf<String>()
+        }
+        val bodyScanResultsStringList = resultsList.map {
+            it.toString()
+        }.toMutableList()
+        return bodyScanResultsStringList
     }
 }

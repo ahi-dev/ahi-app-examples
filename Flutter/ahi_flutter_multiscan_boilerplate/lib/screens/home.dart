@@ -204,7 +204,9 @@ class _HomeState extends State<Home> {
       return;
     }
     try {
-      await platform.invokeMethod("startBodyScan", options).then((bodyScanResult) => {handleBodyScanResults(bodyScanResult)});
+      await platform.invokeMethod("startBodyScan", options).then((bodyScanResult) => {
+            handleBodyScanResults(bodyScanResult),
+          });
     } on PlatformException catch (error) {
       // Error code 4 is the code for the SDK interaction that cancels the scan.
       if (error.code == "4" || error.code == "USER_CANCELLED") {
@@ -216,18 +218,18 @@ class _HomeState extends State<Home> {
   }
 
   void handleBodyScanResults(dynamic data) {
-    Map<String, dynamic> result = Map.from(data);
-    if (result is Map<String, dynamic>) {
+    Map<String, dynamic> result = Map<String, dynamic>.from(data);
+    try {
       // Update the historical results
-      setMultiScanPersistenceDelegate(result);
+      setMultiScanPersistenceDelegate();
       // Handle body scan results
       print("AHI: SCAN RESULTS: $result");
       // Consider getting the 3D mesh here
       // This is an optional feature.
-      getBodyScanExtras(Map<String, dynamic>.from(result));
-      return;
+      getBodyScanExtras(Map.from(result));
+    } on PlatformException catch (error) {
+      print("AHI: UNKNOWN ERROR WITH BODY SCAN RESULT: ERROR: $error RESULT: $result");
     }
-    print("AHI: UNKNOWN ERROR WITH BODY SCAN RESULT: $result");
   }
 
   /// Use this function to fetch the 3D avatar mesh.
@@ -310,16 +312,38 @@ class _HomeState extends State<Home> {
   // "adj" means adjusted and is used to help provide historical results as a reference for the newest result to provide results tailored to the user.
   // We recommend using this for individual users results; avoid using this if the app is a single user ID with multiple users results.
   // More info found here: https://docs.advancedhumanimaging.io/MultiScan%20SDK/Data/
-  void setMultiScanPersistenceDelegate(Map<String, dynamic>? bodyScanResults) {
-    if (bodyScanResults == null) {
-      print("AHI: Results must not be nil and must conform to an Array of Map results.");
-      return;
+  void setMultiScanPersistenceDelegate() {
+   /* Each result requires: 
+     * - _ent_ values 
+     * - _raw_ values 
+     * - id value 
+     * - date value 
+     * Your token may only provide you access to a smaller subset of results.
+       The persistence delegate will still work with your results provided you adhere to the validation check. 
+     */
+    Map<String, dynamic> exampleResult = Map.from({
+      "enum_ent_sex": 'male',
+      "cm_ent_height": 180,
+      "kg_ent_weight": 85,
+      "cm_raw_chest": 104.5213096618652,
+      "cm_raw_hips": 100.4377449035645,
+      "cm_raw_inseam": 82.3893051147461,
+      "cm_raw_thigh": 60.23823547363281,
+      "cm_raw_waist": 84.81353988647462,
+      "kg_raw_weightPredict": 82.55660247802734,
+      "ml_raw_fitness": 0.8,
+      "percent_raw_bodyFat": 17.3342390826027,
+      "id": 'ee2367211649040093',
+      "date": 1649040093,
+    });
+    List exampleResults = [exampleResult];
+    for (Map<String, dynamic> result in exampleResults) {
+      if (!areBodyScanSmoothingResultsValid(result)) {
+        print("AHI WARN: Results are not valid for the persistence delegate. Please compare your results against the schema for more information.");
+        return;
+      }
     }
-    if (!areBodyScanSmoothingResultsValid(bodyScanResults)) {
-      print("AHI WARN: Results are not valid for the persistence delegate. Please compare your results against the schema for more information.");
-      return;
-    }
-    platform.invokeMethod("setMultiScanPersistenceDelegate", bodyScanResults);
+    platform.invokeMethod("setMultiScanPersistenceDelegate", exampleResults);
   }
 
   /// All MultiScan scan configs require this information.
