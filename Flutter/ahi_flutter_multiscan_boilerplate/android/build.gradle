@@ -21,23 +21,12 @@ allprojects {
             url "https://jitpack.io"
         }
         maven {
-            // AHI MultiScan - Maven - Dev
-            url "s3://myfiziq-android-maven/development"
-            credentials(AwsCredentials) {
-                accessKey "AKIAJUN5LPGUVVMKLJIA"
-                secretKey "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"
-            }
-            content {
-                includeGroupByRegex "com\\.myfiziq.*"
-            }
-        }
-        maven {
-            // AHI MultiScan - Maven - Release
+             // AHI MultiScan - Maven - Release
             name "publicRelease"
-            url "s3://myfiziq-android-sdk/release"
+            url System.getenv("RELEASE_AWS_URL")
             credentials(AwsCredentials) {
-                accessKey "AKIASR46NPIHVCEL63MH"
-                secretKey "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"
+                accessKey System.getenv("RELEASE_AWS_ACCESS_KEY")
+                secretKey System.getenv("RELEASE_AWS_SECRET_KEY")
             }
         }
     }
