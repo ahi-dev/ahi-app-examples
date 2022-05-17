@@ -236,7 +236,7 @@ class _HomeState extends State<Home> {
   ///
   /// The 3D mesh can be created and returned at any time.
   /// We recommend doing this on successful completion of a body scan with the results.
-  // getBodyScanExtras(Map<String, dynamic> result) async {
+  /// getBodyScanExtras(Map<String, dynamic> result) async {
   void getBodyScanExtras(Map<String, dynamic> result) async {
     try {
       await platform.invokeMethod("getBodyScanExtras", result).then((value) => {handleBodyScanExtras(value)});
@@ -308,12 +308,12 @@ class _HomeState extends State<Home> {
     print("AHI INFO: SDK has been released successfully.");
   }
 
-  // If you choose to use this, you will obtain two sets of results - one containing the "raw" output and another set containing "adj" output.
-  // "adj" means adjusted and is used to help provide historical results as a reference for the newest result to provide results tailored to the user.
-  // We recommend using this for individual users results; avoid using this if the app is a single user ID with multiple users results.
-  // More info found here: https://docs.advancedhumanimaging.io/MultiScan%20SDK/Data/
+  /// If you choose to use this, you will obtain two sets of results - one containing the "raw" output and another set containing "adj" output.
+  /// "adj" means adjusted and is used to help provide historical results as a reference for the newest result to provide results tailored to the user.
+  /// We recommend using this for individual users results; avoid using this if the app is a single user ID with multiple users results.
+  /// More info found here: https://docs.advancedhumanimaging.io/MultiScan%20SDK/Data/
   void setMultiScanPersistenceDelegate() {
-   /* Each result requires: 
+    /* Each result requires: 
      * - _ent_ values 
      * - _raw_ values 
      * - id value 
@@ -336,12 +336,10 @@ class _HomeState extends State<Home> {
       "id": 'ee2367211649040093',
       "date": 1649040093,
     });
-    List exampleResults = [exampleResult];
-    for (Map<String, dynamic> result in exampleResults) {
-      if (!areBodyScanSmoothingResultsValid(result)) {
-        print("AHI WARN: Results are not valid for the persistence delegate. Please compare your results against the schema for more information.");
-        return;
-      }
+    List<Map<String, dynamic>> exampleResults = [exampleResult];
+    if (!areBodyScanSmoothingResultsValid(exampleResults)) {
+      print("AHI WARN: Results are not valid for the persistence delegate. Please compare your results against the schema for more information.");
+      return;
     }
     platform.invokeMethod("setMultiScanPersistenceDelegate", exampleResults);
   }
@@ -361,6 +359,10 @@ class _HomeState extends State<Home> {
     return ['male', 'female'].contains(sex);
   }
 
+  /// FaceScan config requirements validation.
+  ///
+  /// Please see the Schemas for more information:
+  /// FaceScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FaceScan/Schemas/
   bool _areFaceScanConfigOptionsValid(Map<String, dynamic> inputValues) {
     if (!areSharedScanConfigOptionsValid(inputValues)) {
       return false;
@@ -407,7 +409,7 @@ class _HomeState extends State<Home> {
     return true;
   }
 
-  bool areBodyScanSmoothingResultsValid(Map<String, dynamic> result) {
+  bool areBodyScanSmoothingResultsValid(List<Map<String, dynamic>> resultsList) {
     // Your token may only provide you access to a smaller subset of results.
     // You should modify this list based on your available config options.
     var sdkResultSchema = [
@@ -425,10 +427,12 @@ class _HomeState extends State<Home> {
       "date"
     ];
     bool isValid = true;
-    var resultsKeys = result.keys;
-    for (String key in sdkResultSchema) {
-      if (!resultsKeys.contains(key)) {
-        isValid = false;
+    for (Map<String, dynamic> result in resultsList) {
+      var resultsKeys = result.keys;
+      for (String key in sdkResultSchema) {
+        if (!resultsKeys.contains(key)) {
+          isValid = false;
+        }
       }
     }
     return isValid;
