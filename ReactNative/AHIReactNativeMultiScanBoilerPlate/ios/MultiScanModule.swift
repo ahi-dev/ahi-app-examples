@@ -121,8 +121,13 @@ extension MultiScanModule {
             return
         }
         DispatchQueue.main.async {
+            // This is a temporary solution to prevent multiple callbacks being invoked on null pointer promise and resolve blocks. 
+            var hasReturned = false
             guard let vc = self.topMostVC() else {return }
             self.ahi.initiateScan("face", paymentType: pType, withOptions: userInputs, from:vc) { scanTask, error in
+                if hasReturned {
+                    return
+                }
                 guard let task = scanTask,
                       error == nil else {
                           // Error code 4 is the code for the SDK interaction that cancels the scan.
@@ -161,8 +166,14 @@ extension MultiScanModule {
             return
         }
         DispatchQueue.main.async {
-            guard let vc = self.topMostVC() else {return }
+            guard let vc = self.topMostVC() else { return }
+            // This is a temporary solution to prevent multiple callbacks being invoked on null pointer promise and resolve blocks. 
+            var hasReturned = false
             self.ahi.initiateScan("body", paymentType: pType, withOptions: userInputs, from:vc) { scanTask, error in
+                if hasReturned {
+                    return
+                }
+                hasReturned = true
                 guard let task = scanTask,
                       error == nil else {
                           if let err = error as NSError? {
