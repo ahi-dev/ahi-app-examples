@@ -28,15 +28,15 @@ import {
   View,
 } from 'react-native';
 
-/* The required tokens for the MultiScan Setup and Authorization. */
+/** The required tokens for the MultiScan Setup and Authorization. */
 const AHI_MULTI_SCAN_TOKEN = '';
-/* Your user id. Hardcode a valid user id for testing purposes. */
+/** Your user id. Hardcode a valid user id for testing purposes. */
 const AHI_TEST_USER_ID = 'AHI_TEST_USER';
-/* Your salt token. */
+/** Your salt token. */
 const AHI_TEST_USER_SALT = 'user';
-/* Any claims you require passed to the SDK. */
+/** Any claims you require passed to the SDK. */
 const AHI_TEST_USER_CLAIMS = ['test'];
-/* Payment type */
+/** Payment type */
 enum MSPaymentType {
   PAYG = 'PAYG',
   SUBS = 'SUBSCRIBER',
@@ -287,6 +287,7 @@ const App: () => ReactNode = () => {
         console.log('AHI ERROR: deAuthorizeUser ', error);
       });
   }
+  
   /**
    * Release the MultiScan SDK session.
    *

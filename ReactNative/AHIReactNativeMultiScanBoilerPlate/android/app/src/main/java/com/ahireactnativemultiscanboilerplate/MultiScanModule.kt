@@ -247,10 +247,24 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      * Release the MultiScan SDK session.
      *
      * If you use this, you will need to call setupSDK again.
+     * The expected result for <= v21.1.3 is an error called "NO_OP".
      */
     @ReactMethod
     fun releaseMultiScanSDK(promise: Promise) {
-        promise.resolve("")
+        MultiScan.waitForResult(MultiScan.shared().releaseMultiScanSDK()) {
+            when (it.resultCode) {
+                SdkResultCode.SUCCESS -> {
+                    promise.resolve("")
+                }
+                else -> {
+                    if (it.resultCode == SdkResultCode.NO_OP) {
+                        promise.reject("-15", "AHI MultiScan SDK functionality not implemented.")
+                    } else {
+                        handleFailedResult(it, promise)
+                    }
+                }
+            }
+        }
     }
 
     /**
