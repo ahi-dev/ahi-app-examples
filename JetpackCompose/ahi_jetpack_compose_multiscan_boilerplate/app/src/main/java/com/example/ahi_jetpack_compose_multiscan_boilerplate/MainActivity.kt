@@ -193,7 +193,7 @@ class MainActivity : ComponentActivity() {
         MultiScan.waitForResult(ahi.setup(config)) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> authorizeUser()
-                SdkResultCode.ERROR -> {
+                else -> {
                     Log.d(TAG, "AHI: Error setting up: ${it.message}}\n")
                     Log.d(TAG, "AHI: Confirm you habe a valid token.\n")
                     return@waitForResult
@@ -219,7 +219,7 @@ class MainActivity : ComponentActivity() {
                     Log.d(TAG, "AHI: Setup user successfully\n")
                     viewModel.isSetupState.value = true
                 }
-                SdkResultCode.ERROR -> {
+                else -> {
                     Log.d(TAG, "AHI: Auth Error: ${it.message}\n")
                     Log.d(TAG, "AHI: Confirm you are using a valid user id, salt and claims\n")
                 }
@@ -282,7 +282,8 @@ class MainActivity : ComponentActivity() {
             /** Result check */
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> Log.d(TAG, "AHI: SCAN RESULT: ${it.result}\n")
-                SdkResultCode.ERROR -> Log.d(TAG, "AHI: ERROR WITH FACE SCAN: ${it.message}\n")
+                SdkResultCode.USER_CANCELLED -> Log.d(TAG, "AHI: INFO: User cancelled the session.")
+                else -> Log.d(TAG, "AHI: ERROR WITH FACE SCAN: ${it.message}\n")
             }
         }
     }
@@ -308,7 +309,8 @@ class MainActivity : ComponentActivity() {
                         getBodyScanExtras(id)
                     }
                 }
-                SdkResultCode.ERROR -> Log.d(TAG, "AHI: ERROR WITH BODY SCAN: ${it.message}\n")
+                SdkResultCode.USER_CANCELLED -> Log.d(TAG, "AHI: INFO: User cancelled the session.")
+                else -> Log.d(TAG, "AHI: ERROR WITH BODY SCAN: ${it.message}\n")
             }
         }
     }
