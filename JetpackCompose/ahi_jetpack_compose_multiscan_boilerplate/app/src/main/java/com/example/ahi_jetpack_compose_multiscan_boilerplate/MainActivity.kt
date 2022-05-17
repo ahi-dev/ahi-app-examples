@@ -172,42 +172,14 @@ class MainActivity : ComponentActivity() {
         startBodyScan()
     }
 
+    private fun didTapCheckDownloadSize() {
+        checkAHIResourcesDownloadSize()
+    }
+
     private fun didTapDownloadResources() {
         downloadAHIResources()
         areAHIResourcesAvailable()
         checkAHIResourcesDownloadSize()
-    }
-
-    /** Check the size of the AHI resources that require downloading. */
-    private fun checkAHIResourcesDownloadSize() {
-        MultiScan.waitForResult(ahi.totalEstimatedDownloadSizeInBytes()) {
-            Log.d(TAG, "AHI INFO: Size of download is ${it / 1024 / 1024}\n")
-        }
-    }
-
-    /** Check if the AHI resources are downloaded. */
-    private fun areAHIResourcesAvailable() {
-        MultiScan.waitForResult(ahi.areResourcesDownloaded()) { it ->
-            if (!it) {
-                Log.d(TAG, "AHI INFO: Resources are not downloaded\n")
-                GlobalScope.launch {
-                    delay(30000)
-                    checkAHIResourcesDownloadSize()
-                    areAHIResourcesAvailable()
-                }
-            } else {
-                viewModel.isFinishedDownloadingResourcesState.value = true
-                Log.d(TAG, "AHI: Resources ready\n")
-            }
-        }
-    }
-
-    /**
-     *  Download scan resources.
-     *  We recommend only calling this function once per session to prevent duplicate background resource calls.
-     */
-    private fun downloadAHIResources() {
-        ahi.downloadResourcesInBackground()
     }
 
     /**
@@ -252,6 +224,38 @@ class MainActivity : ComponentActivity() {
                     Log.d(TAG, "AHI: Confirm you are using a valid user id, salt and claims\n")
                 }
             }
+        }
+    }
+
+    /** Check if the AHI resources are downloaded. */
+    private fun areAHIResourcesAvailable() {
+        MultiScan.waitForResult(ahi.areResourcesDownloaded()) { it ->
+            if (!it) {
+                Log.d(TAG, "AHI INFO: Resources are not downloaded\n")
+                GlobalScope.launch {
+                    delay(30000)
+                    checkAHIResourcesDownloadSize()
+                    areAHIResourcesAvailable()
+                }
+            } else {
+                viewModel.isFinishedDownloadingResourcesState.value = true
+                Log.d(TAG, "AHI: Resources ready\n")
+            }
+        }
+    }
+
+    /**
+     *  Download scan resources.
+     *  We recommend only calling this function once per session to prevent duplicate background resource calls.
+     */
+    private fun downloadAHIResources() {
+        ahi.downloadResourcesInBackground()
+    }
+
+    /** Check the size of the AHI resources that require downloading. */
+    private fun checkAHIResourcesDownloadSize() {
+        MultiScan.waitForResult(ahi.totalEstimatedDownloadSizeInBytes()) {
+            Log.d(TAG, "AHI INFO: Size of download is ${it / 1024 / 1024}\n")
         }
     }
 
@@ -328,6 +332,74 @@ class MainActivity : ComponentActivity() {
             // Return the URL
             Log.d(TAG, "AHI: Mesh URL: ${applicationContext.filesDir.path}/$id.obj\n")
         }
+    }
+
+    /**
+     * Check if MultiScan is on or offline.
+     */
+    private fun getMultiScanStatus() {
+        MultiScan.waitForResult(MultiScan.shared().state) {
+            Log.d(TAG, "AHI INFO: Status: ${it.result}")
+        }
+    }
+
+    /**
+     * Check your AHI MultiScan organisation details.
+     */
+    private fun getMultiScanDetails() {
+        Log.d(TAG, "AHI INFO: MultiScan details: ${null}")
+    }
+
+    /**
+     * Check if the user is authorized to use the MultiScan service.
+     *
+     * The expected result for <= v21.1.3 is an error called "NO_OP".
+     */
+    private fun getUserAuthorizedState(userID: String?) {
+        if (userID.isNullOrEmpty()) {
+            Log.d("-9", "Missing user ID")
+            return
+        }
+        MultiScan.waitForResult(MultiScan.shared().userIsAuthorized(userID)) {
+            when (it.resultCode) {
+                SdkResultCode.SUCCESS -> {
+                    Log.d(TAG, "AHI INFO: User is: ${if(it.result == "true") "authorized" else "not authorized"}")
+                }
+                else -> {
+                    if (it.resultCode == SdkResultCode.NO_OP) {
+                        Log.d("-15", "AHI MultiScan SDK functionality not implemented.")
+                    } else {
+                        Log.d(TAG, "AHI ERROR: Failed to get user authorization status")
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Deauthorize the user.
+     */
+    private fun deauthorizeUser() {
+        MultiScan.waitForResult(MultiScan.shared().userDeauthorize()) {
+            when (it.resultCode) {
+                SdkResultCode.SUCCESS -> {
+                    Log.d(TAG, "AHI INFO: User is deauthorized.")
+                }
+                else -> {
+                    Log.d("-15", "AHI MultiScan SDK functionality not implemented.")
+                }
+            }
+        }
+    }
+
+    /**
+     * Release the MultiScan SDK session.
+     *
+     * If you use this, you will need to call setupSDK again.
+     * The expected result for <= v21.1.3 is an error called "NO_OP".
+     */
+    private fun releaseMultiScanSDK() {
+            Log.d("-15", "AHI MultiScan SDK functionality not implemented.")
     }
 
     /** For the newest AHIMultiScan version 21.1.3 need to implement PersistenceDelegate */
