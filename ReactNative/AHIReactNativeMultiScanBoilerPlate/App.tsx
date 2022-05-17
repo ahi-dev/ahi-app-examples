@@ -220,7 +220,7 @@ const App: () => ReactNode = () => {
       return;
     }
     var results = JSON.parse(JSON.stringify(bodyScanResults));
-    if (!areBodyScanSmoothingResultsValid(bodyScanResults)) {
+    if (!areBodyScanSmoothingResultsValid([bodyScanResults])) {
       console.log('AHI ERROR: Body scan results not valid for extras.');
       return;
     }
@@ -337,14 +337,12 @@ const App: () => ReactNode = () => {
       id: 'ee2367211649040093',
       date: 1649040093,
     };
-    var exampleResults = [exampleResult];
-    for (var result of exampleResults) {
-      if (!areBodyScanSmoothingResultsValid(result)) {
-        console.log(
-          'AHI WARN: Results are not valid for the persistence delegate. Please compare your results against the schema for more information.',
-        );
-        return;
-      }
+    var exampleResults: Array<any> = [exampleResult];
+    if (!areBodyScanSmoothingResultsValid(exampleResults)) {
+      console.log(
+        'AHI WARN: Results are not valid for the persistence delegate. Please compare your results against the schema for more information.',
+      );
+      return;
     }
     MultiScanModule.setMultiScanPersistenceDelegate(exampleResults);
   }
@@ -432,7 +430,9 @@ const App: () => ReactNode = () => {
   }
 
   /** Confirm results have correct set of keys. */
-  function areBodyScanSmoothingResultsValid(result: Object): boolean {
+  function areBodyScanSmoothingResultsValid(
+    resultsList: Array<Map<String, any>>,
+  ): boolean {
     /* Your token may only provide you access to a smaller subset of results. */
     /* You should modify this list based on your available config options. */
     var sdkResultSchema = [
@@ -450,10 +450,12 @@ const App: () => ReactNode = () => {
       'date',
     ];
     var isValid = true;
-    for (var key of sdkResultSchema) {
-      /* Check if keys in result contains the required keys. */
-      if (!result.hasOwnProperty(key)) {
-        isValid = false;
+    for (var result of resultsList) {
+      for (var key of sdkResultSchema) {
+        /* Check if keys in result contains the required keys. */
+        if (!result.hasOwnProperty(key)) {
+          isValid = false;
+        }
       }
     }
     return isValid;
@@ -485,10 +487,6 @@ const App: () => ReactNode = () => {
                   <DefaultButton
                     action={didTapStartBodyScan}
                     buttonText={'Start BodyScan'}
-                  />
-                  <DefaultButton
-                    action={authorizeUser}
-                    buttonText={'authorizeUser'}
                   />
                 </>
               ) : (
