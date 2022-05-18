@@ -124,10 +124,48 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         checkAHIResourcesDownloadSize()
     }
 
-    /** Check the size of the AHI resources that require downloading. */
-    private fun checkAHIResourcesDownloadSize() {
-        MultiScan.waitForResult(ahi.totalEstimatedDownloadSizeInBytes()) {
-            Log.d(TAG, "AHI INFO: Size of download is ${it / 1024 / 1024}\n")
+    /**
+     *  Setup the MultiScan SDK
+     *  This must happen before requesting a scan.
+     *  We recommend doing this on successful load of your application.
+     */
+    private fun setupMultiScanSDK() {
+        val config: MutableMap<String, String> = HashMap()
+        config["TOKEN"] = AHIConfigTokens.AHI_MULTI_SCAN_TOKEN
+        MultiScan.waitForResult(ahi.setup(config)) {
+            when (it.resultCode) {
+                SdkResultCode.SUCCESS -> authorizeUser()
+                else -> {
+                    Log.d(TAG, "AHI: Error setting up: $}\n")
+                    Log.d(TAG, "AHI: Confirm you habe a valid token.\n")
+                    return@waitForResult
+                }
+            }
+        }
+    }
+
+    /**
+     *  Once successfully setup, you should authorize your user with our service.
+     *  With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
+     * */
+    private fun authorizeUser() {
+        MultiScan.waitForResult(
+            ahi.userAuthorize(
+                AHIConfigTokens.AHI_TEST_USER_ID,
+                AHIConfigTokens.AHI_TEST_USER_SALT,
+                AHIConfigTokens.AHI_TEST_USER_CLAIMS
+            )
+        ) {
+            when (it.resultCode) {
+                SdkResultCode.SUCCESS -> {
+                    Log.d(TAG, "AHI: Setup user successfully\n")
+                    viewModel.setIsSetup(true)
+                }
+                else -> {
+                    Log.d(TAG, "AHI: Auth Error: ${it.message}\n")
+                    Log.d(TAG, "AHI: Confirm you are using a valid user id, salt and claims\n")
+                }
+            }
         }
     }
 
@@ -156,48 +194,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         ahi.downloadResourcesInBackground()
     }
 
-    /**
-     *  Setup the MultiScan SDK
-     *  This must happen before requesting a scan.
-     *  We recommend doing this on successful load of your application.
-     */
-    private fun setupMultiScanSDK() {
-        val config: MutableMap<String, String> = HashMap()
-        config["TOKEN"] = AHIConfigTokens.AHI_MULTI_SCAN_TOKEN
-        MultiScan.waitForResult(ahi.setup(config)) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> authorizeUser()
-                SdkResultCode.ERROR -> {
-                    Log.d(TAG, "AHI: Error setting up: $}\n")
-                    Log.d(TAG, "AHI: Confirm you habe a valid token.\n")
-                    return@waitForResult
-                }
-            }
-        }
-    }
-
-    /**
-     *  Once successfully setup, you should authorize your user with our service.
-     *  With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
-     * */
-    private fun authorizeUser() {
-        MultiScan.waitForResult(
-            ahi.userAuthorize(
-                AHIConfigTokens.AHI_TEST_USER_ID,
-                AHIConfigTokens.AHI_TEST_USER_SALT,
-                AHIConfigTokens.AHI_TEST_USER_CLAIMS
-            )
-        ) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> {
-                    Log.d(TAG, "AHI: Setup user successfully\n")
-                    viewModel.setIsSetup(true)
-                }
-                SdkResultCode.ERROR -> {
-                    Log.d(TAG, "AHI: Auth Error: ${it.message}\n")
-                    Log.d(TAG, "AHI: Confirm you are using a valid user id, salt and claims\n")
-                }
-            }
+    /** Check the size of the AHI resources that require downloading. */
+    private fun checkAHIResourcesDownloadSize() {
+        MultiScan.waitForResult(ahi.totalEstimatedDownloadSizeInBytes()) {
+            Log.d(TAG, "AHI INFO: Size of download is ${it / 1024 / 1024}\n")
         }
     }
 
@@ -223,6 +223,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             /** Result check */
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> Log.d(TAG, "AHI: SCAN RESULT: ${it.result}\n")
+                SdkResultCode.USER_CANCELLED -> Log.d(TAG, "AHI: INFO: User cancelled the session.")
                 SdkResultCode.ERROR -> Log.d(TAG, "AHI: ERROR WITH FACE SCAN: ${it.message}\n")
             }
         }
@@ -249,7 +250,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                         getBodyScanExtras(id)
                     }
                 }
-                SdkResultCode.ERROR -> Log.d(TAG, "AHI: ERROR WITH BODY SCAN: ${it.message}\n")
+                SdkResultCode.USER_CANCELLED -> Log.d(TAG, "AHI: INFO: User cancelled the session.")
+                else -> Log.d(TAG, "AHI: ERROR WITH BODY SCAN: ${it.message}\n")
             }
         }
     }
@@ -273,6 +275,74 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             /** Return the URL */
             Log.d(TAG, "AHI: Mesh URL: ${applicationContext.filesDir.path}/$id.obj\n")
         }
+    }
+
+    /**
+     * Check if MultiScan is on or offline.
+     */
+    private fun getMultiScanStatus() {
+        MultiScan.waitForResult(MultiScan.shared().state) {
+            Log.d(TAG, "AHI INFO: Status: ${it.result}")
+        }
+    }
+
+    /**
+     * Check your AHI MultiScan organisation details.
+     */
+    private fun getMultiScanDetails() {
+        Log.d(TAG, "AHI INFO: MultiScan details: ${null}")
+    }
+
+    /**
+     * Check if the user is authorized to use the MultiScan service.
+     *
+     * The expected result for <= v21.1.3 is an error called "NO_OP".
+     */
+    private fun getUserAuthorizedState(userID: String?) {
+        if (userID.isNullOrEmpty()) {
+            Log.d("-9", "Missing user ID")
+            return
+        }
+        MultiScan.waitForResult(MultiScan.shared().userIsAuthorized(userID)) {
+            when (it.resultCode) {
+                SdkResultCode.SUCCESS -> {
+                    Log.d(TAG, "AHI INFO: User is: ${if(it.result == "true") "authorized" else "not authorized"}")
+                }
+                else -> {
+                    if (it.resultCode == SdkResultCode.NO_OP) {
+                        Log.d("-15", "AHI MultiScan SDK functionality not implemented.")
+                    } else {
+                        Log.d(TAG, "AHI ERROR: Failed to get user authorization status")
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Deauthorize the user.
+     */
+    private fun deauthorizeUser() {
+        MultiScan.waitForResult(MultiScan.shared().userDeauthorize()) {
+            when (it.resultCode) {
+                SdkResultCode.SUCCESS -> {
+                    Log.d(TAG, "AHI INFO: User is deauthorized.")
+                }
+                else -> {
+                    Log.d("-15", "AHI MultiScan SDK functionality not implemented.")
+                }
+            }
+        }
+    }
+
+    /**
+     * Release the MultiScan SDK session.
+     *
+     * If you use this, you will need to call setupSDK again.
+     * The expected result for <= v21.1.3 is an error called "NO_OP".
+     */
+    private fun releaseMultiScanSDK() {
+        Log.d("-15", "AHI MultiScan SDK functionality not implemented.")
     }
 
     /** For the newest AHIMultiScan version 21.1.3 need to implement PersistenceDelegate */
