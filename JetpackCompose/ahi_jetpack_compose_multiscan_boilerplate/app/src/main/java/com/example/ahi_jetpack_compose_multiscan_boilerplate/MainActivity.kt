@@ -258,7 +258,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startFaceScan() {
-        // All required face scan options.
+        /* All required face scan options. Does not currentlt conform to the SDK Schema */
         val avatarValues: HashMap<String, Any> = HashMap()
         avatarValues["TAG_ARG_GENDER"] = "M"
         avatarValues["TAG_ARG_SMOKER"] = "F"
@@ -277,7 +277,6 @@ class MainActivity : ComponentActivity() {
         MultiScan.waitForResult(
             MultiScan.shared().initiateScan(MSScanType.FACE, MSPaymentType.PAYG, avatarValues)
         ) {
-            /** Result check */
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> Log.d(TAG, "AHI: SCAN RESULT: ${it.result}\n")
                 SdkResultCode.USER_CANCELLED -> Log.d(TAG, "AHI: INFO: User cancelled the session.")
@@ -288,6 +287,7 @@ class MainActivity : ComponentActivity() {
 
     private fun startBodyScan() {
         val avatarValues: HashMap<String, Any> = HashMap()
+        /* All required body scan options. Does not currentlt conform to the SDK Schema */
         avatarValues["TAG_ARG_GENDER"] = "M"
         avatarValues["TAG_ARG_HEIGHT_IN_CM"] = 180
         avatarValues["TAG_ARG_WEIGHT_IN_KG"] = 85
@@ -325,11 +325,11 @@ class MainActivity : ComponentActivity() {
         MultiScan.waitForResult(
             MultiScan.shared().getScanExtra(MSScanType.BODY, parameters)
         ) {
-            // Write the mesh to a directory
+            /* Write the mesh to a directory */
             val objFile = File(applicationContext.filesDir, "$id.obj")
-            // Print the 3D mesh path
+            /* Print the 3D mesh path */
             saveAvatarToFile(it, objFile)
-            // Return the URL
+            /* Return the URL */
             Log.d(TAG, "AHI: Mesh URL: ${applicationContext.filesDir.path}/$id.obj\n")
         }
     }
@@ -504,8 +504,8 @@ class MainActivity : ComponentActivity() {
 
     /** Confirm results have correct set of keys. */
     private fun areBodyScanSmoothingResultsValid(it: MutableMap<String, String>): Boolean {
-        // Your token may only provide you access to a smaller subset of results.
-        // You should modify this list based on your available config options.
+        /* Your token may only provide you access to a smaller subset of results. */
+        /* You should modify this list based on your available config options. */
         val sdkResultSchema = listOf(
             "enum_ent_sex",
             "cm_ent_height",
@@ -522,9 +522,9 @@ class MainActivity : ComponentActivity() {
             "date"
         )
         var isValid = false
-        // Iterate over results
+        /* Iterate over results */
         sdkResultSchema.forEach { str ->
-            // Check if keys in results contains the required keys.
+            /* Check if keys in results contains the required keys. */
             if (!it.keys.contains(str)) {
                 isValid = true
             }
