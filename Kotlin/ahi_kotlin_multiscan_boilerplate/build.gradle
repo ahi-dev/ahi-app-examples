@@ -32,8 +32,8 @@ allprojects {
             name "publicRelease"
             url System.getenv("RELEASE_AWS_URL")
             credentials(AwsCredentials) {
-                accessKey System.getenv("RELEASE_AWS_ACCESS_KEY")
-                secretKey System.getenv("RELEASE_AWS_SECRET_KEY")
+                accessKey System.getenv("AHI_MULTISCAN_AWS_ACCESS_KEY")
+                secretKey System.getenv("AHI_MULTISCAN_AWS_SECRET_KEY")
             }
         }
     }

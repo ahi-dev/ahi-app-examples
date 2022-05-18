@@ -45,19 +45,17 @@ import java.util.concurrent.CompletableFuture
 const val TAG = "MainActivityAHI"
 
 /** The required tokens for the MultiScan Setup and Authorization. */
-object AHIConfigTokens {
-    /**Your AHI MultiScan DEV token */
-    const val AHI_MULTI_SCAN_TOKEN = ""
+/**Your AHI MultiScan DEV token */
+const val AHI_MULTI_SCAN_TOKEN = ""
 
-    /** Your user id. Hardcode a valid user id for testing purposes. */
-    const val AHI_TEST_USER_ID = "AHI_TEST_USER"
+/** Your user id. Hardcode a valid user id for testing purposes. */
+const val AHI_TEST_USER_ID = "AHI_TEST_USER"
 
-    /** Your salt token. */
-    const val AHI_TEST_USER_SALT = "user"
+/** Your salt token. */
+const val AHI_TEST_USER_SALT = "user"
 
-    /** Any claims you require passed to the SDK. */
-    val AHI_TEST_USER_CLAIMS = arrayOf("test")
-}
+/** Any claims you require passed to the SDK. */
+val AHI_TEST_USER_CLAIMS = arrayOf("test")
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
     /** Instance of AHI MultiScan */
@@ -131,7 +129,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      */
     private fun setupMultiScanSDK() {
         val config: MutableMap<String, String> = HashMap()
-        config["TOKEN"] = AHIConfigTokens.AHI_MULTI_SCAN_TOKEN
+        config["TOKEN"] = AHI_MULTI_SCAN_TOKEN
         MultiScan.waitForResult(ahi.setup(config)) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> authorizeUser()
@@ -151,9 +149,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     private fun authorizeUser() {
         MultiScan.waitForResult(
             ahi.userAuthorize(
-                AHIConfigTokens.AHI_TEST_USER_ID,
-                AHIConfigTokens.AHI_TEST_USER_SALT,
-                AHIConfigTokens.AHI_TEST_USER_CLAIMS
+                AHI_TEST_USER_ID,
+                AHI_TEST_USER_SALT,
+                AHI_TEST_USER_CLAIMS
             )
         ) {
             when (it.resultCode) {
@@ -306,7 +304,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         MultiScan.waitForResult(MultiScan.shared().userIsAuthorized(userID)) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
-                    Log.d(TAG, "AHI INFO: User is: ${if(it.result == "true") "authorized" else "not authorized"}")
+                    Log.d(TAG, "AHI INFO: User is: ${if (it.result == "true") "authorized" else "not authorized"}")
                 }
                 else -> {
                     if (it.resultCode == SdkResultCode.NO_OP) {
