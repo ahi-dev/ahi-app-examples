@@ -20,9 +20,9 @@ You can review the relevant code directly:
 [Jetpack Compose code integration](https://github.com/ahi-dev/ahi-app-examples/blob/main/JetpackCompose/ahi_jetpack_compose_multiscan_boilerplate/app/src/main/java/com/example/ahi_jetpack_compose_multiscan_boilerplate/MainActivity.kt)
 
 ### iOS and Android - React Native - Code
-[React Native code integration](https://github.com/ahi-dev/ahi-app-examples/blob/main/ReactNative/AHIReactNativeMultiScanBoilerPlate/App.tsx)
-[React Native code integration Module](https://github.com/ahi-dev/ahi-app-examples/blob/main/ReactNative/AHIReactNativeMultiScanBoilerPlate/Modules/MultiScanModule.ts)
-[React Native iOS code integration](https://github.com/ahi-dev/ahi-app-examples/blob/main/ReactNative/AHIReactNativeMultiScanBoilerPlate/ios/MultiScanModule.swift)
+[React Native code integration](https://github.com/ahi-dev/ahi-app-examples/blob/main/ReactNative/AHIReactNativeMultiScanBoilerPlate/App.tsx) \
+[React Native code integration Module](https://github.com/ahi-dev/ahi-app-examples/blob/main/ReactNative/AHIReactNativeMultiScanBoilerPlate/Modules/MultiScanModule.ts) \
+[React Native iOS code integration](https://github.com/ahi-dev/ahi-app-examples/blob/main/ReactNative/AHIReactNativeMultiScanBoilerPlate/ios/MultiScanModule.swift) \
 [React Native Android code integration](https://github.com/ahi-dev/ahi-app-examples/blob/main/ReactNative/AHIReactNativeMultiScanBoilerPlate/android/app/src/main/java/com/ahireactnativemultiscanboilerplate/MultiScanModule.kt)
 
 ### iOS and Android - Flutter - Code
