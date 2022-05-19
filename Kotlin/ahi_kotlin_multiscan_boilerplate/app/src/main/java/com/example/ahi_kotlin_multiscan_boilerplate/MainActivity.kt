@@ -45,7 +45,7 @@ import java.util.concurrent.CompletableFuture
 const val TAG = "MainActivityAHI"
 
 /** The required tokens for the MultiScan Setup and Authorization. */
-/**Your AHI MultiScan DEV token */
+/** Your AHI MultiScan DEV token */
 const val AHI_MULTI_SCAN_TOKEN = ""
 
 /** Your user id. Hardcode a valid user id for testing purposes. */
