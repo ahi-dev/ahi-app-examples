@@ -26,6 +26,22 @@ class Home extends StatefulWidget {
   State<Home> createState() => _HomeState();
 }
 
+/// Payment type
+enum MSPaymentType { PAYG, SUBS }
+
+extension MSPaymentTypeExtension on MSPaymentType {
+  String get value {
+    switch (this) {
+      case MSPaymentType.PAYG:
+        return "PAYG";
+      case MSPaymentType.SUBS:
+        return "SUBSCRIBER";
+      default:
+        return "";
+    }
+  }
+}
+
 class _HomeState extends State<Home> {
   // Display UI buttons based on SDK state
   bool _isSDKSetup = false;
@@ -36,17 +52,17 @@ class _HomeState extends State<Home> {
   final platform = const MethodChannel('ahi_multiscan_flutter_wrapper');
 
   /// The required tokens for the MultiScan Setup and Authorization.
-  Map<String, dynamic> ahiConfigTokens = {
-    /// Your user id. Hardcode a valid user id for testing purposes.
-    "USER_ID": "AHI_TEST_USER",
-    /// Your salt token.
-    "SALT": "user",
-    /// Any claims you require passed to the SDK.
-    "CLAIMS": ["test"],
-    /// Your AHI MultiScan DEV token
-    "AHI_MULTI_SCAN_TOKEN":
-        "",
-  };
+  /// Your user id. Hardcode a valid user id for testing purposes.
+  final String AHI_TEST_USER_ID = "AHI_TEST_USER";
+
+  /// Your salt token.
+  final String AHI_TEST_USER_SALT = "user";
+
+  /// Any claims you require passed to the SDK.
+  final List<String> AHI_TEST_USER_CLAIMS = ["test"];
+
+  /// Your AHI MultiScan DEV token
+  final String AHI_MULTI_SCAN_TOKEN = "";
 
   didTapSetup() {
     setupMultiScanSDK();
@@ -79,7 +95,7 @@ class _HomeState extends State<Home> {
   /// We recommend doing this on successful load of your application.
   void setupMultiScanSDK() async {
     try {
-      await platform.invokeMethod("setupMultiScanSDK", ahiConfigTokens['AHI_MULTI_SCAN_TOKEN']);
+      await platform.invokeMethod("setupMultiScanSDK", AHI_MULTI_SCAN_TOKEN);
       setState(() {
         _isSDKSetup = true;
       });
@@ -94,6 +110,7 @@ class _HomeState extends State<Home> {
   ///
   /// With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
   void authorizeUser() async {
+    Map<String, dynamic> ahiConfigTokens = {"USER_ID": AHI_TEST_USER_ID, "SALT": AHI_TEST_USER_SALT, "CLAIMS": AHI_TEST_USER_CLAIMS};
     try {
       await platform.invokeMethod("authorizeUser", ahiConfigTokens).then((response) => {handleAuthorizeUser(response)});
     } on PlatformException catch (error) {
@@ -166,7 +183,7 @@ class _HomeState extends State<Home> {
       "bool_ent_hypertension": false,
       "bool_ent_bloodPressureMedication": false,
       "enum_ent_diabetic": "none",
-      "paymentType": "PAYG"
+      "paymentType": MSPaymentType.PAYG.value
     };
     if (!_areFaceScanConfigOptionsValid(options)) {
       print("AHI ERROR: Face Scan inputs invalid.");
@@ -198,7 +215,13 @@ class _HomeState extends State<Home> {
   void startBodyScan() async {
     // All required body scan options
     // Payment type options are either PAYG or SUBSCRIBER.
-    Map<String, dynamic> options = {"enum_ent_sex": "male", "yr_ent_age": 30, "cm_ent_height": 180, "kg_ent_weight": 85, "paymentType": "PAYG"};
+    Map<String, dynamic> options = {
+      "enum_ent_sex": "male",
+      "yr_ent_age": 30,
+      "cm_ent_height": 180,
+      "kg_ent_weight": 85,
+      "paymentType": MSPaymentType.PAYG.value
+    };
     if (!areBodyScanConfigOptionsValid(options)) {
       print("AHI ERROR: Body Scan inputs invalid.");
       return;
@@ -271,7 +294,7 @@ class _HomeState extends State<Home> {
   void getUserAuthorizedState() async {
     try {
       await platform
-          .invokeMethod("getUserAuthorizedState", ahiConfigTokens["AHI_TEST_USER_ID"])
+          .invokeMethod("getUserAuthorizedState", AHI_TEST_USER_ID)
           .then((isAuthorized) => {print("AHI INFO: User is ${isAuthorized ? "authorized" : "not authorized"}")});
     } on PlatformException catch (error) {
       print("AHI ERROR: getUserAuthorizedState $error}");
