@@ -251,20 +251,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      */
     @ReactMethod
     fun releaseMultiScanSDK(promise: Promise) {
-        MultiScan.waitForResult(MultiScan.shared().releaseMultiScanSDK()) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> {
-                    promise.resolve("")
-                }
-                else -> {
-                    if (it.resultCode == SdkResultCode.NO_OP) {
-                        promise.reject("-15", "AHI MultiScan SDK functionality not implemented.")
-                    } else {
-                        handleFailedResult(it, promise)
-                    }
-                }
-            }
-        }
+        promise.resolve("AHI MultiScan SDK functionality not implemented.")
     }
 
     /**
