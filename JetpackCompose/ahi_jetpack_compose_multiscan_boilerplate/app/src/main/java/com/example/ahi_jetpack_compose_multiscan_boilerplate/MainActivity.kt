@@ -51,7 +51,7 @@ import java.util.concurrent.CompletableFuture
 private const val TAG = "MainActivityAHI"
 
 /** The required tokens for the MultiScan Setup and Authorization. */
-/**Your AHI MultiScan DEV token */
+/** Your AHI MultiScan DEV token */
 const val AHI_MULTI_SCAN_TOKEN = ""
 
 /** Your user id. Hardcode a valid user id for testing purposes. */
@@ -203,7 +203,7 @@ class MainActivity : ComponentActivity() {
     /**
      *  Once successfully setup, you should authorize your user with our service.
      *  With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
-     * */
+     */
     private fun authorizeUser() {
         MultiScan.waitForResult(
             ahi.userAuthorize(
@@ -268,7 +268,7 @@ class MainActivity : ComponentActivity() {
         avatarValues["TAG_ARG_HEIGHT_IN_CM"] = 180
         avatarValues["TAG_ARG_WEIGHT_IN_KG"] = 85
         avatarValues["TAG_ARG_AGE"] = 35
-        // TAG_ARG_PREFERRED_HEIGHT_UNITS and TAG_ARG_PREFERRED_WEIGHT_UNITS are unique to the Android MultiScan SDK.
+        /* TAG_ARG_PREFERRED_HEIGHT_UNITS and TAG_ARG_PREFERRED_WEIGHT_UNITS are unique to the Android MultiScan SDK. */
         avatarValues["TAG_ARG_PREFERRED_HEIGHT_UNITS"] = "CENTIMETRES"
         avatarValues["TAG_ARG_PREFERRED_WEIGHT_UNITS"] = "KILOGRAMS"
         if (!areFaceScanConfigOptionsValid(avatarValues)) {
@@ -317,7 +317,7 @@ class MainActivity : ComponentActivity() {
      *  Use this function to fetch the 3D avatar mesh.
      *  The 3D mesh can be created and returned at any time.
      *  We recommend doing this on successful completion of a body scan with the results.
-     * */
+     */
     private fun getBodyScanExtras(id: String) {
         val parameters: MutableMap<String, Any> = HashMap()
         parameters["operation"] = MultiScanOperation.BodyGetMeshObj.name
@@ -428,7 +428,7 @@ class MainActivity : ComponentActivity() {
      *
      *  BodyScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/BodyScan/Schemas/
      *  FaceScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FaceScan/Schemas/
-     * */
+     */
     private fun areSharedScanConfigOptionsValid(avatarValues: java.util.HashMap<String, Any>): Boolean {
         val sex = avatarValues["TAG_ARG_GENDER"].takeIf { it is String }
         val height = avatarValues["TAG_ARG_HEIGHT_IN_CM"].takeIf { it is Int }
@@ -444,7 +444,7 @@ class MainActivity : ComponentActivity() {
      *  FaceScan config requirements validation.
      *  Please see the Schemas for more information:
      *  FaceScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FaceScan/Schemas/
-     * */
+     */
     private fun areFaceScanConfigOptionsValid(avatarValues: HashMap<String, Any>): Boolean {
         if (!areSharedScanConfigOptionsValid(avatarValues)) {
             return false
@@ -483,7 +483,7 @@ class MainActivity : ComponentActivity() {
      *  BodyScan config requirements validation.
      *  Please see the Schemas for more information:
      *  BodyScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/BodyScan/Schemas/
-     * */
+     */
     private fun areBodyScanConfigOptionsValid(avatarValues: java.util.HashMap<String, Any>): Boolean {
         if (!areSharedScanConfigOptionsValid(avatarValues)) {
             return false
