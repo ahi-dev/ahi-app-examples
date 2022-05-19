@@ -5,7 +5,6 @@ You can find a guide about using the Example Apps to demonstrate how to seemless
 https://app.clickup.com/36613895/v/dc/12xbr7-14182
 
 ## Relevant Code
-
 You can review the relevant code directly:
 
 ### iOS App - Swift - Code
