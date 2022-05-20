@@ -253,7 +253,7 @@ extension ViewController {
 
     /// Download scan resources.
     ///
-    /// We recomment only calling this function once per session to prevent duplicate background resource calls.
+    /// We recommend only calling this function once per session to prevent duplicate background resource calls.
     fileprivate func downloadAHIResources() {
         ahi.downloadResourcesInBackground()
     }
