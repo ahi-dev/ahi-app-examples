@@ -24,8 +24,11 @@ import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults.buttonColors
 import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -70,6 +73,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val inset = 16.dp
         val buttonHeight = 55.dp
+        @Composable
+        fun defaultButton(buttonText: String, isEnabled: Boolean?, action: ()-> Unit) {
+            Button(
+                colors = buttonColors(backgroundColor = Color.Black),
+                modifier = Modifier.height(buttonHeight),
+                enabled = isEnabled ?: true,
+                onClick = { action() }) { Text(text = buttonText.uppercase(), color = Color.White) }
+        }
         setContent {
             viewModel = MultiScanViewModel()
             /** Set up view's layout constrains */
@@ -114,9 +125,7 @@ class MainActivity : ComponentActivity() {
                             .fillMaxWidth()
                             .height(buttonHeight), visible = !viewModel.isSetupState.value
                     ) {
-                        Button(
-                            modifier = Modifier.height(buttonHeight),
-                            onClick = { didTapSetup() }) { Text(text = "Setup SDK") }
+                        defaultButton("Setup SDK", true, { didTapSetup() })
                     }
                     AnimatedVisibility(
                         modifier = Modifier
@@ -124,9 +133,7 @@ class MainActivity : ComponentActivity() {
                             .fillMaxWidth()
                             .height(buttonHeight), visible = viewModel.isSetupState.value
                     ) {
-                        Button(
-                            modifier = Modifier.height(buttonHeight),
-                            onClick = { didTapStartFaceScan() }) { Text(text = "Start Facescan") }
+                        defaultButton("Start Facescan", true) { didTapStartFaceScan() }
                     }
                     AnimatedVisibility(
                         modifier = Modifier
@@ -135,13 +142,10 @@ class MainActivity : ComponentActivity() {
                             .height(buttonHeight),
                         visible = viewModel.isSetupState.value && !viewModel.isFinishedDownloadingResourcesState.value
                     ) {
-                        Button(
-                            modifier = Modifier.height(buttonHeight),
-                            enabled = viewModel.buttonEnabled.value,
-                            onClick = {
-                                viewModel.buttonEnabled.value = false
-                                didTapDownloadResources()
-                            }) { Text(text = "Download Resources") }
+                        defaultButton("Download Resources", viewModel.buttonEnabled.value) {
+                            viewModel.buttonEnabled.value = false
+                            didTapDownloadResources()
+                        }
                     }
                     AnimatedVisibility(
                         modifier = Modifier
@@ -150,7 +154,7 @@ class MainActivity : ComponentActivity() {
                             .height(buttonHeight),
                         visible = viewModel.isFinishedDownloadingResourcesState.value
                     ) {
-                        Button(onClick = { didTapStartBodyScan() }) { Text(text = "Start bodyscan") }
+                        defaultButton(buttonText = "Start BodyScan", isEnabled = true, action = { didTapStartBodyScan() })
                     }
                 }
             }
