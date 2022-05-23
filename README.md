@@ -1,8 +1,7 @@
 # AHI MultiScan SDK Integration Example Apps
 We have developed 6 identical UI and functionality apps across 2 platforms demonstrating how to integrate the AHI MultiScan SDK into your app using the most popular and modern languages and frameworks. 
 
-You can find a guide about using the Example Apps to demonstrate how to seemlessly integrate into your product on our ClickUp site:
-https://app.clickup.com/36613895/v/dc/12xbr7-14182
+You can find a guide about using the Example Apps to demonstrate how to seemlessly integrate into your product on our [Developer Docs site](https://docs.advancedhumanimaging.io/).
 
 ## Relevant Code
 You can review the relevant code directly:
