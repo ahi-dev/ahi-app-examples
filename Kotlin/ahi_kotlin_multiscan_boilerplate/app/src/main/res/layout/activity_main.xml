@@ -12,6 +12,8 @@
         android:layout_height="60dp"
         android:layout_margin="10dp"
         android:layout_marginTop="30dp"
+        android:background="#000000"
+        android:textColor="@color/white"
         android:text="setup sdk"
         android:visibility="visible"
         app:layout_constraintEnd_toEndOf="parent"
@@ -24,6 +26,8 @@
         android:layout_height="60dp"
         android:layout_margin="10dp"
         android:layout_marginTop="30dp"
+        android:background="#000000"
+        android:textColor="@color/white"
         android:text="Start Facescan"
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
@@ -37,11 +41,13 @@
         android:layout_marginStart="10dp"
         android:layout_marginTop="10dp"
         android:layout_marginEnd="10dp"
+        android:background="#000000"
+        android:textColor="@color/white"
         android:text="Download Resources"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@+id/startFaceScanButton"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintTop_toBottomOf="@+id/startFaceScanButton" />
 
     <Button
         android:id="@+id/startBodyScanButton"
@@ -50,9 +56,11 @@
         android:layout_marginStart="10dp"
         android:layout_marginTop="10dp"
         android:layout_marginEnd="10dp"
+        android:background="#000000"
+        android:textColor="@color/white"
         android:text="Start bodyscan"
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/downloadResourcesButton" />
+        app:layout_constraintTop_toBottomOf="@+id/startFaceScanButton" />
 </androidx.constraintlayout.widget.ConstraintLayout>
