@@ -315,10 +315,8 @@ class MainActivity : FlutterActivity() {
             result.error("-4", "Missing user face scan payment type.", null)
             return
         }
-        // Before we feed to SDK we need to mapping the keys and values to reach the sdk needs.
-        val sdkStandradSchema = userFaceInputConverter(userInput)
         MultiScan.waitForResult(
-            MultiScan.shared().initiateScan(MSScanType.FACE, pType, sdkStandradSchema)
+            MultiScan.shared().initiateScan(MSScanType.FACE, pType, userInput)
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
@@ -368,11 +366,10 @@ class MainActivity : FlutterActivity() {
             result.error("-6", "Missing user body scan payment type.", null)
             return
         }
-        val sdkStandardSchema = userBodyInputConverter(userInput)
         MultiScan.shared().registerDelegate(AHIPersistenceDelegate)
         MultiScan.waitForResult(
             MultiScan.shared()
-                .initiateScan(MSScanType.BODY, pType, sdkStandardSchema)
+                .initiateScan(MSScanType.BODY, pType, userInput)
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
@@ -536,35 +533,6 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    /** Face Scan user input converter */
-    private fun userFaceInputConverter(userInputAvatarMap: HashMap<String, Any>): Map<String, Any?> {
-        // Convert the schema and feed to SDK
-        return mapOf(
-            "TAG_ARG_GENDER" to userInputAvatarMap["enum_ent_sex"],
-            "TAG_ARG_SMOKER" to userInputAvatarMap["bool_ent_smoker"],
-            "TAG_ARG_DIABETIC" to userInputAvatarMap["enum_ent_diabetic"],
-            "TAG_ARG_HYPERTENSION" to userInputAvatarMap["bool_ent_hypertension"],
-            "TAG_ARG_BPMEDS" to userInputAvatarMap["bool_ent_bloodPressureMedication"],
-            "TAG_ARG_HEIGHT_IN_CM" to userInputAvatarMap["cm_ent_height"],
-            "TAG_ARG_WEIGHT_IN_KG" to userInputAvatarMap["kg_ent_weight"],
-            "TAG_ARG_AGE" to userInputAvatarMap["yr_ent_age"]
-        )
-    }
-
-    /** Body Scan user input converter */
-    private fun userBodyInputConverter(userInputAvatarMap: HashMap<String, Any>): Map<String, Any?> {
-        val sex = when (userInputAvatarMap["sex"].toString()) {
-            "male" -> "M"
-            else -> "F"
-        }
-        // Convert the schema and feed to SDK
-        return mapOf(
-            "TAG_ARG_GENDER" to sex,
-            "TAG_ARG_HEIGHT_IN_CM" to userInputAvatarMap["cm_ent_height"],
-            "TAG_ARG_WEIGHT_IN_KG" to userInputAvatarMap["kg_ent_weight"],
-            "TAG_ARG_AGE" to userInputAvatarMap["yr_ent_age"]
-        )
-    }
     /** The Android MultiScan SDK is currently returning results and a JSONString which needs to be converted to a Map to ensure consistency with Flutter and iOS. */ 
     private fun scanResultsToMap(results: String?): Map<String, Any> {
         if (results == null) {
