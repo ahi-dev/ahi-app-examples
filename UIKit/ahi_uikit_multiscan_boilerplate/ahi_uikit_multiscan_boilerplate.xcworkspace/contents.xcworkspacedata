@@ -2,7 +2,7 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "group:ahi_swift_multiscan_boilerplate.xcodeproj">
+      location = "group:ahi_uikit_multiscan_boilerplate.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:Pods/Pods.xcodeproj">

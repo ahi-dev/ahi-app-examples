@@ -24,15 +24,16 @@ import MyFiziqSDKCoreLite
 // The FaceScan SDK
 import MFZFaceScan
 
+/// The required tokens for the MultiScan Setup and Authorization.
 public struct AHIConfigTokens {
-    /// Your AHI MultiScan DEV token
+    /// Your AHI MultiScan token
     static let AHI_MULTI_SCAN_TOKEN = ""
-    /// Your user id. Hardcode a valid user id for testing purposes.
-    static let AHI_TEST_USER_ID = "AHI_TEST_USER"
-    /// Your salt token.
-    static let AHI_TEST_USER_SALT = "user"
-    /// Any claims you require passed to the SDK.
-    static let AHI_TEST_USER_CLAIMS = ["test"]
+    /// Your user ID. NOTE: User ID is hard-coded here for example, BUT should NOT be hard-coded in real integration (user ID from idP is expected).
+    static let AHI_TEST_USER_ID = "EXAMPLE_USER_ID"
+    /// Security salt value. This should be hard-coded into your app, and SHOULD NOT be changed (i.e. be the same in both iOS and Android). It can be any string value.
+    static let AHI_TEST_USER_SALT = "EXAMPLE_APP_SALT"
+    /// Claims are optional values to increase the security for the user. The order and values should be unique for a given user and be the same on both iOS and Android (e.g. user join date in the format "yyyy", "mm", "dd", "zzzz").
+    static let AHI_TEST_USER_CLAIMS = ["EXAMPLE_CLAIM"]
 }
 
 struct ContentView: View {
