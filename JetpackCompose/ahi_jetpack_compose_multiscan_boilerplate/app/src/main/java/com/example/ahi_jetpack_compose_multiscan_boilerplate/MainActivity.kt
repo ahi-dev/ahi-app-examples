@@ -465,13 +465,11 @@ class MainActivity : ComponentActivity() {
             height != null &&
             weight != null &&
             age != null &&
-            heightUnits != null &&
-            weightUnits != null &&
             height in 25..300 &&
             weight in 25..300 &&
             age in 13..120
         ) {
-            return arrayListOf("none", "type1", "type2").contains(isDiabetic)
+            return arrayListOf("none", "type1", "type2").contains(diabeticType)
         } else {
             return false
         }
