@@ -116,7 +116,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
             return
         }
         MultiScan.waitForResult(
-                MultiScan.shared().initiateScan(MSScanType.FACE, pType, userInput)
+                MultiScan.shared().initiateScan(MSScanType.FACE, pType, userInput.toHashMap())
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
@@ -141,7 +141,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
             return
         }
         MultiScan.waitForResult(
-                MultiScan.shared().initiateScan(MSScanType.BODY, pType, userInput)
+                MultiScan.shared().initiateScan(MSScanType.BODY, pType, userInput.toHashMap())
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
