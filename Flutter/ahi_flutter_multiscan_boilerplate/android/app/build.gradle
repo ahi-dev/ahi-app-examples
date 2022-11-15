@@ -67,7 +67,7 @@ flutter {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
-    def AHISdkVersion = '21.1.3'
+    def AHISdkVersion = '21.1.4'
     annotationProcessor( "com.myfiziq.sdk:orm:${AHISdkVersion}-release")
     implementation "com.myfiziq.sdk:orm:${AHISdkVersion}-release"
     implementation "com.myfiziq.sdk:myfiziqsdk:${AHISdkVersion}-release"

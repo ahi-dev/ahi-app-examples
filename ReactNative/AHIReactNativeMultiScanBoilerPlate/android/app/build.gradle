@@ -267,7 +267,7 @@ dependencies {
     implementation "com.facebook.react:react-native:+"  // From node_modules
 
     // AHI SDK
-    def AHISdkVersion = '21.1.3'
+    def AHISdkVersion = '21.1.4'
     annotationProcessor "com.myfiziq.sdk:orm:${AHISdkVersion}-release"
     implementation "com.myfiziq.sdk:orm:${AHISdkVersion}-release"
     implementation "com.myfiziq.sdk:myfiziqsdk:${AHISdkVersion}-release"
