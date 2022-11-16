@@ -132,7 +132,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 SdkResultCode.SUCCESS -> authorizeUser()
                 else -> {
                     Log.d(TAG, "AHI: Error setting up: $}\n")
-                    Log.d(TAG, "AHI: Confirm you habe a valid token.\n")
+                    Log.d(TAG, "AHI: Confirm you have a valid token.\n")
                     return@waitForResult
                 }
             }
