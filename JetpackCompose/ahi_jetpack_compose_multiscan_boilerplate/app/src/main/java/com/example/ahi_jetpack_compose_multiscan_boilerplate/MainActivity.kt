@@ -435,7 +435,7 @@ class MainActivity : ComponentActivity() {
         val height = avatarValues["cm_ent_height"].takeIf { it is Int }
         val weight = avatarValues["kg_ent_weight"].takeIf { it is Int }
         return if (sex != null && height != null && weight != null) {
-            arrayListOf("M", "F").contains(sex)
+            arrayListOf("male", "female").contains(sex)
         } else {
             false
         }
