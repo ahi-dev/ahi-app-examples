@@ -45,17 +45,14 @@ import java.util.concurrent.CompletableFuture
 const val TAG = "MainActivityAHI"
 
 /** The required tokens for the MultiScan Setup and Authorization. */
-/** Your AHI MultiScan DEV token */
+/** Your AHI MultiScan token */
 const val AHI_MULTI_SCAN_TOKEN = ""
-
-/** Your user id. Hardcode a valid user id for testing purposes. */
-const val AHI_TEST_USER_ID = "AHI_TEST_USER"
-
-/** Your salt token. */
-const val AHI_TEST_USER_SALT = "user"
-
-/** Any claims you require passed to the SDK. */
-val AHI_TEST_USER_CLAIMS = arrayOf("test")
+/** Your user ID. NOTE: User ID is hard-coded here for example, BUT should NOT be hard-coded in real integration (user ID from idP is expected). */
+const val AHI_TEST_USER_ID = "EXAMPLE_USER_ID"
+/** Security salt value. This should be hard-coded into your app, and SHOULD NOT be changed (i.e. be the same in both iOS and Android). It can be any string value. */
+const val AHI_TEST_USER_SALT = "EXAMPLE_APP_SALT"
+/** Claims are optional values to increase the security for the user. The order and values should be unique for a given user and be the same on both iOS and Android (e.g. user join date in the format "yyyy", "mm", "dd", "zzzz"). */
+val AHI_TEST_USER_CLAIMS = arrayOf("EXAMPLE_CLAIM")
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
     /** Instance of AHI MultiScan */
@@ -135,7 +132,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 SdkResultCode.SUCCESS -> authorizeUser()
                 else -> {
                     Log.d(TAG, "AHI: Error setting up: $}\n")
-                    Log.d(TAG, "AHI: Confirm you habe a valid token.\n")
+                    Log.d(TAG, "AHI: Confirm you have a valid token.\n")
                     return@waitForResult
                 }
             }
@@ -202,16 +199,14 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     private fun startFaceScan() {
         // All required face scan options.
         val avatarValues: HashMap<String, Any> = HashMap()
-        avatarValues["TAG_ARG_GENDER"] = "M"
-        avatarValues["TAG_ARG_SMOKER"] = "F"
-        avatarValues["TAG_ARG_DIABETIC"] = "none"
-        avatarValues["TAG_ARG_HYPERTENSION"] = "F"
-        avatarValues["TAG_ARG_BPMEDS"] = "F"
-        avatarValues["TAG_ARG_HEIGHT_IN_CM"] = 180
-        avatarValues["TAG_ARG_WEIGHT_IN_KG"] = 85
-        avatarValues["TAG_ARG_AGE"] = 35
-        avatarValues["TAG_ARG_PREFERRED_HEIGHT_UNITS"] = "CENTIMETRES"
-        avatarValues["TAG_ARG_PREFERRED_WEIGHT_UNITS"] = "KILOGRAMS"
+        avatarValues["enum_ent_sex"] = "male"
+        avatarValues["bool_ent_smoker"] = false
+        avatarValues["enum_ent_diabetic"] = "none"
+        avatarValues["bool_ent_hypertension"] = false
+        avatarValues["bool_ent_bloodPressureMedication"] = false
+        avatarValues["cm_ent_height"] = 180
+        avatarValues["kg_ent_weight"] = 85
+        avatarValues["yr_ent_age"] = 35
         if (!areFaceScanConfigOptionsValid(avatarValues)) {
             Log.d(TAG, "AHI ERROR: Face Scan inputs invalid.")
         }
@@ -229,9 +224,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun startBodyScan() {
         val avatarValues: HashMap<String, Any> = HashMap()
-        avatarValues["TAG_ARG_GENDER"] = "M"
-        avatarValues["TAG_ARG_HEIGHT_IN_CM"] = 180
-        avatarValues["TAG_ARG_WEIGHT_IN_KG"] = 85
+        avatarValues["enum_ent_sex"] = "male"
+        avatarValues["cm_ent_height"] = 180
+        avatarValues["kg_ent_weight"] = 85
         if (!areBodyScanConfigOptionsValid(avatarValues)) {
             Log.d(TAG, "AHI ERROR: Body Scan inputs invalid.")
             return
@@ -371,11 +366,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      *  FaceScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FaceScan/Schemas/
      * */
     private fun areSharedScanConfigOptionsValid(avatarValues: java.util.HashMap<String, Any>): Boolean {
-        val sex = avatarValues["TAG_ARG_GENDER"].takeIf { it is String }
-        val height = avatarValues["TAG_ARG_HEIGHT_IN_CM"].takeIf { it is Int }
-        val weight = avatarValues["TAG_ARG_WEIGHT_IN_KG"].takeIf { it is Int }
+        val sex = avatarValues["enum_ent_sex"].takeIf { it is String }
+        val height = avatarValues["cm_ent_height"].takeIf { it is Int }
+        val weight = avatarValues["kg_ent_weight"].takeIf { it is Int }
         return if (sex != null && height != null && weight != null) {
-            arrayListOf("M", "F").contains(sex)
+            arrayListOf("male", "female").contains(sex)
         } else {
             false
         }
@@ -390,31 +385,27 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         if (!areSharedScanConfigOptionsValid(avatarValues)) {
             return false
         }
-        val sex = avatarValues["TAG_ARG_GENDER"].takeIf { it is String }
-        val smoke = avatarValues["TAG_ARG_SMOKER"].takeIf { it is String }
-        val isDiabetic = avatarValues["TAG_ARG_DIABETIC"].takeIf { it is String }
-        val hypertension = avatarValues["TAG_ARG_HYPERTENSION"].takeIf { it is String }
-        val blood = avatarValues["TAG_ARG_BPMEDS"].takeIf { it is String }
-        val height = avatarValues["TAG_ARG_HEIGHT_IN_CM"].takeIf { it is Int }
-        val weight = avatarValues["TAG_ARG_WEIGHT_IN_KG"].takeIf { it is Int }
-        val age = avatarValues["TAG_ARG_AGE"].takeIf { it is Int }
-        val heightUnits = avatarValues["TAG_ARG_PREFERRED_HEIGHT_UNITS"].takeIf { it is String }
-        val weightUnits = avatarValues["TAG_ARG_PREFERRED_WEIGHT_UNITS"].takeIf { it is String }
+        val sex = avatarValues["enum_ent_sex"].takeIf { it is String }
+        val smoke = avatarValues["bool_ent_smoker"].takeIf { it is Boolean }
+        val diabeticType = avatarValues["enum_ent_diabetic"].takeIf { it is String }
+        val hypertension = avatarValues["bool_ent_hypertension"].takeIf { it is Boolean }
+        val blood = avatarValues["bool_ent_bloodPressureMedication"].takeIf { it is Boolean }
+        val height = avatarValues["cm_ent_height"].takeIf { it is Int }
+        val weight = avatarValues["kg_ent_weight"].takeIf { it is Int }
+        val age = avatarValues["yr_ent_age"].takeIf { it is Int }
         if (sex != null &&
             smoke != null &&
-            isDiabetic != null &&
+            diabeticType != null &&
             hypertension != null &&
             blood != null &&
             height != null &&
             weight != null &&
             age != null &&
-            heightUnits != null &&
-            weightUnits != null &&
             height in 25..300 &&
             weight in 25..300 &&
             age in 13..120
         ) {
-            return arrayListOf("none", "type1", "type2").contains(isDiabetic)
+            return arrayListOf("none", "type1", "type2").contains(diabeticType)
         } else {
             return false
         }
@@ -429,9 +420,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         if (!areSharedScanConfigOptionsValid(avatarValues)) {
             return false
         }
-        val sex = avatarValues["TAG_ARG_GENDER"].takeIf { it is String }
-        val height = avatarValues["TAG_ARG_HEIGHT_IN_CM"].takeIf { it is Int }
-        val weight = avatarValues["TAG_ARG_WEIGHT_IN_KG"].takeIf { it is Int }
+        val sex = avatarValues["enum_ent_sex"].takeIf { it is String }
+        val height = avatarValues["cm_ent_height"].takeIf { it is Int }
+        val weight = avatarValues["kg_ent_weight"].takeIf { it is Int }
         if (sex != null &&
             height != null &&
             weight != null &&

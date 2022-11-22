@@ -115,9 +115,8 @@ class MultiScanModule(private val context: ReactApplicationContext) :
             promise.reject("-4", "Missing user face scan payment type.")
             return
         }
-        val faceScanUserInput = userFaceInputConverter(userInput)
         MultiScan.waitForResult(
-                MultiScan.shared().initiateScan(MSScanType.FACE, pType, faceScanUserInput)
+                MultiScan.shared().initiateScan(MSScanType.FACE, pType, userInput.toHashMap())
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
@@ -141,9 +140,8 @@ class MultiScanModule(private val context: ReactApplicationContext) :
             promise.reject("-6", "Missing user body scan payment type.")
             return
         }
-        val bodyScanUserInput = userBodyInputConverter(userInput)
         MultiScan.waitForResult(
-                MultiScan.shared().initiateScan(MSScanType.BODY, pType, bodyScanUserInput)
+                MultiScan.shared().initiateScan(MSScanType.BODY, pType, userInput.toHashMap())
         ) {
             when (it.resultCode) {
                 SdkResultCode.SUCCESS -> {
@@ -309,60 +307,6 @@ class MultiScanModule(private val context: ReactApplicationContext) :
             print("AHI ERROR: KOTLIN: Exception when attempting to write file: $e")
             false
         }
-    }
-
-    /**
-     * This function converts the AHI Face Scan Input Schema to the AHI FaceScan SDK input schema and returns a map.
-     */
-    private fun userFaceInputConverter(userScanInputs: ReadableMap): Map<String, Any?> {
-        /* Convert the input and feed to SDK */
-        val userScanInputValues = userScanInputs.toHashMap()
-        val sex = when (userScanInputValues["enum_ent_sex"]) {
-            "male" -> "M"
-            else -> "F"
-        }
-        val smoker = when (userScanInputValues["bool_ent_smoker"]) {
-            true -> "T"
-            else -> "F"
-        }
-        val hypertension = when (userScanInputValues["bool_ent_hypertension"]) {
-            true -> "T"
-            else -> "F"
-        }
-        val bpmds = when (userScanInputValues["bool_ent_bloodPressureMedication"]) {
-            true -> "T"
-            else -> "F"
-        }
-        val convertedSchema = mapOf(
-            "TAG_ARG_GENDER" to sex,
-            "TAG_ARG_SMOKER" to smoker,
-            "TAG_ARG_DIABETIC" to userScanInputValues["enum_ent_diabetic"],
-            "TAG_ARG_HYPERTENSION" to hypertension,
-            "TAG_ARG_BPMEDS" to bpmds,
-            "TAG_ARG_HEIGHT_IN_CM" to userScanInputValues["cm_ent_height"],
-            "TAG_ARG_WEIGHT_IN_KG" to userScanInputValues["kg_ent_weight"],
-            "TAG_ARG_AGE" to userScanInputValues["yr_ent_age"],
-        )
-        return convertedSchema
-    }
-
-    /**
-     * This function converts the AHI Body Scan Input Schema to the AHI FaceScan SDK input schema and returns a map.
-     */
-    private fun userBodyInputConverter(userScanInputs: ReadableMap): Map<String, Any?> {
-        /* Convert the input and feed to SDK */
-        val userScanInputValues = userScanInputs.toHashMap()
-        val sex = when (userScanInputValues["enum_ent_sex"]) {
-            "male" -> "M"
-            else -> "F"
-        }
-        val convertedSchema = mapOf(
-            "TAG_ARG_GENDER" to sex,
-            "TAG_ARG_HEIGHT_IN_CM" to userScanInputValues["cm_ent_height"],
-            "TAG_ARG_WEIGHT_IN_KG" to userScanInputValues["kg_ent_weight"],
-            "TAG_ARG_AGE" to userScanInputValues["yr_ent_age"],
-        )
-        return convertedSchema
     }
 
     private fun scanResultsToMap(result: String?): WritableNativeMap {
