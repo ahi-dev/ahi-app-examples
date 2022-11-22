@@ -20,9 +20,9 @@ import UIKit
 // The MultiScan SDK
 import AHIMultiScan
 // The Body Scan SDK
-import MyFiziqSDKCoreLite
+import AHIBodyScan
 // The FaceScan SDK
-import MFZFaceScan
+import AHIFaceScan
 
 /// The required tokens for the MultiScan Setup and Authorization.
 public struct AHIConfigTokens {
@@ -119,16 +119,16 @@ class AHISDKManager: NSObject, ObservableObject {
     // MARK: Scan Instances
 
     /// Instance of AHI MultiScan
-    let ahi = AHIMultiScan.shared()!
+    let ahi = MultiScan.shared()
     /// Instance of AHI FaceScan
-    let faceScan = AHIFaceScan.shared()
+    let faceScan = FaceScan()
     /// Instance of AHI BodyScan
-    let bodyScan = AHIBodyScan.shared()
+    let bodyScan = BodyScan()
     
     public override init() {
         super.init()
         // Set persistence delegate
-        ahi.setPersistenceDelegate(self)
+        ahi.delegatePersistence = self
     }
 }
 
@@ -178,9 +178,9 @@ extension AHISDKManager {
     /// We have remote resources that exceed 100MB that enable our scans to work.
     /// You are required to download them inorder to obtain a body scan.
     fileprivate func areAHIResourcesAvailable() {
-        ahi.areResourcesDownloaded { [weak self] success in
+        ahi.areResourcesDownloaded { [weak self] success, error in
             if !success {
-                print("AHI INFO: Resources are not downloaded.")
+                print("AHI INFO: Resources are not downloaded, Error: \(error)")
                 self?.isDownloadInProgress = true
                 weak var weakSelf = self
                 // We recommend polling to check resource state.
@@ -209,8 +209,8 @@ extension AHISDKManager {
 
     /// Check the size of the AHI resources that require downloading.
     fileprivate func checkAHIResourcesDownloadSize() {
-        ahi.totalEstimatedDownloadSizeInBytes { [weak self] bytes in
-            print("AHI INFO: Size of download is \(self?.convertBytesToMBString(Int(bytes)) ?? "0")")
+        ahi.totalEstimatedDownloadSizeInBytes { [weak self] bytes, totalBytes, error in
+            print("AHI INFO: Size of download is \(self?.convertBytesToMBString(Int(bytes)) ?? "0") / \(self?.convertBytesToMBString(Int(totalBytes)) ?? "0")")
         }
     }
 }
@@ -238,7 +238,7 @@ extension AHISDKManager {
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
         guard let vc = topMostVC() else { return }
-        ahi.initiateScan("face", paymentType: .PAYG, withOptions: options, from: vc) { scanTask, error in
+        ahi.initiateScan("face", withOptions: options, from: vc) { scanTask, error in
             guard let task = scanTask, error == nil else {
                 // Error code 7 is the code for the SDK interaction that cancels the scan.
                 if let nsError = error as? NSError, nsError.code == 7 {
@@ -279,7 +279,7 @@ extension AHISDKManager {
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
         guard let vc = topMostVC() else { return }
-        ahi.initiateScan("body", paymentType: .PAYG, withOptions: options, from: vc) { [weak self] scanTask, error in
+        ahi.initiateScan("body", withOptions: options, from: vc) { [weak self] scanTask, error in
             guard let task = scanTask, error == nil else {
                 // Error code 4 is the code for the SDK interaction that cancels the scan.
                 if let nsError = error as? NSError, nsError.code == 4 {
@@ -313,14 +313,14 @@ extension AHISDKManager {
     /// The 3D mesh can be created and returned at any time.
     /// We recommend doing this on successful completion of a body scan with the results.
     fileprivate func getBodyScanExtras(withBodyScanResult result: [String: Any]) {
-        ahi.getExtra(result, options: nil) { error, extras in
+        ahi.getExtra(["body": [result]], query: ["extrapolate": ["mesh"]]) { extras, error in
             guard let extras = extras, error == nil else {
                 print("AHI: ERROR GETTING BODY SCAN EXTRAS. \(error ?? NSError())")
                 return
             }
             print("AHI EXTRAS: \(extras)")
             // The mesh is returned as a URL that stored the file in the app cache.
-            if let meshURL = extras["meshURL"] as? URL {
+            if let meshResult = extras["extrapolate"]?.first as? Dictionary<String, Any>, let meshURL = meshResult["mesh"] as? URL {
                 print("AHI: Mesh URL: \(meshURL)")
             }
         }
@@ -346,7 +346,7 @@ extension AHISDKManager {
 
     /// Check if the userr is authorized to use the MuiltScan service.
     fileprivate func getUserAuthorizedState() {
-        ahi.userIsAuthorized(forId: AHIConfigTokens.AHI_TEST_USER_ID) { isAuthorized in
+        ahi.userIsAuthorized { isAuthorized, userId, error in
             print("AHI INFO: User is \(isAuthorized ? "authorized" : "not authorized")")
         }
     }
