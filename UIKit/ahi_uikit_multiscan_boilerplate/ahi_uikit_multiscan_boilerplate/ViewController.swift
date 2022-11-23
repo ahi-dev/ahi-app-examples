@@ -291,7 +291,7 @@ extension ViewController {
         ahi.initiateScan("face", withOptions: options, from: self) { scanTask, error in
             guard let task = scanTask, error == nil else {
                 // Error code 7 is the code for the SDK interaction that cancels the scan.
-                if let nsError = error as? NSError, nsError.code == 7 {
+                if let nsError = error as? NSError, nsError.code == 3010 {
                     print("AHI: INFO: User cancelled the session.")
                 } else {
                     // Handle error through either lack of results or error.
@@ -325,18 +325,15 @@ extension ViewController {
             print("AHI ERROR: Body Scan inputs invalid.")
             return
         }
+        
+        bodyScan.setEventListener(self)
+        
         // Ensure the view controller being used is the top one.
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
         ahi.initiateScan("body", withOptions: options, from: self) { [weak self] scanTask, error in
             guard let task = scanTask, error == nil else {
-                // Error code 4 is the code for the SDK interaction that cancels the scan.
-                if let nsError = error as? NSError, nsError.code == 4 {
-                    print("AHI: INFO: User cancelled the session.")
-                } else {
-                    // Handle error through either lack of results or error.
-                    print("AHI: ERROR WITH BODY SCAN: \(error ?? NSError())")
-                }
+                print("AHI: ERROR WITH BODY SCAN: \(error ?? NSError())")
                 return
             }
             task.continueWith(block: { resultsTask in
@@ -372,6 +369,16 @@ extension ViewController {
             if let meshResult = extras["extrapolate"]?.first as? Dictionary<String, Any>, let meshURL = meshResult["mesh"] as? URL {
                 print("AHI: Mesh URL: \(meshURL)")
             }
+        }
+    }
+}
+
+// MARK: - AHI Body Scan optional event lintener
+
+extension ViewController: AHIBSEventListenerDelegate {
+    func event(_ name: String, meta: [String : Any]?) {
+        if (name == "scan_cancelled") {
+            print("AHI: INFO: Scan cancelled.")
         }
     }
 }
