@@ -362,10 +362,7 @@ extension ViewController {
     /// The 3D mesh can be created and returned at any time.
     /// We recommend doing this on successful completion of a body scan with the results.
     fileprivate func getBodyScanExtras(withBodyScanResult result: [String: Any]) {
-        let bsresults = ["body": [result]]
-        let meshQuery = ["extrapolate" : ["mesh"]]
-        
-        ahi.getExtra(bsresults, query: meshQuery) { extras, error in
+        ahi.getExtra(["body": [result]], query: ["extrapolate" : ["mesh"]]) { extras, error in
             guard let extras = extras, error == nil else {
                 print("AHI: ERROR GETTING BODY SCAN EXTRAS. \(error ?? NSError())")
                 return
