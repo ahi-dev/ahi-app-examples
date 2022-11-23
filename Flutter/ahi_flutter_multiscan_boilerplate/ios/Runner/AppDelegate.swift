@@ -303,16 +303,6 @@ extension AHIMultiScanModule {
 
 extension AHIMultiScanModule {
     fileprivate func startFaceScan(userInputs: [String: Any], paymentType: String, resultHandler: @escaping FlutterResult) {
-//    TODO: payment types
-//        var pType = AHIMultiScanPaymentType.PAYG
-//        if paymentType == "PAYG" {
-//            pType = .PAYG
-//        } else if paymentType == "SUBSCRIBER" {
-//            pType = .subscriber
-//        } else {
-//            resultHandler(FlutterError(code: "-7", message: "Missing valid payment type.", details: nil))
-//            return
-//        }
         // Ensure the view controller being used is the top one.
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
@@ -338,16 +328,6 @@ extension AHIMultiScanModule {
 
 extension AHIMultiScanModule {
     fileprivate func startBodyScan(userInputs: [String: Any], paymentType: String, resultHandler: @escaping FlutterResult) {
-//    TODO: payment types
-//        var pType = AHIMultiScanPaymentType.PAYG
-//        if paymentType == "PAYG" {
-//            pType = .PAYG
-//        } else if paymentType == "SUBSCRIBER" {
-//            pType = .subscriber
-//        } else {
-//            resultHandler(FlutterError(code: "-7", message: "Missing valid payment type.", details: nil))
-//            return
-//        }
         // Ensure the view controller being used is the top one.
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
