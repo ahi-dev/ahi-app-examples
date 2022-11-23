@@ -19,19 +19,19 @@ import React
 // The MultiScan SDK
 import AHIMultiScan
 // The Body Scan SDK
-import MyFiziqSDKCoreLite
+import AHIBodyScan
 // The FaceScan SDK
-import MFZFaceScan
+import AHIFaceScan
 
 @objc(MultiScanModule)
 class MultiScanModule: NSObject {
     // Start SDK init
     /// Instance of AHI MultiScan
-    let ahi = AHIMultiScan.shared()!
+    let ahi = MultiScan.shared()
     /// Instance of AHI FaceScan
-    let faceScan = AHIFaceScan.shared()
+    let faceScan = FaceScan()
     /// Instance of AHI BodyScan
-    let bodyScan = AHIBodyScan.shared()
+    let bodyScan = BodyScan()
     /// Body Scan Results
     var bodyScanResults = [[String: Any]]()
 
@@ -85,7 +85,7 @@ extension MultiScanModule {
                                   rejecter reject: @escaping RCTPromiseRejectBlock){
         // This is a temporary solution to prevent multiple callbacks being invoked on null pointer promise and resolve blocks. 
         var hasReturned = false
-        ahi.areResourcesDownloaded{ success in
+        ahi.areResourcesDownloaded{ success, error in
             if hasReturned {
                 return
             }
@@ -102,29 +102,20 @@ extension MultiScanModule {
     @objc
     func checkAHIResourcesDownloadSize(_ resolve: @escaping RCTPromiseResolveBlock,
                                        rejecter reject: @escaping RCTPromiseRejectBlock){
-        ahi.totalEstimatedDownloadSizeInBytes(){ bytes in
+        ahi.totalEstimatedDownloadSizeInBytes(){ bytes, totalBytes, error in
             resolve(Int64(bytes))
         }
     }
 
     @objc
-    func startFaceScan(_ userInputs: [String: Any], paymentType msPaymentType: String,
+    func startFaceScan(_ userInputs: [String: Any],
                        resolver resolve: @escaping RCTPromiseResolveBlock,
                        rejecter reject: @escaping RCTPromiseRejectBlock) {
-        var pType = AHIMultiScanPaymentType.PAYG
-        if msPaymentType == "PAYG" {
-            pType = AHIMultiScanPaymentType.PAYG
-        } else if msPaymentType == "SUBSCRIBER" {
-            pType = AHIMultiScanPaymentType.subscriber
-        } else {
-            reject("-4", "Missing user face scan payment type.", "" as? Error)
-            return
-        }
         DispatchQueue.main.async {
             // This is a temporary solution to prevent multiple callbacks being invoked on null pointer promise and resolve blocks. 
             var hasReturned = false
             guard let vc = self.topMostVC() else {return }
-            self.ahi.initiateScan("face", paymentType: pType, withOptions: userInputs, from:vc) { scanTask, error in
+            self.ahi.initiateScan("face", withOptions: userInputs, from:vc) { scanTask, error in
                 if hasReturned {
                     return
                 }
@@ -153,23 +144,13 @@ extension MultiScanModule {
 
     @objc
     func startBodyScan(_ userInputs: [String: Any],
-                       paymentType msPaymentType: String,
                        resolver resolve: @escaping RCTPromiseResolveBlock,
                        rejecter reject: @escaping RCTPromiseRejectBlock) {
-        var pType = AHIMultiScanPaymentType.PAYG
-        if msPaymentType == "PAYG" {
-            pType = AHIMultiScanPaymentType.PAYG
-        } else if msPaymentType == "SUBSCRIBER" {
-            pType = AHIMultiScanPaymentType.subscriber
-        } else {
-            reject("-6", "Missing user body scan payment type.", "" as? Error)
-            return
-        }
         DispatchQueue.main.async {
             guard let vc = self.topMostVC() else { return }
             // This is a temporary solution to prevent multiple callbacks being invoked on null pointer promise and resolve blocks. 
             var hasReturned = false
-            self.ahi.initiateScan("body", paymentType: pType, withOptions: userInputs, from:vc) { scanTask, error in
+            self.ahi.initiateScan("body", withOptions: userInputs, from:vc) { scanTask, error in
                 if hasReturned {
                     return
                 }
@@ -199,8 +180,9 @@ extension MultiScanModule {
     @objc
     func getBodyScanExtras(_ bodyScanResult: [String: Any],
                            resolver resolve: @escaping RCTPromiseResolveBlock,
-                           rejecter reject: @escaping RCTPromiseRejectBlock){
-        ahi.getExtra(bodyScanResult, options: nil) { error, bodyExtras in
+                           rejecter reject: @escaping RCTPromiseRejectBlock) {
+        
+        ahi.getExtra(["body": [bodyScanResult]], query: ["extrapolate" : ["mesh"]]) { bodyExtras, error in
             if let err = error as NSError? {
                 reject("\(err.code)", err.localizedDescription, err)
                 return
@@ -209,8 +191,11 @@ extension MultiScanModule {
                 reject("-10", "No body scan extras available.", "" as? Error)
                 return
             }
+            
+//        TODO: get mesh
             var bsExtras = [String: String]()
-            if let meshURL = extras["meshURL"] as? URL {
+            
+            if let meshResult = extras["extrapolate"]?.first as? Dictionary<String, Any>, let meshURL = meshResult["mesh"] as? URL {
                 bsExtras["meshURL"] = meshURL.absoluteString
             } else {
                 bsExtras["meshURL"] = ""
@@ -251,15 +236,9 @@ extension MultiScanModule {
     }
 
     @objc
-    func getUserAuthorizedState(_ userId: Any?,
-                                resolver resolve: @escaping RCTPromiseResolveBlock,
-                                rejecter reject: @escaping RCTPromiseRejectBlock){
-        guard let userId = userId as? String else {
-            let err = NSError(domain: "com.ahi.ios.ahi_multiscan_react_native_wrapper", code: -11, userInfo: [NSLocalizedDescriptionKey: "User is not authorized"])
-            reject("\(err.code)", err.localizedDescription, err)
-            return
-        }
-        ahi.userIsAuthorized(forId: userId) { isAuthorized in
+    func getUserAuthorizedState( resolver resolve: @escaping RCTPromiseResolveBlock,
+                                 rejecter reject: @escaping RCTPromiseRejectBlock) {
+        ahi.userIsAuthorized() { isAuthorized, userId, error in
             resolve(isAuthorized)
         }
     }
@@ -290,7 +269,7 @@ extension MultiScanModule {
             print("AHI: Results must not be nil and must conform to an Array of Map results.")
             return
         }
-        ahi.setPersistenceDelegate(self)
+        ahi.delegatePersistence = self
         bodyScanResults = bsResults
     }
 }

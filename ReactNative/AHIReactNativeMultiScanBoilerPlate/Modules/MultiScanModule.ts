@@ -37,12 +37,10 @@ interface MultiScanInterface {
   /** Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG"). */
   startFaceScan(
     userInput: Object,
-    paymentType: string,
   ): Promise<Map<String, any>>;
   /** Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG"). */
   startBodyScan(
     userInput: Object,
-    paymentType: string,
   ): Promise<Map<String, any>>;
   /** Requires a map object of the body scan results and returns a Map object. */
   getBodyScanExtras(scanResults: Map<String, any>): Promise<Map<String, any>>;
@@ -51,7 +49,7 @@ interface MultiScanInterface {
   /** Returns a Map containing the SDK details. */
   getMultiScanDetails(): Promise<Map<string, any>>;
   /** Returns the user authorization status of the SDK. */
-  getUserAuthorizedState(userID: string): Promise<string>;
+  getUserAuthorizedState(): Promise<string>;
   /** Will deuathorize the user from the SDK. */
   deauthorizeUser(): Promise<string>;
   /** Released the actively registered SDK session. */
