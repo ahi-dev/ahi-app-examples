@@ -387,8 +387,6 @@ extension ViewController {
             return
         }
         
-        bodyScan.setEventListener(self)
-        
         // Ensure the view controller being used is the top one.
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
