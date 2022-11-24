@@ -12,7 +12,7 @@ target 'ahi_uikit_multiscan_boilerplate' do
   pod 'AHIMultiScan', '~> 22.0'
   pod 'AHIBodyScan', '~> 22.0'
   pod 'AHIFaceScan', '~> 22.0'
-  pod 'AHIFingerScan', '~>22.0'
+  pod 'AHIFingerScan', '~> 22.0'
   
 
 end

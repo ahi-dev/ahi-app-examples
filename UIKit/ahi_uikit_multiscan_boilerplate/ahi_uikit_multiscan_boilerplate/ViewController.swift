@@ -390,7 +390,8 @@ extension ViewController {
         // you may have issues.
         ahi.initiateScan("body", withOptions: options, from: self) { [weak self] scanTask, error in
             guard let task = scanTask, error == nil else {
-                if let nsError = error as? NSError, nsError.code == AHIBSErrorCode.codeBodyScanCancelledByUser.rawValue {
+                // TODO: use enum
+                if let nsError = error as? NSError, nsError.code == 2011 {
                     print("AHI: INFO: User cancelled the session.")
                 } else {
                     // Handle error through either lack of results or error.
