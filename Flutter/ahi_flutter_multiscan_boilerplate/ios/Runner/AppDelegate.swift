@@ -181,10 +181,6 @@ extension AppDelegate {
             resultHandler(FlutterError(code: "-3", message: "Missing user face scan input details.", details: nil))
             return
         }
-        guard let paymentType = args["paymentType"] as? String else {
-            resultHandler(FlutterError(code: "-4", message: "Missing user face scan payment type.", details: nil))
-            return
-        }
         let userInputs: [String : Any] = [
             "enum_ent_sex": enum_ent_sex,
             "cm_ent_height": cm_ent_height,
@@ -195,7 +191,7 @@ extension AppDelegate {
             "bool_ent_bloodPressureMedication": bool_ent_bloodPressureMedication,
             "enum_ent_diabetic": enum_ent_diabetic,
         ]
-        multiScan.startFaceScan(userInputs: userInputs, paymentType: paymentType.uppercased(), resultHandler: resultHandler)
+        multiScan.startFaceScan(userInputs: userInputs, resultHandler: resultHandler)
     }
 
     fileprivate func startFingerScan(arguments: Any?, resultHandler: @escaping FlutterResult) {
@@ -226,16 +222,12 @@ extension AppDelegate {
             resultHandler(FlutterError(code: "-5", message: "Missing user body scan input details.", details: nil))
             return
         }
-        guard let paymentType = args["paymentType"] as? String else {
-            resultHandler(FlutterError(code: "-6", message: "Missing user body scan payment type.", details: nil))
-            return
-        }
         let userInputs: [String : Any] = [
             "enum_ent_sex": enum_ent_sex,
             "cm_ent_height": cm_ent_height,
             "kg_ent_weight": kg_ent_weight
         ]
-        multiScan.startBodyScan(userInputs: userInputs, paymentType: paymentType.uppercased(), resultHandler: resultHandler)
+        multiScan.startBodyScan(userInputs: userInputs, resultHandler: resultHandler)
     }
 }
 
@@ -329,7 +321,7 @@ extension AHIMultiScanModule {
 // MARK: - AHI Face Scan Initialiser
 
 extension AHIMultiScanModule {
-    fileprivate func startFaceScan(userInputs: [String: Any], paymentType: String, resultHandler: @escaping FlutterResult) {
+    fileprivate func startFaceScan(userInputs: [String: Any], resultHandler: @escaping FlutterResult) {
         // Ensure the view controller being used is the top one.
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
@@ -380,7 +372,7 @@ extension AHIMultiScanModule {
 // MARK: - AHI Body Scan Initialiser
 
 extension AHIMultiScanModule {
-    fileprivate func startBodyScan(userInputs: [String: Any], paymentType: String, resultHandler: @escaping FlutterResult) {
+    fileprivate func startBodyScan(userInputs: [String: Any], resultHandler: @escaping FlutterResult) {
         // Ensure the view controller being used is the top one.
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
@@ -508,7 +500,8 @@ extension AHIMultiScanModule {
         guard let err = error as? NSError else {
             return nil
         }
-        let errCode = err.code
+        let errCode = (err.code == AHIFingerScanErrorCode.codeScanCanceled.rawValue ||
+                       err.code == AHIFaceScanErrorCode.ScanCanceled.rawValue) ? "USER_CANCELLED" : "\(err.code)"
         var errMessage = err.localizedDescription
         if errMessage.isEmpty {
             errMessage = "Unknown error occurred. Please contact developer support."

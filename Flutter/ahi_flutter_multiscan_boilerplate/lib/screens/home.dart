@@ -541,7 +541,9 @@ class _HomeState extends State<Home> {
             if (!_isSDKSetup) defaultButton("Setup SDK", () => {didTapSetup()}),
             if (_isUserAuthorized)
               defaultButton("Start FaceScan", () => {didTapStartFaceScan()}),
-            defaultButton("Start FingerScan", () => {didTapStartFingerScan()}),
+            if (_isUserAuthorized)
+              defaultButton(
+                  "Start FingerScan", () => {didTapStartFingerScan()}),
             if (_isUserAuthorized && _downloadResourcesButtonEnabled)
               defaultButton(
                   "Download Resources", () => {didTapDownloadResources()}),
