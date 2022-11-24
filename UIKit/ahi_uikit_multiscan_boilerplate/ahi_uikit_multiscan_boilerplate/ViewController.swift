@@ -19,9 +19,11 @@ import UIKit
 // The MultiScan SDK
 import AHIMultiScan
 // The Body Scan SDK
-import MyFiziqSDKCoreLite
+import AHIBodyScan
 // The FaceScan SDK
-import MFZFaceScan
+import AHIFaceScan
+// The FingerScan SDK
+import AHIFingerScan
 
 /// The required tokens for the MultiScan Setup and Authorization.
 public struct AHIConfigTokens {
@@ -51,6 +53,7 @@ class ViewController: UIViewController {
                 }
                 self.setupButton.isHidden = self.isSetup
                 self.startFaceScanButton.isHidden = !self.isSetup
+                self.startFingerScanButton.isHidden = !self.isSetup
                 self.downloadResourcesButton.isHidden = !self.isSetup
             }
         }
@@ -79,11 +82,13 @@ class ViewController: UIViewController {
     // MARK: Scan Instances
 
     /// Instance of AHI MultiScan
-    let ahi = AHIMultiScan.shared()!
+    let ahi = MultiScan.shared()
     /// Instance of AHI FaceScan
-    let faceScan = AHIFaceScan.shared()
+    let faceScan = FaceScan()
+    /// Instance of AHI FingerScacn
+    let fingerScan = FingerScan()
     /// Instance of AHI BodyScan
-    let bodyScan = AHIBodyScan.shared()
+    let bodyScan = BodyScan()
 
     // MARK: View Components
 
@@ -108,6 +113,14 @@ class ViewController: UIViewController {
         ub.isHidden = true
         return ub
     }()
+    /// Button to invoke finger scan.
+    /// Is hiddden until successful setup.
+    lazy var startFingerScanButton: UIButton = {
+        let ub = createButton(withTitle: "Start FingerScan", action: #selector(didTapStartFingerScan))
+        ub.isHidden = true
+        return ub
+    }()
+    
     /// Button to invoke face scan.
     /// Is hiddden until successful download of resources.
     lazy var startBodyScanButton: UIButton = {
@@ -128,10 +141,12 @@ class ViewController: UIViewController {
         view.backgroundColor = .white
         view.addSubview(setupButton)
         view.addSubview(startFaceScanButton)
+        view.addSubview(startFingerScanButton)
         view.addSubview(startBodyScanButton)
         view.addSubview(downloadResourcesButton)
         updateViewConstraints()
-        ahi.setPersistenceDelegate(self)
+        ahi.delegatePersistence = self
+        bodyScan.setEventListener(self)
     }
 
     // MARK: Constraints
@@ -152,14 +167,18 @@ class ViewController: UIViewController {
         startFaceScanButton.leftAnchor.constraint(equalTo: view.leftAnchor, constant: inset).isActive = true
         startFaceScanButton.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -inset).isActive = true
         startFaceScanButton.safeAreaLayoutGuide.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: (buttonHeight + inset)).isActive = true
+        startFingerScanButton.heightAnchor.constraint(equalToConstant: buttonHeight).isActive = true
+        startFingerScanButton.leftAnchor.constraint(equalTo: view.leftAnchor, constant: inset).isActive = true
+        startFingerScanButton.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -inset).isActive = true
+        startFingerScanButton.topAnchor.constraint(equalTo: startFaceScanButton.bottomAnchor, constant: inset).isActive = true
         startBodyScanButton.heightAnchor.constraint(equalToConstant: buttonHeight).isActive = true
         startBodyScanButton.leftAnchor.constraint(equalTo: view.leftAnchor, constant: inset).isActive = true
         startBodyScanButton.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -inset).isActive = true
-        startBodyScanButton.topAnchor.constraint(equalTo: startFaceScanButton.bottomAnchor, constant: inset).isActive = true
+        startBodyScanButton.topAnchor.constraint(equalTo: startFingerScanButton.bottomAnchor, constant: inset).isActive = true
         downloadResourcesButton.heightAnchor.constraint(equalToConstant: buttonHeight).isActive = true
         downloadResourcesButton.leftAnchor.constraint(equalTo: view.leftAnchor, constant: inset).isActive = true
         downloadResourcesButton.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -inset).isActive = true
-        downloadResourcesButton.topAnchor.constraint(equalTo: startFaceScanButton.bottomAnchor, constant: inset).isActive = true
+        downloadResourcesButton.topAnchor.constraint(equalTo: startFingerScanButton.bottomAnchor, constant: inset).isActive = true
     }
 }
 
@@ -172,6 +191,10 @@ extension ViewController {
 
     @IBAction func didTapStartFaceScan() {
         startFaceScan()
+    }
+    
+    @IBAction func didTapStartFingerScan() {
+        startFingerScan()
     }
 
     @IBAction func didTapStartBodyScan() {
@@ -200,7 +223,7 @@ extension ViewController {
     /// This must happen before requesting a scan.
     /// We recommend doing this on successful load of your application.
     fileprivate func setupMultiScanSDK() {
-        ahi.setup(withConfig: ["TOKEN": AHIConfigTokens.AHI_MULTI_SCAN_TOKEN], scans: [faceScan, bodyScan]) { [weak self] error in
+        ahi.setup(withConfig: ["TOKEN": AHIConfigTokens.AHI_MULTI_SCAN_TOKEN], scans: [faceScan, bodyScan, fingerScan]) { [weak self] error in
             if let err = error {
                 print("AHI: Error setting up: \(err)")
                 print("AHI: Confirm you have a valid token.")
@@ -234,9 +257,9 @@ extension ViewController {
     /// We have remote resources that exceed 100MB that enable our scans to work.
     /// You are required to download them inorder to obtain a body scan.
     fileprivate func areAHIResourcesAvailable() {
-        ahi.areResourcesDownloaded { [weak self] success in
+        ahi.areResourcesDownloaded { [weak self] success, error in
             if !success {
-                print("AHI INFO: Resources are not downloaded.")
+                print("AHI INFO: Resources are not downloaded, error: \(error?.localizedDescription)")
                 weak var weakSelf = self
                 // We recommend polling to check resource state.
                 // This is a simple example of how.
@@ -260,8 +283,8 @@ extension ViewController {
 
     /// Check the size of the AHI resources that require downloading. 
     fileprivate func checkAHIResourcesDownloadSize() {
-        ahi.totalEstimatedDownloadSizeInBytes { [weak self] bytes in
-            print("AHI INFO: Size of download is \(self?.convertBytesToMBString(Int(bytes)) ?? "0")")
+        ahi.totalEstimatedDownloadSizeInBytes { [weak self] bytes, totalBytes, error in
+            print("AHI INFO: Size of download is \(self?.convertBytesToMBString(Int(bytes)) ?? "0") / \(self?.convertBytesToMBString(Int(totalBytes)) ?? "0")")
         }
     }
 }
@@ -288,14 +311,50 @@ extension ViewController {
         // Ensure the view controller being used is the top one.
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
-        ahi.initiateScan("face", paymentType: .PAYG, withOptions: options, from: self) { scanTask, error in
+        ahi.initiateScan("face", withOptions: options, from: self) { scanTask, error in
             guard let task = scanTask, error == nil else {
-                // Error code 7 is the code for the SDK interaction that cancels the scan.
-                if let nsError = error as? NSError, nsError.code == 7 {
+                if let nsError = error as? NSError, nsError.code == AHIFaceScanErrorCode.ScanCanceled.rawValue {
                     print("AHI: INFO: User cancelled the session.")
                 } else {
                     // Handle error through either lack of results or error.
                     print("AHI: ERROR WITH FACE SCAN: \(error ?? NSError())")
+                }
+                return
+            }
+            task.continueWith(block: { resultsTask in
+                if let results = resultsTask.result as? [String : Any] {
+                    // Handle results
+                    print("AHI: SCAN RESULTS: \(results)")
+                }
+                /// Handle failure.
+                return nil
+            })
+        }
+    }
+}
+
+// MARK: - AHI Finger Scan Initialiser
+
+extension ViewController {
+    fileprivate func startFingerScan() {
+        // All required finger scan options.
+        let options: [String : Any] = [
+            "sec_ent_scanLength" : 60
+        ]
+        if !areFingerScanConfigOptionsValid(fingerScanInput: options) {
+            print("AHI ERROR: Finger Scan inputs invalid.")
+            return
+        }
+        // Ensure the view controller being used is the top one.
+        // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
+        // you may have issues.
+        ahi.initiateScan("finger", withOptions: options, from: self) { scanTask, error in
+            guard let task = scanTask, error == nil else {
+                if let nsError = error as? NSError, nsError.code == AHIFingerScanErrorCode.codeScanCanceled.rawValue {
+                    print("AHI: INFO: User cancelled the session.")
+                } else {
+                    // Handle error through either lack of results or error.
+                    print("AHI: ERROR WITH FINGER SCAN: \(error ?? NSError())")
                 }
                 return
             }
@@ -321,17 +380,18 @@ extension ViewController {
             "cm_ent_height": 180,
             "kg_ent_weight": 85
         ]
-        if !areBodyScanConfigOptionsValid(faceScanInput: options) {
+        if !areBodyScanConfigOptionsValid(bodyScanInput: options) {
             print("AHI ERROR: Body Scan inputs invalid.")
             return
         }
+        
         // Ensure the view controller being used is the top one.
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
-        ahi.initiateScan("body", paymentType: .PAYG, withOptions: options, from: self) { [weak self] scanTask, error in
+        ahi.initiateScan("body", withOptions: options, from: self) { [weak self] scanTask, error in
             guard let task = scanTask, error == nil else {
-                // Error code 4 is the code for the SDK interaction that cancels the scan.
-                if let nsError = error as? NSError, nsError.code == 4 {
+                // TODO: use enum
+                if let nsError = error as? NSError, nsError.code == 2011 {
                     print("AHI: INFO: User cancelled the session.")
                 } else {
                     // Handle error through either lack of results or error.
@@ -362,17 +422,25 @@ extension ViewController {
     /// The 3D mesh can be created and returned at any time.
     /// We recommend doing this on successful completion of a body scan with the results.
     fileprivate func getBodyScanExtras(withBodyScanResult result: [String: Any]) {
-        ahi.getExtra(result, options: nil) { error, extras in
+        ahi.getExtra(["body": [result]], query: ["extrapolate" : ["mesh"]]) { extras, error in
             guard let extras = extras, error == nil else {
                 print("AHI: ERROR GETTING BODY SCAN EXTRAS. \(error ?? NSError())")
                 return
             }
             print("AHI EXTRAS: \(extras)")
             // The mesh is returned as a URL that stored the file in the app cache.
-            if let meshURL = extras["meshURL"] as? URL {
+            if let meshResult = extras["extrapolate"]?.first as? Dictionary<String, Any>, let meshURL = meshResult["mesh"] as? URL {
                 print("AHI: Mesh URL: \(meshURL)")
             }
         }
+    }
+}
+
+// MARK: - AHI Body Scan optional event lintener
+
+extension ViewController: AHIBSEventListenerDelegate {
+    func event(_ name: String, meta: [String : Any]?) {
+        print("AHI Body Scan event: \(name)")
     }
 }
 
@@ -395,7 +463,7 @@ extension ViewController {
 
     /// Check if the userr is authorized to use the MuiltScan service.
     fileprivate func getUserAuthorizedState() {
-        ahi.userIsAuthorized(forId: AHIConfigTokens.AHI_TEST_USER_ID) { isAuthorized in
+        ahi.userIsAuthorized { isAuthorized, partnerUserId, error in
             print("AHI INFO: User is \(isAuthorized ? "authorized" : "not authorized")")
         }
     }
@@ -479,6 +547,7 @@ extension NSObject {
     /// Please see the Schemas for more information:
     /// BodyScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/BodyScan/Schemas/
     /// FaceScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FaceScan/Schemas/
+    /// FingerScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FingerScan/Schemas/
     public func areSharedScanConfigOptionsValid(scanInput configs: [String: Any]) -> Bool {
         guard
             let sex = configs["enum_ent_sex"] as? String,
@@ -518,7 +587,7 @@ extension NSObject {
     ///
     /// Please see the Schemas for more information:
     /// BodyScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/BodyScan/Schemas/
-    public func areBodyScanConfigOptionsValid(faceScanInput configs: [String: Any]) -> Bool {
+    public func areBodyScanConfigOptionsValid(bodyScanInput configs: [String: Any]) -> Bool {
         if !areSharedScanConfigOptionsValid(scanInput: configs) {
             return false
         }
@@ -526,6 +595,18 @@ extension NSObject {
               let weight = configs["kg_ent_weight"] as? Int,
               (height >= 50 && height <= 255),
               (weight >= 16 && weight <= 300) else {
+            return false
+        }
+        return true
+    }
+    
+    /// FingerScan config requirements validation.
+    ///
+    /// Please see the Schemas for more information:
+    /// FingerScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FingerScan/Schemas/
+    public func areFingerScanConfigOptionsValid(fingerScanInput configs: [String: Any]) -> Bool {
+        guard let scanLength = configs["sec_ent_scanLength"] as? Int,
+              (scanLength >= 20) else {
             return false
         }
         return true

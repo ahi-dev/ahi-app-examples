@@ -20,9 +20,9 @@ import Flutter
 // The MultiScan SDK
 import AHIMultiScan
 // The Body Scan SDK
-import MyFiziqSDKCoreLite
+import AHIBodyScan
 // The FaceScan SDK
-import MFZFaceScan
+import AHIFaceScan
 
 private let CHANNEL = "ahi_multiscan_flutter_wrapper"
 
@@ -130,7 +130,7 @@ extension AppDelegate {
                     weakSelf.multiScan.getMultiScanDetails(resultHandler: resultHandler)
                     break
                 case .getUserAuthorizedState:
-                    weakSelf.multiScan.getUserAuthorizedState(userId: call.arguments, resultHandler: resultHandler)
+                    weakSelf.multiScan.getUserAuthorizedState(resultHandler: resultHandler)
                     break
                 case .deauthorizeUser:
                     weakSelf.multiScan.deauthorizeUser(resultHandler: resultHandler)
@@ -221,11 +221,11 @@ class AHIMultiScanModule: NSObject {
     // MARK: Scan Instances
     
     /// Instance of AHI MultiScan
-    let ahi = AHIMultiScan.shared()!
+    let ahi = MultiScan.shared()
     /// Instance of AHI FaceScan
-    let faceScan = AHIFaceScan.shared()
+    let faceScan = FaceScan()
     /// Instance of AHI BodyScan
-    let bodyScan = AHIBodyScan.shared()
+    let bodyScan = BodyScan()
     /// Body Scan Results
     var bodyScanResults = [[String: Any]]()
     
@@ -279,7 +279,7 @@ extension AHIMultiScanModule {
     ///
     /// This function checks if they are already downloaded and available for use.
     fileprivate func areAHIResourcesAvailable(resultHandler: @escaping FlutterResult) {
-        ahi.areResourcesDownloaded { success in
+        ahi.areResourcesDownloaded { success, error in
             resultHandler(success)
         }
     }
@@ -293,7 +293,7 @@ extension AHIMultiScanModule {
     
     /// Check the size of the AHI resources that require downloading.
     fileprivate func checkAHIResourcesDownloadSize(resultHandler: @escaping FlutterResult) {
-        ahi.totalEstimatedDownloadSizeInBytes { bytes in
+        ahi.totalEstimatedDownloadSizeInBytes { bytes, totalBytes, error in
             resultHandler(Int64(bytes))
         }
     }
@@ -303,20 +303,11 @@ extension AHIMultiScanModule {
 
 extension AHIMultiScanModule {
     fileprivate func startFaceScan(userInputs: [String: Any], paymentType: String, resultHandler: @escaping FlutterResult) {
-        var pType = AHIMultiScanPaymentType.PAYG
-        if paymentType == "PAYG" {
-            pType = .PAYG
-        } else if paymentType == "SUBSCRIBER" {
-            pType = .subscriber
-        } else {
-            resultHandler(FlutterError(code: "-7", message: "Missing valid payment type.", details: nil))
-            return
-        }
         // Ensure the view controller being used is the top one.
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
         guard let vc = topMostVC() else { return }
-        ahi.initiateScan("face", paymentType: pType, withOptions: userInputs, from: vc) { [weak self] scanTask, error in
+        ahi.initiateScan("face", withOptions: userInputs, from: vc) { [weak self] scanTask, error in
             guard let task = scanTask, error == nil else {
                 resultHandler(self?.createFlutterError(fromError: error))
                 return
@@ -337,20 +328,11 @@ extension AHIMultiScanModule {
 
 extension AHIMultiScanModule {
     fileprivate func startBodyScan(userInputs: [String: Any], paymentType: String, resultHandler: @escaping FlutterResult) {
-        var pType = AHIMultiScanPaymentType.PAYG
-        if paymentType == "PAYG" {
-            pType = .PAYG
-        } else if paymentType == "SUBSCRIBER" {
-            pType = .subscriber
-        } else {
-            resultHandler(FlutterError(code: "-7", message: "Missing valid payment type.", details: nil))
-            return
-        }
         // Ensure the view controller being used is the top one.
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
         guard let vc = topMostVC() else { return }
-        ahi.initiateScan("body", paymentType: pType, withOptions: userInputs, from: vc) {
+        ahi.initiateScan("body", withOptions: userInputs, from: vc) {
             [weak self] scanTask, error in
             guard let task = scanTask, error == nil else {
                 resultHandler(self?.createFlutterError(fromError: error))
@@ -381,13 +363,14 @@ extension AHIMultiScanModule {
             resultHandler(FlutterError(code: "-8", message: "Missing valid body scan result.", details: nil))
             return
         }
-        ahi.getExtra(bodyScanResult, options: nil) { [weak self] error, extras in
+        ahi.getExtra(["body": [result ?? [:]]], query: ["extrapolate": ["mesh"]]) { [weak self] extras, error in
             guard let extras = extras, error == nil else {
                 resultHandler(self?.createFlutterError(fromError: error))
                 return
             }
+            
             var bsExtras = [String: String]()
-            if let meshURL = extras["meshURL"] as? URL {
+            if let meshResult = extras["extrapolate"]?.first as? Dictionary<String, Any>, let meshURL = meshResult["mesh"] as? URL {
                 // This may require being relative path over absoluteString.
                 // Would recommend in session moving the mesh to another file controlled by the app.
                 bsExtras["meshURL"] = meshURL.absoluteString
@@ -419,12 +402,8 @@ extension AHIMultiScanModule {
     }
     
     /// Check if the user is authorized to use the MuiltScan service.
-    fileprivate func getUserAuthorizedState(userId: Any?, resultHandler: @escaping FlutterResult) {
-        guard let userID = userId as? String else {
-            resultHandler(FlutterError(code: "-9", message: "Missing user ID.", details: nil))
-            return
-        }
-        ahi.userIsAuthorized(forId: userID) { isAuthorized in
+    fileprivate func getUserAuthorizedState(resultHandler: @escaping FlutterResult) {
+        ahi.userIsAuthorized { isAuthorized, partnerUserId, error in
             resultHandler(isAuthorized)
         }
     }
@@ -459,7 +438,7 @@ extension AHIMultiScanModule: AHIDelegatePersistence {
             print("AHI: Results must not be nil and must conform to an Array of Map results.")
             return
         }
-        ahi.setPersistenceDelegate(self)
+        ahi.delegatePersistence = self
         bodyScanResults = bsResults
     }
 

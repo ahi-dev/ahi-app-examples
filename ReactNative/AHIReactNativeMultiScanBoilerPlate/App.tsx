@@ -180,7 +180,7 @@ const App: () => ReactNode = () => {
       console.log('AHI ERROR: Face Scan inputs');
       return;
     }
-    MultiScanModule.startFaceScan(userFaceScanInput, MSPaymentType.PAYG)
+    MultiScanModule.startFaceScan(userFaceScanInput)
       .then((faceScanResults: Map<String, any>) => {
         console.log('AHI: SCAN RESULTS: ' + JSON.stringify(faceScanResults));
       })
@@ -200,7 +200,7 @@ const App: () => ReactNode = () => {
       console.log('AHI ERROR: Body Scan inputs invalid.');
       return;
     }
-    MultiScanModule.startBodyScan(userBodyScanInput, MSPaymentType.PAYG)
+    MultiScanModule.startBodyScan(userBodyScanInput)
       .then((bodyScanResults: Map<String, any>) => {
         console.log('AHI: SCAN RESULTS: ' + JSON.stringify(bodyScanResults));
         getBodyScanExtras(bodyScanResults);
@@ -258,7 +258,7 @@ const App: () => ReactNode = () => {
    * Check if the user is authorized to use the MuiltScan service.
    */
   function getUserAuthorizedState() {
-    MultiScanModule.getUserAuthorizedState(AHI_TEST_USER_ID)
+    MultiScanModule.getUserAuthorizedState()
       .then(isAuthorized => {
         console.log(
           'AHI INFO: User is ',

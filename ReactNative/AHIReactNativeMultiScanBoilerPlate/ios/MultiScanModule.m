@@ -34,13 +34,11 @@ RCT_EXTERN_METHOD(
                   )
 RCT_EXTERN_METHOD(
                   startFaceScan:(NSDictionary *)userInputValues
-                  paymentType:(NSString *)msPaymentType
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject
                   )
 RCT_EXTERN_METHOD(
                   startBodyScan:(NSDictionary *)userInputValues
-                  paymentType:(NSString *)msPaymentType
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject
                   )
@@ -70,8 +68,7 @@ RCT_EXTERN_METHOD(
                   rejecter:(RCTPromiseRejectBlock)reject
                   )
 RCT_EXTERN_METHOD(
-                  getUserAuthorizedState:(NSString *)userID
-                  resolver:(RCTPromiseResolveBlock)resolve
+                  getUserAuthorizedState:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject
                   )
 RCT_EXTERN_METHOD(
