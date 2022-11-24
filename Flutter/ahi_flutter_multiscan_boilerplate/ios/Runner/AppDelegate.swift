@@ -23,6 +23,8 @@ import AHIMultiScan
 import AHIBodyScan
 // The FaceScan SDK
 import AHIFaceScan
+// The FingerScan SDK
+import AHIFingerScan
 
 private let CHANNEL = "ahi_multiscan_flutter_wrapper"
 
@@ -42,9 +44,11 @@ private let CHANNEL = "ahi_multiscan_flutter_wrapper"
         case downloadAHIResources = "downloadAHIResources"
         /// Will return an integer for the bytes size.
         case checkAHIResourcesDownloadSize = "checkAHIResourcesDownloadSize"
-        /// Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG")
+        /// Requires a map object for the required user inputs
         case startFaceScan = "startFaceScan"
-        /// Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG")
+        /// Requires a map object for the required user inputs
+        case startFingerScan = "startFingerScan"
+        /// Requires a map object for the required user inputs 
         case startBodyScan = "startBodyScan"
         /// Requires a map object of the body scan results and returns a Map object.
         case getBodyScanExtras = "getBodyScanExtras"
@@ -116,6 +120,9 @@ extension AppDelegate {
                     break
                 case .startFaceScan:
                     weakSelf.startFaceScan(arguments: call.arguments, resultHandler: resultHandler)
+                    break
+                case .startFingerScan:
+                    weakSelf.startFingerScan(arguments: call.arguments, resultHandler: resultHandler)
                     break
                 case .startBodyScan:
                     weakSelf.startBodyScan(arguments: call.arguments, resultHandler: resultHandler)
@@ -191,6 +198,24 @@ extension AppDelegate {
         multiScan.startFaceScan(userInputs: userInputs, paymentType: paymentType.uppercased(), resultHandler: resultHandler)
     }
 
+    fileprivate func startFingerScan(arguments: Any?, resultHandler: @escaping FlutterResult) {
+        // Need to separate the payment type content from the Map.
+        guard let args = arguments as? [String: Any],
+              let sec_ent_scanLength = args["sec_ent_scanLength"] as? Int,
+              let str_ent_instruction1 = args["str_ent_instruction1"] as? String,
+              let str_ent_instruction2 = args["str_ent_instruction2"] as? String
+        else {
+            resultHandler(FlutterError(code: "-3", message: "Missing user finger scan input details.", details: nil))
+            return
+        }
+        let userInputs: [String : Any] = [
+            "sec_ent_scanLength": sec_ent_scanLength,
+            "str_ent_instruction1": str_ent_instruction1,
+            "str_ent_instruction2": str_ent_instruction2,
+        ]
+        multiScan.startFingerScan(userInputs: userInputs, resultHandler: resultHandler)
+    }
+
     fileprivate func startBodyScan(arguments: Any?, resultHandler: @escaping FlutterResult) {
         // Need to separate the payment type content from the Map.
         guard let args = arguments as? [String: Any],
@@ -224,6 +249,8 @@ class AHIMultiScanModule: NSObject {
     let ahi = MultiScan.shared()
     /// Instance of AHI FaceScan
     let faceScan = FaceScan()
+    /// Instance of AHI FigerScan
+    let fingerScan = FingerScan()
     /// Instance of AHI BodyScan
     let bodyScan = BodyScan()
     /// Body Scan Results
@@ -246,7 +273,7 @@ extension AHIMultiScanModule {
             resultHandler(FlutterError(code: "-1", message: "Missing multi scan token", details: nil))
             return
         }
-        ahi.setup(withConfig: ["TOKEN": token], scans: [faceScan, bodyScan]) { [weak self] error in
+        ahi.setup(withConfig: ["TOKEN": token], scans: [faceScan, fingerScan, bodyScan]) { [weak self] error in
             if let err = error {
                 resultHandler(self?.createFlutterError(fromError: err))
                 return
@@ -308,6 +335,32 @@ extension AHIMultiScanModule {
         // you may have issues.
         guard let vc = topMostVC() else { return }
         ahi.initiateScan("face", withOptions: userInputs, from: vc) { [weak self] scanTask, error in
+            guard let task = scanTask, error == nil else {
+                resultHandler(self?.createFlutterError(fromError: error))
+                return
+            }
+            task.continueWith(block: { resultsTask in
+                if let results = resultsTask.result as? [String : Any] {
+                    resultHandler(results)
+                } else {
+                    resultHandler(nil)
+                }
+                return nil
+            })
+        }
+    }
+}
+
+
+// MARK: - AHI Finger Scan Initialiser
+
+extension AHIMultiScanModule {
+    fileprivate func startFingerScan(userInputs: [String: Any], resultHandler: @escaping FlutterResult) {
+        // Ensure the view controller being used is the top one.
+        // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
+        // you may have issues.
+        guard let vc = topMostVC() else { return }
+        ahi.initiateScan("finger", withOptions: userInputs, from: vc) { [weak self] scanTask, error in
             guard let task = scanTask, error == nil else {
                 resultHandler(self?.createFlutterError(fromError: error))
                 return

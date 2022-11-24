@@ -26,22 +26,6 @@ class Home extends StatefulWidget {
   State<Home> createState() => _HomeState();
 }
 
-/// Payment type
-enum MSPaymentType { PAYG, SUBS }
-
-extension MSPaymentTypeExtension on MSPaymentType {
-  String get value {
-    switch (this) {
-      case MSPaymentType.PAYG:
-        return "PAYG";
-      case MSPaymentType.SUBS:
-        return "SUBSCRIBER";
-      default:
-        return "";
-    }
-  }
-}
-
 class _HomeState extends State<Home> {
   // Display UI buttons based on SDK state
   bool _isSDKSetup = false;
@@ -71,6 +55,10 @@ class _HomeState extends State<Home> {
 
   didTapStartFaceScan() {
     startFaceScan();
+  }
+
+  didTapStartFingerScan() {
+    startFingerScan();
   }
 
   didTapStartBodyScan() {
@@ -180,8 +168,6 @@ class _HomeState extends State<Home> {
   }
 
   void startFaceScan() async {
-    // All required face scan options and the payment type.
-    // Payment type options are either PAYG or SUBSCRIBER.
     Map<String, dynamic> options = {
       "enum_ent_sex": "male",
       "cm_ent_height": 180,
@@ -190,8 +176,7 @@ class _HomeState extends State<Home> {
       "bool_ent_smoker": false,
       "bool_ent_hypertension": false,
       "bool_ent_bloodPressureMedication": false,
-      "enum_ent_diabetic": "none",
-      "paymentType": MSPaymentType.PAYG.value
+      "enum_ent_diabetic": "none"
     };
     if (!_areFaceScanConfigOptionsValid(options)) {
       print("AHI ERROR: Face Scan inputs invalid.");
@@ -202,8 +187,7 @@ class _HomeState extends State<Home> {
           .invokeMethod("startFaceScan", options)
           .then((value) => {handleFaceScanResults(value)});
     } on PlatformException catch (error) {
-      // Error code 7 is the code for the SDK interaction that cancels the scan.
-      if (error.code == "7" || error.code == "USER_CANCELLED") {
+      if (error.code == "USER_CANCELLED") {
         print("AHI: INFO: User cancelled the session.");
         return;
       }
@@ -214,7 +198,42 @@ class _HomeState extends State<Home> {
   void handleFaceScanResults(dynamic data) {
     Map<String, dynamic> result = Map.from(data);
     if (result is Map<String, dynamic>) {
-      // Handle body scan results
+      // Handle face scan results
+      print("AHI: SCAN RESULTS: $result");
+      return;
+    }
+    print("AHI: UNKNOWN ERROR WITH FACE SCAN RESULT: $result");
+  }
+
+  void startFingerScan() async {
+    Map<String, dynamic> options = {
+      "sec_ent_scanLength": 60,
+      "str_ent_instruction1": "Instruction 1",
+      "str_ent_instruction2": "Instruction 2"
+    };
+
+    if (!_areFingerScanConfigOptionsValid(options)) {
+      print("AHI ERROR: Finger Scan inputs invalid.");
+      return;
+    }
+
+    try {
+      await platform
+          .invokeMethod("startFingerScan", options)
+          .then((value) => {handleFingerScanResults(value)});
+    } on PlatformException catch (error) {
+      if (error.code == "USER_CANCELLED") {
+        print("AHI: INFO: User cancelled the session.");
+        return;
+      }
+      print("AHI: ERROR WITH FINGER SCAN: $error");
+    }
+  }
+
+  void handleFingerScanResults(dynamic data) {
+    Map<String, dynamic> result = Map.from(data);
+    if (result is Map<String, dynamic>) {
+      // Handle finger scan results
       print("AHI: SCAN RESULTS: $result");
       return;
     }
@@ -223,14 +242,11 @@ class _HomeState extends State<Home> {
 
   /// Initiate native module BodyScan
   void startBodyScan() async {
-    // All required body scan options
-    // Payment type options are either PAYG or SUBSCRIBER.
     Map<String, dynamic> options = {
       "enum_ent_sex": "male",
       "yr_ent_age": 30,
       "cm_ent_height": 180,
-      "kg_ent_weight": 85,
-      "paymentType": MSPaymentType.PAYG.value
+      "kg_ent_weight": 85
     };
     if (!areBodyScanConfigOptionsValid(options)) {
       print("AHI ERROR: Body Scan inputs invalid.");
@@ -243,8 +259,7 @@ class _HomeState extends State<Home> {
                 handleBodyScanResults(bodyScanResult),
               });
     } on PlatformException catch (error) {
-      // Error code 4 is the code for the SDK interaction that cancels the scan.
-      if (error.code == "4" || error.code == "USER_CANCELLED") {
+      if (error.code == "USER_CANCELLED") {
         print("AHI: INFO: User cancelled the session.");
         return;
       }
@@ -441,6 +456,25 @@ class _HomeState extends State<Home> {
     }
   }
 
+  /// FingerScan config requirements validation.
+  ///
+  /// Please see the Schemas for more information:
+  /// FingerScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FingerScan/Schemas/
+  bool _areFingerScanConfigOptionsValid(Map<String, dynamic> inputValues) {
+    var scanLength = inputValues["sec_ent_scanLength"];
+    var instruction1 = inputValues["str_ent_instruction1"];
+    var instruction2 = inputValues["str_ent_instruction2"];
+
+    if (scanLength is! int &&
+        instruction1 is! String &&
+        instruction2 is! String &&
+        scanLength < 20) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
   /// BodyScan config requirements validation.
   ///
   /// Please see the Schemas for more information:
@@ -507,6 +541,7 @@ class _HomeState extends State<Home> {
             if (!_isSDKSetup) defaultButton("Setup SDK", () => {didTapSetup()}),
             if (_isUserAuthorized)
               defaultButton("Start FaceScan", () => {didTapStartFaceScan()}),
+            defaultButton("Start FingerScan", () => {didTapStartFingerScan()}),
             if (_isUserAuthorized && _downloadResourcesButtonEnabled)
               defaultButton(
                   "Download Resources", () => {didTapDownloadResources()}),
