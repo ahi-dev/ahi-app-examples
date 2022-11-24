@@ -60,16 +60,12 @@ struct ContentView: View {
             .background(Color.black)
             
             Button (action:{
-                if multiScan.isSetup {
-                    didTapStartFingerScan()
-                } else {
-                    didTapSetup()
-                }
-                }, label: {
-                    Text(multiScan.isSetup ? "Start Finger" : "Setup SDK")
-                        .foregroundColor(Color.white)
-                        .frame(maxWidth: .infinity)
-                        })
+                didTapStartFingerScan()
+            }, label: {
+                Text("Start Finger")
+                    .foregroundColor(Color.white)
+                    .frame(maxWidth: .infinity)
+            })
             .frame(height: buttonHeight)
             .background(Color.black)
             .hidden(!multiScan.isSetup)
@@ -80,11 +76,11 @@ struct ContentView: View {
                 } else {
                     didTapDownloadResources()
                 }
-                }, label: {
-                    Text(multiScan.isFinishedDownloadingResources ? "Start BodyScan" : "Download Resources")
-                        .foregroundColor(Color.white)
-                        .frame(maxWidth: .infinity)
-                        })
+            }, label: {
+                Text(multiScan.isFinishedDownloadingResources ? "Start BodyScan" : "Download Resources")
+                    .foregroundColor(Color.white)
+                    .frame(maxWidth: .infinity)
+            })
             .frame(height: buttonHeight)
             .background(Color.black)
             .hidden(!multiScan.isSetup)
@@ -264,8 +260,7 @@ extension AHISDKManager {
         guard let vc = topMostVC() else { return }
         ahi.initiateScan("face", withOptions: options, from: vc) { scanTask, error in
             guard let task = scanTask, error == nil else {
-                // Error code 7 is the code for the SDK interaction that cancels the scan.
-                if let nsError = error as? NSError, nsError.code == 7 {
+                if let nsError = error as? NSError, nsError.code == AHIFaceScanErrorCode.ScanCanceled.rawValue {
                     print("AHI: INFO: User cancelled the session.")
                 } else {
                     // Handle error through either lack of results or error.
@@ -304,8 +299,7 @@ extension AHISDKManager {
         guard let vc = topMostVC() else { return }
         ahi.initiateScan("finger", withOptions: options, from: vc) { scanTask, error in
             guard let task = scanTask, error == nil else {
-                // Error code 5007 is the code for the SDK interaction that cancels the scan.
-                if let nsError = error as? NSError, nsError.code == 5007 {
+                if let nsError = error as? NSError, nsError.code == AHIFingerScanErrorCode.codeScanCanceled.rawValue {
                     print("AHI: INFO: User cancelled the session.")
                 } else {
                     // Handle error through either lack of results or error.
@@ -345,8 +339,8 @@ extension AHISDKManager {
         guard let vc = topMostVC() else { return }
         ahi.initiateScan("body", withOptions: options, from: vc) { [weak self] scanTask, error in
             guard let task = scanTask, error == nil else {
-                // Error code 4 is the code for the SDK interaction that cancels the scan.
-                if let nsError = error as? NSError, nsError.code == 4 {
+                // Error code 2011 is the code for the SDK interaction that cancels the scan.
+                if let nsError = error as? NSError, nsError.code == 2011 {
                     print("AHI: INFO: User cancelled the session.")
                 } else {
                     // Handle error through either lack of results or error.
