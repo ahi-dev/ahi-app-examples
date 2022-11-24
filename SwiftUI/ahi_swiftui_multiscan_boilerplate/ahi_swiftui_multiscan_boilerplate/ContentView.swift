@@ -23,6 +23,8 @@ import AHIMultiScan
 import AHIBodyScan
 // The FaceScan SDK
 import AHIFaceScan
+// The FingerScan SDK
+import AHIFingerScan
 
 /// The required tokens for the MultiScan Setup and Authorization.
 public struct AHIConfigTokens {
@@ -56,6 +58,22 @@ struct ContentView: View {
                         })
             .frame(height: buttonHeight)
             .background(Color.black)
+            
+            Button (action:{
+                if multiScan.isSetup {
+                    didTapStartFingerScan()
+                } else {
+                    didTapSetup()
+                }
+                }, label: {
+                    Text(multiScan.isSetup ? "Start Finger" : "Setup SDK")
+                        .foregroundColor(Color.white)
+                        .frame(maxWidth: .infinity)
+                        })
+            .frame(height: buttonHeight)
+            .background(Color.black)
+            .hidden(!multiScan.isSetup)
+            
             Button (action:{
                 if multiScan.isFinishedDownloadingResources {
                     didTapStartBodyScan()
@@ -94,6 +112,10 @@ extension ContentView {
     func didTapStartFaceScan() {
         multiScan.startFaceScan()
     }
+    
+    func didTapStartFingerScan() {
+        multiScan.startFingerScan()
+    }
 
     func didTapStartBodyScan() {
         multiScan.startBodyScan()
@@ -122,6 +144,8 @@ class AHISDKManager: NSObject, ObservableObject {
     let ahi = MultiScan.shared()
     /// Instance of AHI FaceScan
     let faceScan = FaceScan()
+    /// Instance of AHI FaceScan
+    let fingerScan = FingerScan()
     /// Instance of AHI BodyScan
     let bodyScan = BodyScan()
     
@@ -140,7 +164,7 @@ extension AHISDKManager {
     /// This must happen before requesting a scan.
     /// We recommend doing this on successfuil load of your application.
     fileprivate func setupMultiScanSDK() {
-        ahi.setup(withConfig: ["TOKEN": AHIConfigTokens.AHI_MULTI_SCAN_TOKEN], scans: [faceScan, bodyScan]) { error in
+        ahi.setup(withConfig: ["TOKEN": AHIConfigTokens.AHI_MULTI_SCAN_TOKEN], scans: [faceScan, fingerScan, bodyScan]) { error in
             if let err = error {
                 print("AHI: Error setting up: \(err)")
                 print("AHI: Confirm you have a valid token.")
@@ -261,6 +285,46 @@ extension AHISDKManager {
     }
 }
 
+
+// MARK: - AHI Finger Scan Initialiser
+
+extension AHISDKManager {
+    fileprivate func startFingerScan() {
+        // All required finger scan options.
+        let options: [String : Any] = [
+            "sec_ent_scanLength": 60
+        ]
+        if !areFingerScanConfigOptionsValid(fingerScanInput: options) {
+            print("AHI ERROR: Finger Scan inputs invalid.")
+            return
+        }
+        // Ensure the view controller being used is the top one.
+        // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
+        // you may have issues.
+        guard let vc = topMostVC() else { return }
+        ahi.initiateScan("finger", withOptions: options, from: vc) { scanTask, error in
+            guard let task = scanTask, error == nil else {
+                // Error code 5007 is the code for the SDK interaction that cancels the scan.
+                if let nsError = error as? NSError, nsError.code == 5007 {
+                    print("AHI: INFO: User cancelled the session.")
+                } else {
+                    // Handle error through either lack of results or error.
+                    print("AHI: ERROR WITH FINGER SCAN: \(error ?? NSError())")
+                }
+                return
+            }
+            task.continueWith(block: { resultsTask in
+                if let results = resultsTask.result as? [String : Any] {
+                    // Handle results
+                    print("AHI: SCAN RESULTS: \(results)")
+                }
+                // Handle failure.
+                return nil
+            })
+        }
+    }
+}
+
 // MARK: - AHI Body Scan Initialiser
 
 extension AHISDKManager {
@@ -271,7 +335,7 @@ extension AHISDKManager {
             "cm_ent_height": 180,
             "kg_ent_weight": 85
         ]
-        if !areBodyScanConfigOptionsValid(faceScanInput: options) {
+        if !areBodyScanConfigOptionsValid(bodyScanInput: options) {
             print("AHI ERROR: Body Scan inputs invalid.")
             return
         }
@@ -430,6 +494,7 @@ extension NSObject {
     /// Please see the Schemas for more information:
     /// BodyScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/BodyScan/Schemas/
     /// FaceScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FaceScan/Schemas/
+    /// FingerScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FingerScan/Schemas/
     public func areSharedScanConfigOptionsValid(scanInput configs: [String: Any]) -> Bool {
         guard
             let sex = configs["enum_ent_sex"] as? String,
@@ -464,12 +529,26 @@ extension NSObject {
         }
         return ["none", "type1", "type2"].contains(isDiabetic)
     }
+    
+    /// FingerScan config requirements validation.
+    ///
+    /// Please see the Schemas for more information:
+    /// FingerScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FingerScan/Schemas/
+    public func areFingerScanConfigOptionsValid(fingerScanInput configs: [String: Any]) -> Bool {
+        
+        guard let scanLength = configs["sec_ent_scanLength"] as? Int,
+              (scanLength >= 20) else {
+            return false
+        }
+        return true
+    }
+    
 
     /// BodyScan config requirements validation.
     ///
     /// Please see the Schemas for more information:
     /// BodyScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/BodyScan/Schemas/
-    public func areBodyScanConfigOptionsValid(faceScanInput configs: [String: Any]) -> Bool {
+    public func areBodyScanConfigOptionsValid(bodyScanInput configs: [String: Any]) -> Bool {
         if !areSharedScanConfigOptionsValid(scanInput: configs) {
             return false
         }
