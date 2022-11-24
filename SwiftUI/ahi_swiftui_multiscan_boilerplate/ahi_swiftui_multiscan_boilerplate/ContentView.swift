@@ -160,6 +160,7 @@ extension AHISDKManager {
     /// This must happen before requesting a scan.
     /// We recommend doing this on successfuil load of your application.
     fileprivate func setupMultiScanSDK() {
+        bodyScan.setEventListener(self)
         ahi.setup(withConfig: ["TOKEN": AHIConfigTokens.AHI_MULTI_SCAN_TOKEN], scans: [faceScan, fingerScan, bodyScan]) { error in
             if let err = error {
                 print("AHI: Error setting up: \(err)")
@@ -321,7 +322,7 @@ extension AHISDKManager {
 
 // MARK: - AHI Body Scan Initialiser
 
-extension AHISDKManager {
+extension AHISDKManager: AHIBSEventListenerDelegate {
     fileprivate func startBodyScan() {
         // All required body scan options
         let options: [String : Any] = [
@@ -360,6 +361,10 @@ extension AHISDKManager {
                 return nil
             })
         }
+    }
+    
+    func event(_ name: String, meta: [String : Any]?) {
+        print("event: \(name)")
     }
 }
 
