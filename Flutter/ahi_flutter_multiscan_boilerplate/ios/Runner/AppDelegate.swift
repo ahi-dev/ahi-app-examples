@@ -167,7 +167,6 @@ extension AppDelegate {
     }
 
     fileprivate func startFaceScan(arguments: Any?, resultHandler: @escaping FlutterResult) {
-        // Need to separate the payment type content from the Map.
         guard let args = arguments as? [String: Any],
               let enum_ent_sex = args["enum_ent_sex"] as? String,
                 let cm_ent_height = args["cm_ent_height"] as? Int,
@@ -195,7 +194,6 @@ extension AppDelegate {
     }
 
     fileprivate func startFingerScan(arguments: Any?, resultHandler: @escaping FlutterResult) {
-        // Need to separate the payment type content from the Map.
         guard let args = arguments as? [String: Any],
               let sec_ent_scanLength = args["sec_ent_scanLength"] as? Int,
               let str_ent_instruction1 = args["str_ent_instruction1"] as? String,
@@ -213,7 +211,6 @@ extension AppDelegate {
     }
 
     fileprivate func startBodyScan(arguments: Any?, resultHandler: @escaping FlutterResult) {
-        // Need to separate the payment type content from the Map.
         guard let args = arguments as? [String: Any],
               let enum_ent_sex = args["enum_ent_sex"] as? String,
               let cm_ent_height = args["cm_ent_height"] as? Int,
