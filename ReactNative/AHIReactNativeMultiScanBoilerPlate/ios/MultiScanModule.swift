@@ -22,6 +22,8 @@ import AHIMultiScan
 import AHIBodyScan
 // The FaceScan SDK
 import AHIFaceScan
+// The FingerScan SDK
+import AHIFingerScan
 
 @objc(MultiScanModule)
 class MultiScanModule: NSObject {
@@ -30,6 +32,8 @@ class MultiScanModule: NSObject {
     let ahi = MultiScan.shared()
     /// Instance of AHI FaceScan
     let faceScan = FaceScan()
+    /// Instance of AHI FingerScan
+    let fingerScan = FingerScan()
     /// Instance of AHI BodyScan
     let bodyScan = BodyScan()
     /// Body Scan Results
@@ -47,7 +51,7 @@ extension MultiScanModule {
                            resolver resolve: @escaping RCTPromiseResolveBlock,
                            rejecter reject: @escaping RCTPromiseRejectBlock) {
         var hasReturned = false
-        ahi.setup(withConfig: ["TOKEN": token], scans: [faceScan, bodyScan]) { error in
+        ahi.setup(withConfig: ["TOKEN": token], scans: [faceScan, fingerScan, bodyScan]) { error in
             if hasReturned {
                 return
             }
@@ -121,14 +125,54 @@ extension MultiScanModule {
                 }
                 guard let task = scanTask,
                       error == nil else {
-                          // Error code 4 is the code for the SDK interaction that cancels the scan.
                           if let err = error as NSError? {
+                              if (err.code == AHIFaceScanErrorCode.ScanCanceled.rawValue) {
+                                  // Scan cancelled by user
+                                  print("User scan cancelled")
+                              }
                               reject("\(err.code)", err.localizedDescription, err)
                           } else {
                               reject("-10", "Error performing face scan.", "" as? Error)
                           }
                           return
                       }
+                task.continueWith(block: { resultsTask in
+                    if let results = resultsTask.result as? [String : Any] {
+                        resolve(results)
+                    } else {
+                        resolve("")
+                    }
+                    // Handle failure.
+                    return nil
+                })
+            }
+        }
+    }
+    
+    @objc
+    func startFingerScan(_ userInputs: [String: Any],
+                       resolver resolve: @escaping RCTPromiseResolveBlock,
+                       rejecter reject: @escaping RCTPromiseRejectBlock) {
+        DispatchQueue.main.async {
+            // This is a temporary solution to prevent multiple callbacks being invoked on null pointer promise and resolve blocks.
+            var hasReturned = false
+            guard let vc = self.topMostVC() else {return }
+            self.ahi.initiateScan("finger", withOptions: userInputs, from:vc) { scanTask, error in
+                if hasReturned {
+                    return
+                }
+                guard let task = scanTask, error == nil else {
+                    if let err = error as NSError? {
+                        if (err.code == AHIFingerScanErrorCode.codeScanCanceled.rawValue) {
+                            // Scan cancelled by user
+                            print("User scan cancelled")
+                        }
+                        reject("\(err.code)", err.localizedDescription, err)
+                    } else {
+                        reject("-10", "Error performing face scan.", "" as? Error)
+                    }
+                    return
+                }
                 task.continueWith(block: { resultsTask in
                     if let results = resultsTask.result as? [String : Any] {
                         resolve(results)

@@ -34,11 +34,12 @@ interface MultiScanInterface {
   downloadAHIResources(): void;
   /** Will return an integer for the bytes size. */
   checkAHIResourcesDownloadSize(): Promise<string>;
-  /** Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG"). */
   startFaceScan(
     userInput: Object,
   ): Promise<Map<String, any>>;
-  /** Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG"). */
+  startFingerScan(
+    userInput: Object,
+  ): Promise<Map<String, any>>;
   startBodyScan(
     userInput: Object,
   ): Promise<Map<String, any>>;

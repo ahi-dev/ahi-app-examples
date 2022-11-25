@@ -38,11 +38,6 @@ const AHI_TEST_USER_SALT = 'EXAMPLE_APP_SALT';
 /** Claims are optional values to increase the security for the user. The order and values should be unique for a given user and be the same on both iOS and Android (e.g. user join date in the format "yyyy", "mm", "dd", "zzzz"). */
 
 const AHI_TEST_USER_CLAIMS = ['EXAMPLE_CLAIM'];
-/** Payment type */
-enum MSPaymentType {
-  PAYG = 'PAYG',
-  SUBS = 'SUBSCRIBER',
-}
 
 const App: () => ReactNode = () => {
   const [resourcesDownloaded, setResourcesDownloaded] = useState(false);
@@ -55,6 +50,10 @@ const App: () => ReactNode = () => {
 
   function didTapStartFaceScan() {
     startFaceScan();
+  }
+
+  function didTapStartFingerScan() {
+    startFingerScan();
   }
 
   function didTapStartBodyScan() {
@@ -187,6 +186,27 @@ const App: () => ReactNode = () => {
       .catch(error => {
         console.log('AHI ERROR: Face Scan error: ' + error);
       });
+  };
+
+  const startFingerScan = async () => {
+    let userFingerScanInput = {
+      sec_ent_scanLength: 60,
+      str_ent_instruction1: "Instruction 1",
+      str_ent_instruction2: "Instruction 2",
+    };
+    if (!areFingerScanConfigOptionsValid(objectToMap(userFingerScanInput))) {
+      console.log('AHI ERROR: Finger Scan inputs');
+      return;
+    }
+
+    MultiScanModule.startFingerScan(userFingerScanInput)
+      .then((fingerScanResults: Map<String, any>) => {
+        console.log('AHI: SCAN RESULTS: ' + JSON.stringify(fingerScanResults));
+      })
+      .catch(error => {
+        console.log('AHI ERROR: Face Scan error: ' + error);
+      });
+
   };
 
   const startBodyScan = () => {
@@ -408,6 +428,24 @@ const App: () => ReactNode = () => {
   }
 
   /**
+   * FingerScan config requirements validation. Please see the Schemas for more information:
+   * FingerScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FingerScan/Schemas/
+   */
+   function areFingerScanConfigOptionsValid(
+    inputValues: Map<string, any>,
+  ): boolean {
+    var scanLength = inputValues.get('sec_ent_scanLength');
+    var instruction1 = inputValues.get('str_ent_instruction1');
+    var instruction2 = inputValues.get('str_ent_instruction2');
+    return (
+      scanLength != null &&
+      instruction1 != null &&
+      instruction2 != null &&
+      scanLength >= 20
+    );
+  }
+
+  /**
    * BodyScan config requirements validation. Please see the Schemas for more information:
    * BodyScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/BodyScan/Schemas/
    */
@@ -483,6 +521,10 @@ const App: () => ReactNode = () => {
               <DefaultButton
                 action={didTapStartFaceScan}
                 buttonText={'Start FaceScan'}
+              />
+              <DefaultButton
+                action={didTapStartFingerScan}
+                buttonText={'Start FingerScan'}
               />
               {resourcesDownloaded ? (
                 <>

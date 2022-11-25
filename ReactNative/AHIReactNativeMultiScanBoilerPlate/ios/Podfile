@@ -33,6 +33,7 @@ target 'AHIReactNativeMultiScanBoilerPlate' do
   pod 'AHIMultiScan', '~> 22.0'
   pod 'AHIBodyScan', '~> 22.0'
   pod 'AHIFaceScan', '~> 22.0'
+  pod 'AHIFingerScan', '~> 22.0'
 
   target 'AHIReactNativeMultiScanBoilerPlateTests' do
     inherit! :complete
