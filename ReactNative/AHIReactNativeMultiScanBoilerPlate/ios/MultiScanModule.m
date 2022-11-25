@@ -38,6 +38,11 @@ RCT_EXTERN_METHOD(
                   rejecter:(RCTPromiseRejectBlock)reject
                   )
 RCT_EXTERN_METHOD(
+                  startFingerScan:(NSDictionary *)userInputValues
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject
+                  )
+RCT_EXTERN_METHOD(
                   startBodyScan:(NSDictionary *)userInputValues
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject
