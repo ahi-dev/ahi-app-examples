@@ -19,6 +19,7 @@ package com.example.ahi_kotlin_multiscan_boilerplate
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -65,7 +66,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         viewModel = ViewModelProvider(this).get(MultiScanViewModel::class.java)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
+//        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
         viewModel.isSetup.observe(this, Observer {
             if (it) {
                 binding.setupButton.visibility = View.GONE
@@ -119,7 +120,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun didTapStartBodyScan() {
         startBodyScan()
-        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
+//        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
     }
 
     private fun didTapDownloadResources() {
@@ -215,10 +216,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         avatarValues["cm_ent_height"] = 165
         avatarValues["kg_ent_weight"] = 67
         avatarValues["yr_ent_age"] = 35
-//        if (!areFaceScanConfigOptionsValid(avatarValues)) {
-//            Log.d(TAG, "AHI ERROR: Face Scan inputs invalid.")
-//            return
-//        }
+        if (!areFaceScanConfigOptionsValid(avatarValues)) {
+            Log.d(TAG, "AHI ERROR: Face Scan inputs invalid.")
+            return
+        }
 
         AHIMultiScan.initiateScan("face", avatarValues, activityResultRegistry, completionBlock = {
             lifecycleScope.launch(Dispatchers.Main) {
@@ -289,6 +290,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 when (val result = withContext(Dispatchers.IO) { it.get() }) {
                     is AHIResult.Success -> {
                         Log.d(TAG, "initiateScan: ${result.value}")
+
+                        // get scan extra
+                        getBodyScanExtras(result.value)
                     }
                     else -> {
                         if (result.error() == BodyScanError.BODY_SCAN_CANCELED) {
@@ -307,21 +311,16 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      *  The 3D mesh can be created and returned at any time.
      *  We recommend doing this on successful completion of a body scan with the results.
      * */
-    private fun getBodyScanExtras(id: String) {
-
-//        val parameters: MutableMap<String, Any> = HashMap()
-//        parameters["operation"] = MultiScanOperation.BodyGetMeshObj.name
-//        parameters["id"] = id
-//        MultiScan.waitForResult(
-//            MultiScan.shared().getScanExtra(MSScanType.BODY, parameters)
-//        ) {
-//            /** Write the mesh to a directory */
-//            val objFile = File(applicationContext.filesDir, "$id.obj")
-//            /** Print the 3D mesh path */
-//            saveAvatarToFile(it, objFile)
-//            /** Return the URL */
-//            Log.d(TAG, "AHI: Mesh URL: ${applicationContext.filesDir.path}/$id.obj\n")
-//        }
+    private  fun getBodyScanExtras(result: Map<String, Any>) {
+        val options = mapOf("extrapolate" to listOf("mesh"))
+        AHIMultiScan.getScanExtra(result, options, completionBlock = {
+            it.fold({
+                val uri = (it["extrapolate"] as? List<Map<*, *>>)?.firstOrNull()?.get("mesh") as? Uri
+                Log.i(TAG, "$uri")
+            }, {
+                Log.e(TAG, it.toString())
+            })
+        })
     }
 
     /**
@@ -390,14 +389,13 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         }
     }
 
-    /** For the newest AHIMultiScan version 21.1.3 need to implement PersistenceDelegate */
     object AHIPersistenceDelegate: IAHIPersistence {
         override fun request(
             scanType: String,
             options: Map<String, Any>,
             completionBlock: (result: AHIResult<Array<Map<String, Any>>>) -> Unit
         ) {
-            TODO("Not yet implemented")
+//            TODO: implement
         }
     }
 
@@ -409,8 +407,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      * */
     private fun areSharedScanConfigOptionsValid(avatarValues: java.util.HashMap<String, Any>): Boolean {
         val sex = avatarValues["enum_ent_sex"].takeIf { it is String }
-        val height = avatarValues["cm_ent_height"].takeIf { it is Int }
-        val weight = avatarValues["kg_ent_weight"].takeIf { it is Int }
+        val height = avatarValues["cm_ent_height"].takeIf { it is Double || it is Int}
+        val weight = avatarValues["kg_ent_weight"].takeIf { it is Double || it is Int}
         return if (sex != null && height != null && weight != null) {
             arrayListOf("male", "female").contains(sex)
         } else {
@@ -432,8 +430,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         val diabeticType = avatarValues["enum_ent_diabetic"].takeIf { it is String }
         val hypertension = avatarValues["bool_ent_hypertension"].takeIf { it is Boolean }
         val blood = avatarValues["bool_ent_bloodPressureMedication"].takeIf { it is Boolean }
-        val height = avatarValues["cm_ent_height"].takeIf { it is Double }
-        val weight = avatarValues["kg_ent_weight"].takeIf { it is Double }
+        val height = avatarValues["cm_ent_height"].takeIf { it is Double || it is Int}
+        val weight = avatarValues["kg_ent_weight"].takeIf { it is Double || it is Int}
         val age = avatarValues["yr_ent_age"].takeIf { it is Int }
         if (sex != null &&
             smoke != null &&
@@ -463,8 +461,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             return false
         }
         val sex = avatarValues["enum_ent_sex"].takeIf { it is String }
-        val height = avatarValues["cm_ent_height"].takeIf { it is Int }
-        val weight = avatarValues["kg_ent_weight"].takeIf { it is Int }
+        val height = avatarValues["cm_ent_height"].takeIf { it is Double || it is Int}
+        val weight = avatarValues["kg_ent_weight"].takeIf { it is Double || it is Int}
         if (sex != null &&
             height != null &&
             weight != null &&
@@ -476,58 +474,15 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         return false
     }
 
-    /** Confirm results have correct set of keys. */
-    private fun areBodyScanSmoothingResultsValid(it: MutableMap<String, String>): Boolean {
-        // Your token may only provide you access to a smaller subset of results.
-        // You should modify this list based on your available config options.
-        val sdkResultSchema = listOf(
-            "enum_ent_sex",
-            "cm_ent_height",
-            "kg_ent_weight",
-            "cm_raw_chest",
-            "cm_raw_hips",
-            "cm_raw_inseam",
-            "cm_raw_thigh",
-            "cm_raw_waist",
-            "kg_raw_weightPredict",
-            "ml_raw_fitness",
-            "percent_raw_bodyFat",
-            "id",
-            "date"
-        )
-        var isValid = false
-        /** Iterate over results */
-        sdkResultSchema.forEach { str ->
-            /** Check if keys in results contains the required keys. */
-            if (!it.keys.contains(str)) {
-                isValid = true
-            }
-        }
-        return !isValid
-    }
-
-    /** Save 3D avatar mesh result on local device. */
-//    private fun saveAvatarToFile(res: SdkResultParcelable, objFile: File) {
-//        val meshResObj = JSONObject(res.result)
-//        val objString = meshResObj["mesh"].toString()
-//        val words: List<String> = objString.split(",")
-//        val stream = FileOutputStream(objFile)
-//        val writer = BufferedWriter(OutputStreamWriter(stream))
-//        for (word in words) {
-//            writer.write(word)
-//            writer.newLine()
-//        }
-//        writer.close()
-//    }
-
-
+    /**
+     * Check camera permissions
+     */
     private fun checkPermission() {
         if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.CAMERA)
             == PackageManager.PERMISSION_DENIED
         ){
             requestPermissions(arrayOf(Manifest.permission.CAMERA), PERMISSION_REQUEST_CODE)
         }
-
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
