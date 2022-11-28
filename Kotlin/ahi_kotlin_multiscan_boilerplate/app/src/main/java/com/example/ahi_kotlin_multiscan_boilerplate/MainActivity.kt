@@ -17,32 +17,31 @@
 
 package com.example.ahi_kotlin_multiscan_boilerplate
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import com.advancedhumanimaging.sdk.bodyscan.BodyScan
+import com.advancedhumanimaging.sdk.bodyscan.common.BodyScanError
+import com.advancedhumanimaging.sdk.common.IAHIPersistence
+import com.advancedhumanimaging.sdk.common.IAHIScan
+import com.advancedhumanimaging.sdk.common.models.AHIResult
+import com.advancedhumanimaging.sdk.facescan.FaceScan
+import com.advancedhumanimaging.sdk.fingerscan.FingerScan
+import com.advancedhumanimaging.sdk.multiscan.AHIMultiScan
 import com.example.ahi_kotlin_multiscan_boilerplate.databinding.ActivityMainBinding
 import com.example.ahi_kotlin_multiscan_boilerplate.viewmodel.MultiScanViewModel
-import com.myfiziq.sdk.MultiScan
-import com.myfiziq.sdk.MultiScanDelegate
-import com.myfiziq.sdk.MultiScanOperation
-import com.myfiziq.sdk.enums.MSPaymentType
-import com.myfiziq.sdk.enums.MSScanType
-import com.myfiziq.sdk.enums.SdkResultCode
-import com.myfiziq.sdk.vo.SdkResultParcelable
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import org.json.JSONObject
-import java.io.BufferedWriter
-import java.io.File
-import java.io.FileOutputStream
-import java.io.OutputStreamWriter
-import java.util.concurrent.CompletableFuture
+import kotlinx.coroutines.*
 
 const val TAG = "MainActivityAHI"
+const val PERMISSION_REQUEST_CODE = 111
 
 /** The required tokens for the MultiScan Setup and Authorization. */
 /** Your AHI MultiScan token */
@@ -56,7 +55,6 @@ val AHI_TEST_USER_CLAIMS = arrayOf("EXAMPLE_CLAIM")
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
     /** Instance of AHI MultiScan */
-    val ahi = MultiScan.shared()
     lateinit var binding: ActivityMainBinding
     lateinit var viewModel: MultiScanViewModel
 
@@ -65,11 +63,12 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         viewModel = ViewModelProvider(this).get(MultiScanViewModel::class.java)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        ahi.registerDelegate(AHIPersistenceDelegate)
+        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
         viewModel.isSetup.observe(this, Observer {
             if (it) {
                 binding.setupButton.visibility = View.GONE
                 binding.startFaceScanButton.visibility = View.VISIBLE
+                binding.startFingerScanButton.visibility = View.VISIBLE
                 binding.downloadResourcesButton.visibility = View.VISIBLE
             }
         })
@@ -81,8 +80,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         })
         binding.downloadResourcesButton.setOnClickListener(this)
         binding.startFaceScanButton.setOnClickListener(this)
+        binding.startFingerScanButton.setOnClickListener(this)
         binding.startBodyScanButton.setOnClickListener(this)
         binding.setupButton.setOnClickListener(this)
+
+        checkPermission()
     }
 
     /** Handle each button action and visibility. */
@@ -90,6 +92,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         when (view?.id) {
             R.id.setupButton -> didTapSetup()
             R.id.startFaceScanButton -> didTapStartFaceScan()
+            R.id.startFingerScanButton -> didTapStartFingerScan()
             R.id.startBodyScanButton -> didTapStartBodyScan()
             R.id.downloadResourcesButton -> {
                 didTapDownloadResources()
@@ -108,9 +111,13 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         startFaceScan()
     }
 
+    private fun didTapStartFingerScan() {
+        startFingerScan()
+    }
+
     private fun didTapStartBodyScan() {
         startBodyScan()
-        ahi.registerDelegate(AHIPersistenceDelegate)
+        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
     }
 
     private fun didTapDownloadResources() {
@@ -127,16 +134,15 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     private fun setupMultiScanSDK() {
         val config: MutableMap<String, String> = HashMap()
         config["TOKEN"] = AHI_MULTI_SCAN_TOKEN
-        MultiScan.waitForResult(ahi.setup(config)) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> authorizeUser()
-                else -> {
-                    Log.d(TAG, "AHI: Error setting up: $}\n")
-                    Log.d(TAG, "AHI: Confirm you have a valid token.\n")
-                    return@waitForResult
-                }
-            }
-        }
+        val scans: Array<IAHIScan> = arrayOf(FaceScan(), FingerScan(), BodyScan())
+        AHIMultiScan.setup(application, config, scans, completionBlock = {
+            it.fold({
+                    authorizeUser()
+            }, {
+                Log.d(TAG, "AHI: Error setting up: $}\n")
+                Log.d(TAG, "AHI: Confirm you have a valid token.\n")
+            })
+        })
     }
 
     /**
@@ -144,40 +150,36 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      *  With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
      * */
     private fun authorizeUser() {
-        MultiScan.waitForResult(
-            ahi.userAuthorize(
-                AHI_TEST_USER_ID,
-                AHI_TEST_USER_SALT,
-                AHI_TEST_USER_CLAIMS
-            )
-        ) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> {
-                    Log.d(TAG, "AHI: Setup user successfully\n")
-                    viewModel.setIsSetup(true)
-                }
-                else -> {
-                    Log.d(TAG, "AHI: Auth Error: ${it.message}\n")
-                    Log.d(TAG, "AHI: Confirm you are using a valid user id, salt and claims\n")
-                }
-            }
-        }
+        AHIMultiScan.userAuthorize(AHI_TEST_USER_ID, AHI_TEST_USER_SALT, AHI_TEST_USER_CLAIMS, completionBlock = {
+            it.fold({
+                Log.d(TAG, "AHI: Setup user successfully\n")
+                viewModel.setIsSetup(true)
+            }, {
+                Log.d(TAG, "AHI: Auth Error: ${it.message}\n")
+                Log.d(TAG, "AHI: Confirm you are using a valid user id, salt and claims\n")
+            })
+        })
     }
 
     /** Check if the AHI resources are downloaded. */
     private fun areAHIResourcesAvailable() {
-        MultiScan.waitForResult(ahi.areResourcesDownloaded()) { it ->
-            if (!it) {
-                Log.d(TAG, "AHI INFO: Resources are not downloaded\n")
-                GlobalScope.launch {
-                    delay(30000)
-                    checkAHIResourcesDownloadSize()
-                    areAHIResourcesAvailable()
+
+        AHIMultiScan.areResourcesDownloaded {
+            it.fold({
+                if (it) {
+                    viewModel.setIsFinishedDownloadingResources(true)
+                    Log.d(TAG, "AHI: Resources ready\n")
+                } else {
+                    Log.d(TAG, "AHI INFO: Resources are not downloaded\n")
+                    GlobalScope.launch {
+                        delay(30000)
+                        checkAHIResourcesDownloadSize()
+                        areAHIResourcesAvailable()
+                    }
                 }
-            } else {
-                viewModel.setIsFinishedDownloadingResources(true)
-                Log.d(TAG, "AHI: Resources ready\n")
-            }
+            }, {
+                Log.d(TAG, "AHI: Error in resource downloading \n")
+            })
         }
     }
 
@@ -186,13 +188,17 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      *  We recommend only calling this function once per session to prevent duplicate background resource calls.
      */
     private fun downloadAHIResources() {
-        ahi.downloadResourcesInBackground()
+        AHIMultiScan.downloadResourcesInForeground()
     }
 
     /** Check the size of the AHI resources that require downloading. */
     private fun checkAHIResourcesDownloadSize() {
-        MultiScan.waitForResult(ahi.totalEstimatedDownloadSizeInBytes()) {
-            Log.d(TAG, "AHI INFO: Size of download is ${it / 1024 / 1024}\n")
+        AHIMultiScan.totalEstimatedDownloadSizeInBytes {
+            it.fold({
+                Log.d(TAG, "AHI INFO: Size of download is ${it.progressBytes / 1024 / 1024} / ${it.totalBytes / 1024 / 1024}\n")
+            }, {
+                Log.e(TAG, it.message.toString())
+            })
         }
     }
 
@@ -204,22 +210,63 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         avatarValues["enum_ent_diabetic"] = "none"
         avatarValues["bool_ent_hypertension"] = false
         avatarValues["bool_ent_bloodPressureMedication"] = false
-        avatarValues["cm_ent_height"] = 180
-        avatarValues["kg_ent_weight"] = 85
+        avatarValues["cm_ent_height"] = 165.0
+        avatarValues["kg_ent_weight"] = 67.0
         avatarValues["yr_ent_age"] = 35
         if (!areFaceScanConfigOptionsValid(avatarValues)) {
             Log.d(TAG, "AHI ERROR: Face Scan inputs invalid.")
+            return
         }
-        MultiScan.waitForResult(
-            MultiScan.shared().initiateScan(MSScanType.FACE, MSPaymentType.PAYG, avatarValues)
-        ) {
-            /** Result check */
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> Log.d(TAG, "AHI: SCAN RESULT: ${it.result}\n")
-                SdkResultCode.USER_CANCELLED -> Log.d(TAG, "AHI: INFO: User cancelled the session.")
-                SdkResultCode.ERROR -> Log.d(TAG, "AHI: ERROR WITH FACE SCAN: ${it.message}\n")
+
+        AHIMultiScan.initiateScan("face", avatarValues, activityResultRegistry, completionBlock = {
+            lifecycleScope.launch(Dispatchers.Main) {
+                if (!it.isDone) {
+                    Log.i(TAG, "Waiting of results, can show waiting screen here")
+                }
+
+                when (val result = withContext(Dispatchers.IO) { it.get() }) {
+                    is AHIResult.Success -> {
+                        Log.d(TAG, "initiateScan: ${result.value}")
+                    }
+                    else -> {
+//                        if (result.error() == BodyScanError.FACE_SCAN_CANCELED) {
+//                            Log.i(TAG, "User cancelled scan")
+//                        } else {
+                            Log.d(TAG, "initiateScan: ${result.error()}")
+//                        }
+                    }
+                }
             }
-        }
+        })
+    }
+
+    private fun startFingerScan() {
+        // All required face scan options.
+        val avatarValues: HashMap<String, Any> = HashMap()
+        avatarValues["sec_ent_scanLength"] = 60
+        avatarValues["str_ent_instruction1"] = "Instruction 1"
+        avatarValues["str_ent_instruction2"] = "Instruction 2"
+
+        AHIMultiScan.initiateScan("finger", avatarValues, activityResultRegistry, completionBlock = {
+            lifecycleScope.launch(Dispatchers.Main) {
+                if (!it.isDone) {
+                    Log.i(TAG, "Waiting of results, can show waiting screen here")
+                }
+
+                when (val result = withContext(Dispatchers.IO) { it.get() }) {
+                    is AHIResult.Success -> {
+                        Log.d(TAG, "initiateScan: ${result.value}")
+                    }
+                    else -> {
+//                        if (result.error() == BodyScanError.FINGER_SCAN_CANCELED) {
+//                            Log.i(TAG, "User cancelled scan")
+//                        } else {
+                            Log.d(TAG, "initiateScan: ${result.error()}")
+//                        }
+                    }
+                }
+            }
+        })
     }
 
     private fun startBodyScan() {
@@ -231,22 +278,27 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             Log.d(TAG, "AHI ERROR: Body Scan inputs invalid.")
             return
         }
-        MultiScan.waitForResult(
-            MultiScan.shared().initiateScan(MSScanType.BODY, MSPaymentType.PAYG, avatarValues)
-        ) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> {
-                    Log.d(TAG, "AHI: SCAN RESULT: ${it.result}\n")
-                    if (areBodyScanSmoothingResultsValid(it.resultMap)) {
-                        val res = JSONObject(it.result)
-                        val id = res["id"].toString()
-                        getBodyScanExtras(id)
+
+        AHIMultiScan.initiateScan("body", avatarValues, activityResultRegistry, completionBlock = {
+            lifecycleScope.launch(Dispatchers.Main) {
+                if (!it.isDone) {
+                    Log.i(TAG, "Waiting of results, can show waiting screen here")
+                }
+
+                when (val result = withContext(Dispatchers.IO) { it.get() }) {
+                    is AHIResult.Success -> {
+                        Log.d(TAG, "initiateScan: ${result.value}")
+                    }
+                    else -> {
+                        if (result.error() == BodyScanError.BODY_SCAN_CANCELED) {
+                            Log.i(TAG, "User cancelled scan")
+                        } else {
+                            Log.d(TAG, "initiateScan: ${result.error()}")
+                        }
                     }
                 }
-                SdkResultCode.USER_CANCELLED -> Log.d(TAG, "AHI: INFO: User cancelled the session.")
-                else -> Log.d(TAG, "AHI: ERROR WITH BODY SCAN: ${it.message}\n")
             }
-        }
+        })
     }
 
     /**
@@ -255,27 +307,29 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      *  We recommend doing this on successful completion of a body scan with the results.
      * */
     private fun getBodyScanExtras(id: String) {
-        val parameters: MutableMap<String, Any> = HashMap()
-        parameters["operation"] = MultiScanOperation.BodyGetMeshObj.name
-        parameters["id"] = id
-        MultiScan.waitForResult(
-            MultiScan.shared().getScanExtra(MSScanType.BODY, parameters)
-        ) {
-            /** Write the mesh to a directory */
-            val objFile = File(applicationContext.filesDir, "$id.obj")
-            /** Print the 3D mesh path */
-            saveAvatarToFile(it, objFile)
-            /** Return the URL */
-            Log.d(TAG, "AHI: Mesh URL: ${applicationContext.filesDir.path}/$id.obj\n")
-        }
+
+//        val parameters: MutableMap<String, Any> = HashMap()
+//        parameters["operation"] = MultiScanOperation.BodyGetMeshObj.name
+//        parameters["id"] = id
+//        MultiScan.waitForResult(
+//            MultiScan.shared().getScanExtra(MSScanType.BODY, parameters)
+//        ) {
+//            /** Write the mesh to a directory */
+//            val objFile = File(applicationContext.filesDir, "$id.obj")
+//            /** Print the 3D mesh path */
+//            saveAvatarToFile(it, objFile)
+//            /** Return the URL */
+//            Log.d(TAG, "AHI: Mesh URL: ${applicationContext.filesDir.path}/$id.obj\n")
+//        }
     }
 
     /**
      * Check if MultiScan is on or offline.
      */
     private fun getMultiScanStatus() {
-        MultiScan.waitForResult(MultiScan.shared().state) {
-            Log.d(TAG, "AHI INFO: Status: ${it.result}")
+
+        AHIMultiScan.getStatus {
+            Log.d(TAG, "AHI INFO: Status: ${it.toString()}")
         }
     }
 
@@ -296,19 +350,13 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             Log.d("-9", "Missing user ID")
             return
         }
-        MultiScan.waitForResult(MultiScan.shared().userIsAuthorized(userID)) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> {
-                    Log.d(TAG, "AHI INFO: User is: ${if (it.result == "true") "authorized" else "not authorized"}")
-                }
-                else -> {
-                    if (it.resultCode == SdkResultCode.NO_OP) {
-                        Log.d("-15", "AHI MultiScan SDK functionality not implemented.")
-                    } else {
-                        Log.d(TAG, "AHI ERROR: Failed to get user authorization status")
-                    }
-                }
-            }
+
+        AHIMultiScan.userIsAuthorized {
+            it.fold({
+                Log.d(TAG, "AHI INFO: User is authorized")
+            }, {
+                Log.d(TAG, "AHI INFO: User is not authorized")
+            })
         }
     }
 
@@ -316,15 +364,12 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      * Deauthorize the user.
      */
     private fun deauthorizeUser() {
-        MultiScan.waitForResult(MultiScan.shared().userDeauthorize()) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> {
-                    Log.d(TAG, "AHI INFO: User is deauthorized.")
-                }
-                else -> {
-                    Log.d("-15", "AHI MultiScan SDK functionality not implemented.")
-                }
-            }
+        AHIMultiScan.userDeauthorize {
+            it.fold({
+                Log.d(TAG, "AHI INFO: User is deauthorized.")
+            }, {
+                Log.e(TAG, it.toString())
+            })
         }
     }
 
@@ -335,27 +380,23 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      * The expected result for <= v21.1.3 is an error called "NO_OP".
      */
     private fun releaseMultiScanSDK() {
-        Log.d("-15", "AHI MultiScan SDK functionality not implemented.")
+        AHIMultiScan.releaseSdk {
+            it.fold({
+                Log.d(TAG, "AHI INFO: SDK is released.")
+            }, {
+                Log.e(TAG, it.toString())
+            })
+        }
     }
 
     /** For the newest AHIMultiScan version 21.1.3 need to implement PersistenceDelegate */
-    object AHIPersistenceDelegate : MultiScanDelegate {
+    object AHIPersistenceDelegate: IAHIPersistence {
         override fun request(
-            scanType: MSScanType?,
-            options: MutableMap<String, String>?
-        ): CompletableFuture<SdkResultParcelable> {
-            val future = CompletableFuture<SdkResultParcelable>()
-            if (scanType == MSScanType.BODY) {
-                val rawResultList = mutableListOf<String>()
-                options?.forEach {
-                    rawResultList.add(it.toString())
-                }
-                val jsonArrayString = "[" + rawResultList.joinToString(separator = ",") + "]"
-                future.complete(SdkResultParcelable(SdkResultCode.SUCCESS, jsonArrayString))
-            } else {
-                future.complete(SdkResultParcelable(SdkResultCode.ERROR, ""))
-            }
-            return future
+            scanType: String,
+            options: Map<String, Any>,
+            completionBlock: (result: AHIResult<Array<Map<String, Any>>>) -> Unit
+        ) {
+            TODO("Not yet implemented")
         }
     }
 
@@ -390,8 +431,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         val diabeticType = avatarValues["enum_ent_diabetic"].takeIf { it is String }
         val hypertension = avatarValues["bool_ent_hypertension"].takeIf { it is Boolean }
         val blood = avatarValues["bool_ent_bloodPressureMedication"].takeIf { it is Boolean }
-        val height = avatarValues["cm_ent_height"].takeIf { it is Int }
-        val weight = avatarValues["kg_ent_weight"].takeIf { it is Int }
+        val height = avatarValues["cm_ent_height"].takeIf { it is Double }
+        val weight = avatarValues["kg_ent_weight"].takeIf { it is Double }
         val age = avatarValues["yr_ent_age"].takeIf { it is Int }
         if (sex != null &&
             smoke != null &&
@@ -465,16 +506,37 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     /** Save 3D avatar mesh result on local device. */
-    private fun saveAvatarToFile(res: SdkResultParcelable, objFile: File) {
-        val meshResObj = JSONObject(res.result)
-        val objString = meshResObj["mesh"].toString()
-        val words: List<String> = objString.split(",")
-        val stream = FileOutputStream(objFile)
-        val writer = BufferedWriter(OutputStreamWriter(stream))
-        for (word in words) {
-            writer.write(word)
-            writer.newLine()
+//    private fun saveAvatarToFile(res: SdkResultParcelable, objFile: File) {
+//        val meshResObj = JSONObject(res.result)
+//        val objString = meshResObj["mesh"].toString()
+//        val words: List<String> = objString.split(",")
+//        val stream = FileOutputStream(objFile)
+//        val writer = BufferedWriter(OutputStreamWriter(stream))
+//        for (word in words) {
+//            writer.write(word)
+//            writer.newLine()
+//        }
+//        writer.close()
+//    }
+
+
+    private fun checkPermission() {
+        if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.CAMERA)
+            == PackageManager.PERMISSION_DENIED
+        ){
+            requestPermissions(arrayOf(Manifest.permission.CAMERA), PERMISSION_REQUEST_CODE)
         }
-        writer.close()
+
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "camera permission granted", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this, "camera permission denied", Toast.LENGTH_LONG).show();
+            }
+        }
     }
 }
