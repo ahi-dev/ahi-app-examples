@@ -33,7 +33,9 @@ import com.advancedhumanimaging.sdk.bodyscan.common.BodyScanError
 import com.advancedhumanimaging.sdk.common.IAHIPersistence
 import com.advancedhumanimaging.sdk.common.IAHIScan
 import com.advancedhumanimaging.sdk.common.models.AHIResult
+import com.advancedhumanimaging.sdk.facescan.AHIFaceScanError
 import com.advancedhumanimaging.sdk.facescan.FaceScan
+import com.advancedhumanimaging.sdk.fingerscan.AHIFingerScanError
 import com.advancedhumanimaging.sdk.fingerscan.FingerScan
 import com.advancedhumanimaging.sdk.multiscan.AHIMultiScan
 import com.example.ahi_kotlin_multiscan_boilerplate.databinding.ActivityMainBinding
@@ -210,30 +212,29 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         avatarValues["enum_ent_diabetic"] = "none"
         avatarValues["bool_ent_hypertension"] = false
         avatarValues["bool_ent_bloodPressureMedication"] = false
-        avatarValues["cm_ent_height"] = 165.0
-        avatarValues["kg_ent_weight"] = 67.0
+        avatarValues["cm_ent_height"] = 165
+        avatarValues["kg_ent_weight"] = 67
         avatarValues["yr_ent_age"] = 35
-        if (!areFaceScanConfigOptionsValid(avatarValues)) {
-            Log.d(TAG, "AHI ERROR: Face Scan inputs invalid.")
-            return
-        }
+//        if (!areFaceScanConfigOptionsValid(avatarValues)) {
+//            Log.d(TAG, "AHI ERROR: Face Scan inputs invalid.")
+//            return
+//        }
 
         AHIMultiScan.initiateScan("face", avatarValues, activityResultRegistry, completionBlock = {
             lifecycleScope.launch(Dispatchers.Main) {
                 if (!it.isDone) {
                     Log.i(TAG, "Waiting of results, can show waiting screen here")
                 }
-
                 when (val result = withContext(Dispatchers.IO) { it.get() }) {
                     is AHIResult.Success -> {
                         Log.d(TAG, "initiateScan: ${result.value}")
                     }
                     else -> {
-//                        if (result.error() == BodyScanError.FACE_SCAN_CANCELED) {
-//                            Log.i(TAG, "User cancelled scan")
-//                        } else {
+                        if (result.error() == AHIFaceScanError.FACE_SCAN_CANCELED) {
+                            Log.i(TAG, "User cancelled scan")
+                        } else {
                             Log.d(TAG, "initiateScan: ${result.error()}")
-//                        }
+                        }
                     }
                 }
             }
@@ -258,11 +259,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                         Log.d(TAG, "initiateScan: ${result.value}")
                     }
                     else -> {
-//                        if (result.error() == BodyScanError.FINGER_SCAN_CANCELED) {
-//                            Log.i(TAG, "User cancelled scan")
-//                        } else {
+                        if (result.error() == AHIFingerScanError.FINGER_SCAN_CANCELLED) {
+                            Log.i(TAG, "User cancelled scan")
+                        } else {
                             Log.d(TAG, "initiateScan: ${result.error()}")
-//                        }
+                        }
                     }
                 }
             }
