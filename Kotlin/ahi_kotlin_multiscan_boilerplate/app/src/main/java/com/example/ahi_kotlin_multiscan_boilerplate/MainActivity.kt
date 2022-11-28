@@ -249,6 +249,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         avatarValues["str_ent_instruction1"] = "Instruction 1"
         avatarValues["str_ent_instruction2"] = "Instruction 2"
 
+        if (!areFingerScanConfigOptionsValid(avatarValues)) {
+            Log.d(TAG, "AHI ERROR: Finger Scan inputs invalid.")
+            return
+        }
+
         AHIMultiScan.initiateScan("finger", avatarValues, activityResultRegistry, completionBlock = {
             lifecycleScope.launch(Dispatchers.Main) {
                 if (!it.isDone) {
@@ -431,8 +436,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         val diabeticType = avatarValues["enum_ent_diabetic"].takeIf { it is String }
         val hypertension = avatarValues["bool_ent_hypertension"].takeIf { it is Boolean }
         val blood = avatarValues["bool_ent_bloodPressureMedication"].takeIf { it is Boolean }
-        val height = avatarValues["cm_ent_height"].takeIf { it is Double || it is Int}
-        val weight = avatarValues["kg_ent_weight"].takeIf { it is Double || it is Int}
+        val height = avatarValues["cm_ent_height"].toString().toDoubleOrNull()
+        val weight = avatarValues["kg_ent_weight"].toString().toDoubleOrNull()
         val age = avatarValues["yr_ent_age"].takeIf { it is Int }
         if (sex != null &&
             smoke != null &&
@@ -442,14 +447,29 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             height != null &&
             weight != null &&
             age != null &&
-            height in 25..300 &&
-            weight in 25..300 &&
+            height in 50.0..300.0 &&
+            weight in 25.0..300.0 &&
             age in 13..120
         ) {
             return arrayListOf("none", "type1", "type2").contains(diabeticType)
         } else {
             return false
         }
+    }
+
+    /**
+     *  FingerScan config requirements validation.
+     *  Please see the Schemas for more information:
+     *  FingerScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FingerScan/Schemas/
+     * */
+    private fun areFingerScanConfigOptionsValid(avatarValues: HashMap<String, Any>): Boolean {
+        val scanLength = avatarValues["sec_ent_scanLength"].toString().toIntOrNull()
+        val instruction1 = avatarValues["str_ent_instruction1"].takeIf { it is String }
+        val instruction2 = avatarValues["str_ent_instruction2"].takeIf { it is String }
+        return (scanLength != null &&
+            instruction1 != null &&
+            instruction2 != null &&
+            scanLength >= 20 )
     }
 
     /**
@@ -462,17 +482,14 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             return false
         }
         val sex = avatarValues["enum_ent_sex"].takeIf { it is String }
-        val height = avatarValues["cm_ent_height"].takeIf { it is Double || it is Int}
-        val weight = avatarValues["kg_ent_weight"].takeIf { it is Double || it is Int}
-        if (sex != null &&
+        val height = avatarValues["cm_ent_height"].toString().toDoubleOrNull()
+        val weight = avatarValues["kg_ent_weight"].toString().toDoubleOrNull()
+        return (sex != null &&
             height != null &&
             weight != null &&
-            height in 50..255 &&
-            weight in 16..300
-        ) {
-            return true
-        }
-        return false
+            height in 50.0..255.0 &&
+            weight in 16.0..300.0
+        )
     }
 
     /**
