@@ -389,15 +389,16 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         }
     }
 
-    object AHIPersistenceDelegate: IAHIPersistence {
-        override fun request(
-            scanType: String,
-            options: Map<String, Any>,
-            completionBlock: (result: AHIResult<Array<Map<String, Any>>>) -> Unit
-        ) {
-//            TODO: implement
-        }
-    }
+//    object AHIPersistenceDelegate: IAHIPersistence {
+//        override fun request(
+//            scanType: String,
+//            options: Map<String, Any>,
+//            completionBlock: (result: AHIResult<Array<Map<String, Any>>>) -> Unit
+//        ) {
+////            TODO: implement
+//        }
+//    }
+
 
     /**
      *  All MultiScan scan configs require this information.
