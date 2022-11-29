@@ -59,10 +59,10 @@ const val PERMISSION_REQUEST_CODE = 111
 const val AHI_MULTI_SCAN_TOKEN = ""
 
 /** Your user id. Hardcode a valid user id for testing purposes. */
-const val AHI_TEST_USER_ID = "AHI_TEST_USER1"
+const val AHI_TEST_USER_ID = "AHI_TEST_USER"
 
 /** Your salt token. */
-const val AHI_TEST_USER_SALT = "EXAMPLE_APP_SALT1"
+const val AHI_TEST_USER_SALT = "EXAMPLE_APP_SALT"
 
 /** Any claims you require passed to the SDK. */
 val AHI_TEST_USER_CLAIMS = arrayOf("EXAMPLE_CLAIM")
