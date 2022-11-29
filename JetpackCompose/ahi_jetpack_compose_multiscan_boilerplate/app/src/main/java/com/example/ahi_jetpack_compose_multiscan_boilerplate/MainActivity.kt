@@ -17,8 +17,12 @@
 
 package com.example.ahi_jetpack_compose_multiscan_boilerplate
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
@@ -33,41 +37,37 @@ import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.ConstraintSet
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import com.advancedhumanimaging.sdk.bodyscan.BodyScan
+import com.advancedhumanimaging.sdk.bodyscan.common.BodyScanError
+import com.advancedhumanimaging.sdk.common.IAHIScan
+import com.advancedhumanimaging.sdk.common.models.AHIResult
+import com.advancedhumanimaging.sdk.facescan.AHIFaceScanError
+import com.advancedhumanimaging.sdk.facescan.FaceScan
+import com.advancedhumanimaging.sdk.fingerscan.AHIFingerScanError
+import com.advancedhumanimaging.sdk.fingerscan.FingerScan
+import com.advancedhumanimaging.sdk.multiscan.AHIMultiScan
 import com.example.ahi_jetpack_compose_multiscan_boilerplate.viewmodel.MultiScanViewModel
-import com.myfiziq.sdk.MultiScan
-import com.myfiziq.sdk.MultiScanDelegate
-import com.myfiziq.sdk.MultiScanOperation
-import com.myfiziq.sdk.enums.MSPaymentType
-import com.myfiziq.sdk.enums.MSScanType
-import com.myfiziq.sdk.enums.SdkResultCode
-import com.myfiziq.sdk.vo.SdkResultParcelable
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import org.json.JSONObject
-import java.io.BufferedWriter
-import java.io.File
-import java.io.FileOutputStream
-import java.io.OutputStreamWriter
-import java.util.concurrent.CompletableFuture
+import kotlinx.coroutines.*
 
 private const val TAG = "MainActivityAHI"
+const val PERMISSION_REQUEST_CODE = 111
 
 /** The required tokens for the MultiScan Setup and Authorization. */
 /** Your AHI MultiScan token */
-const val AHI_MULTI_SCAN_TOKEN = ""
+const val AHI_MULTI_SCAN_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJicTNKYXN5M0hMVmRxMkRja05MR1FXdGk2WEZIM2dVUElndUVNOXIyUTdXR05WRGVHTkV5ajR0T09XYXZxa3Y2VHEvYXJEVmtJNUZFSzZ4STFJUmcwRlVMK0t1MVdZV1UrOUtqSGsvS3pHVFk4bllES29WU2J6WEw1eVljOGprMndkMlNmeFBhYXJmT3pPZS9odFJvdUJwa2RSM09BS1V3TGtITTJYT3Fyays4d0MyenE2Y01pczFNZThTVWtGZ2RDS1ZsNVFLbkU0b2xGYzBNRTBVOEVqTW5mUUZSd1ZSZ2VVWlVOdkVWL3R2K1B0aEpJZGJKUnpxa0JUaE5YNDZBaXJaT2ZPV0tsczVoalZXMzNDS2xSczgxd3VwRWYrU0FQY3MxRmUwV2Urd1diN3VKSTdqTXRJeE1pcEdWdUQxMXNEODVKaW1GNm51bnBYRlY3NWc5TmVBR0JpdzZETDVnbXRPenRVNFVTaStKbWhvc1lIc3ZLMWhZay9YRTVKREFEeHV3eWJVaVlxVFJwVWdUeWRYUU02V1BpVUMvaVRmWEJIc1BKK3liRlBTcVpSVWhWa21EYUZ4TjJvNXluL1ZzRkNQU3IvSEs3WmcweEhZUGh4UHVpby8ydkRaZjRNZk1RU0tZaVhDbUxUNks0dmQwYy94OUg1ZngrYzdhMWlTRmR2dTNjWnV0aG1jdG5aYjVLU2prblVkcFlWamJaaytWb1B6eWczUVVpRXhqWDNuaVRZR0NaS3M5RkYyVFNUTW9PenZmVnVYcHpoVGhYMm5IeEpGdzNwN2phcGNvN21tZVhpYzF2VWpVVDhhQ09Xc3hqK1o1MUVRRHBielNyTjllSVV2N3pRZmtsNDhLQXpUUng3M0dkMWZuUmVMM0xzTWExcDBEc2hDakRlcz0iLCJleHAiOjE4MTQ3MDc1MzcsInZlciI6M30.EJTaMwDwzMtgIuY1DtwnCDyCnp9_2NauN7n91O7UIco8YpBbSxXWQWbbcvT-72pbpAQagAQ7hgKkjWEce5kKniDh3KhVa546kdQeneuWd1vu7iV1s3nZsMnPCxmFcv5uL30Cv8HWIkDEZb5UozZTgOcHDFAKyKQVT7Tmw0XA5GOjZqKZRtYtRXjzkQw7nidI_I0YkAshC6H8eakeyrVp-u-SilU95_ppIgZOtZHk1nSo04HATGXxl0inTDa57bi_UTU_OHLLlzKm-4GYtSKKdxyHcAipZklkQic4I_g4K43FeLNlWEyGpHt0dnabJm4auU033RZa5L87qCWFDSkTlBDTb3xTfSVtPtsyXTpHDMXS1-1WzQm97P8QcZ2zJl4z1wDk1WClwYRvk4E2JiA9ZwTef0OG2nQVlRJw0O4IpUWI8NLfg-2YcZR9-DZs2iC2QAIV0K1MVc9Ro2LMkgIm0nycgvYagmn-PZLuq9pATjVlW3oF1pJahEJcltoBc-JE0b_NjMsOFMeH3FQNf7_fCBYbRZA3SkOX87uPOqn2BXkYP77sHJ91mFw89TDilx4iVJSbErUej7tr8ZdagCVG1x0ltJ8qVAFCK5wnHZxp5FdfVBuaZNA2e7VzCFB7cYEFUfsuHd9NK2TzLcxizw7L2PxYHP2RdNCKMR3ebR572-w"
 
 /** Your user id. Hardcode a valid user id for testing purposes. */
-const val AHI_TEST_USER_ID = "AHI_TEST_USER"
+const val AHI_TEST_USER_ID = "AHI_TEST_USER1"
 
 /** Your salt token. */
-const val AHI_TEST_USER_SALT = "EXAMPLE_APP_SALT"
+const val AHI_TEST_USER_SALT = "EXAMPLE_APP_SALT1"
 
 /** Any claims you require passed to the SDK. */
 val AHI_TEST_USER_CLAIMS = arrayOf("EXAMPLE_CLAIM")
 
 class MainActivity : ComponentActivity() {
-    val ahi: MultiScan = MultiScan.shared()
     private lateinit var viewModel: MultiScanViewModel
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,6 +88,7 @@ class MainActivity : ComponentActivity() {
                 return ConstraintSet {
                     val setupButton = createRefFor("setupButton")
                     val startFaceScanButton = createRefFor("startFaceScanButton")
+                    val startFingerScanButton = createRefFor("startFingerScanButton")
                     val downloadResourcesButton = createRefFor("downloadResourcesButton")
                     val startBodyScanButton = createRefFor("startBodyScanButton")
                     constrain(setupButton) {
@@ -100,14 +101,19 @@ class MainActivity : ComponentActivity() {
                         top.linkTo(parent.top)
                         end.linkTo(parent.end)
                     }
+                    constrain(startFingerScanButton) {
+                        start.linkTo(parent.start)
+                        top.linkTo(startFaceScanButton.bottom, margin = inset)
+                        end.linkTo(parent.end)
+                    }
                     constrain(downloadResourcesButton) {
                         start.linkTo(parent.start)
-                        top.linkTo(parent.top, margin = inset + buttonHeight)
+                        top.linkTo(startFingerScanButton.bottom, margin = inset)
                         end.linkTo(parent.end)
                     }
                     constrain(startBodyScanButton) {
                         start.linkTo(parent.start)
-                        top.linkTo(parent.top, margin = inset + buttonHeight)
+                        top.linkTo(startFingerScanButton.bottom, margin = inset)
                         end.linkTo(parent.end)
                     }
                 }
@@ -134,6 +140,14 @@ class MainActivity : ComponentActivity() {
                             .height(buttonHeight), visible = viewModel.isSetupState.value
                     ) {
                         defaultButton("Start Facescan", true) { didTapStartFaceScan() }
+                    }
+                    AnimatedVisibility(
+                        modifier = Modifier
+                            .layoutId("startFingerScanButton")
+                            .fillMaxWidth()
+                            .height(buttonHeight), visible = viewModel.isSetupState.value
+                    ) {
+                        defaultButton("Start FingerScan", true) { didTapStartFingerScan() }
                     }
                     AnimatedVisibility(
                         modifier = Modifier
@@ -169,8 +183,12 @@ class MainActivity : ComponentActivity() {
         startFaceScan()
     }
 
+    private fun didTapStartFingerScan() {
+        startFingerScan()
+    }
+
     private fun didTapStartBodyScan() {
-        ahi.registerDelegate(AHIPersistenceDelegate)
+//        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
         startBodyScan()
     }
 
@@ -192,16 +210,15 @@ class MainActivity : ComponentActivity() {
     private fun setupMultiScanSDK() {
         val config: MutableMap<String, String> = HashMap()
         config["TOKEN"] = AHI_MULTI_SCAN_TOKEN
-        MultiScan.waitForResult(ahi.setup(config)) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> authorizeUser()
-                else -> {
-                    Log.d(TAG, "AHI: Error setting up: ${it.message}}\n")
-                    Log.d(TAG, "AHI: Confirm you habe a valid token.\n")
-                    return@waitForResult
-                }
-            }
-        }
+        val scans: Array<IAHIScan> = arrayOf(FaceScan(), FingerScan(), BodyScan())
+        AHIMultiScan.setup(application, config, scans, completionBlock = {
+            it.fold({
+                authorizeUser()
+            }, {
+                Log.d(TAG, "AHI: Error setting up: $}\n")
+                Log.d(TAG, "AHI: Confirm you have a valid token.\n")
+            })
+        })
     }
 
     /**
@@ -209,40 +226,35 @@ class MainActivity : ComponentActivity() {
      *  With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
      */
     private fun authorizeUser() {
-        MultiScan.waitForResult(
-            ahi.userAuthorize(
-                AHI_TEST_USER_ID,
-                AHI_TEST_USER_SALT,
-                AHI_TEST_USER_CLAIMS
-            )
-        ) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> {
-                    Log.d(TAG, "AHI: Setup user successfully\n")
-                    viewModel.isSetupState.value = true
-                }
-                else -> {
-                    Log.d(TAG, "AHI: Auth Error: ${it.message}\n")
-                    Log.d(TAG, "AHI: Confirm you are using a valid user id, salt and claims\n")
-                }
-            }
-        }
+        AHIMultiScan.userAuthorize(AHI_TEST_USER_ID, AHI_TEST_USER_SALT, AHI_TEST_USER_CLAIMS, completionBlock = {
+            it.fold({
+                Log.d(TAG, "AHI: Setup user successfully\n")
+//                viewModel.setIsSetup(true)
+            }, {
+                Log.d(TAG, "AHI: Auth Error: ${it.message}\n")
+                Log.d(TAG, "AHI: Confirm you are using a valid user id, salt and claims\n")
+            })
+        })
     }
 
     /** Check if the AHI resources are downloaded. */
     private fun areAHIResourcesAvailable() {
-        MultiScan.waitForResult(ahi.areResourcesDownloaded()) { it ->
-            if (!it) {
-                Log.d(TAG, "AHI INFO: Resources are not downloaded\n")
-                GlobalScope.launch {
-                    delay(30000)
-                    checkAHIResourcesDownloadSize()
-                    areAHIResourcesAvailable()
+        AHIMultiScan.areResourcesDownloaded {
+            it.fold({
+                if (it) {
+//                    viewModel.setIsFinishedDownloadingResources(true)
+                    Log.d(TAG, "AHI: Resources ready\n")
+                } else {
+                    Log.d(TAG, "AHI INFO: Resources are not downloaded\n")
+                    GlobalScope.launch {
+                        delay(30000)
+                        checkAHIResourcesDownloadSize()
+                        areAHIResourcesAvailable()
+                    }
                 }
-            } else {
-                viewModel.isFinishedDownloadingResourcesState.value = true
-                Log.d(TAG, "AHI: Resources ready\n")
-            }
+            }, {
+                Log.d(TAG, "AHI: Error in resource downloading \n")
+            })
         }
     }
 
@@ -251,44 +263,94 @@ class MainActivity : ComponentActivity() {
      *  We recommend only calling this function once per session to prevent duplicate background resource calls.
      */
     private fun downloadAHIResources() {
-        ahi.downloadResourcesInBackground()
+        AHIMultiScan.downloadResourcesInForeground()
     }
 
     /** Check the size of the AHI resources that require downloading. */
     private fun checkAHIResourcesDownloadSize() {
-        MultiScan.waitForResult(ahi.totalEstimatedDownloadSizeInBytes()) {
-            Log.d(TAG, "AHI INFO: Size of download is ${it / 1024 / 1024}\n")
+        AHIMultiScan.totalEstimatedDownloadSizeInBytes {
+            it.fold({
+                Log.d(TAG, "AHI INFO: Size of download is ${it.progressBytes / 1024 / 1024} / ${it.totalBytes / 1024 / 1024}\n")
+            }, {
+                Log.e(TAG, it.message.toString())
+            })
         }
     }
 
     private fun startFaceScan() {
-        /* All required face scan options. Does not currentlt conform to the SDK Schema */
+        // All required face scan options.
         val avatarValues: HashMap<String, Any> = HashMap()
         avatarValues["enum_ent_sex"] = "male"
         avatarValues["bool_ent_smoker"] = false
         avatarValues["enum_ent_diabetic"] = "none"
         avatarValues["bool_ent_hypertension"] = false
         avatarValues["bool_ent_bloodPressureMedication"] = false
-        avatarValues["cm_ent_height"] = 180
-        avatarValues["kg_ent_weight"] = 85
+        avatarValues["cm_ent_height"] = 165
+        avatarValues["kg_ent_weight"] = 67
         avatarValues["yr_ent_age"] = 35
         if (!areFaceScanConfigOptionsValid(avatarValues)) {
             Log.d(TAG, "AHI ERROR: Face Scan inputs invalid.")
+            return
         }
-        MultiScan.waitForResult(
-            MultiScan.shared().initiateScan(MSScanType.FACE, MSPaymentType.PAYG, avatarValues)
-        ) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> Log.d(TAG, "AHI: SCAN RESULT: ${it.result}\n")
-                SdkResultCode.USER_CANCELLED -> Log.d(TAG, "AHI: INFO: User cancelled the session.")
-                else -> Log.d(TAG, "AHI: ERROR WITH FACE SCAN: ${it.message}\n")
+
+        AHIMultiScan.initiateScan("face", avatarValues, activityResultRegistry, completionBlock = {
+            lifecycleScope.launch(Dispatchers.Main) {
+                if (!it.isDone) {
+                    Log.i(TAG, "Waiting of results, can show waiting screen here")
+                }
+                val result = withContext(Dispatchers.IO) { it.get() }
+                when (result) {
+                    is AHIResult.Success -> {
+                        Log.d(TAG, "initiateScan: ${result.value}")
+                    }
+                    else -> {
+                        if (result.error() == AHIFaceScanError.FACE_SCAN_CANCELED) {
+                            Log.i(TAG, "User cancelled scan")
+                        } else {
+                            Log.d(TAG, "initiateScan: ${result.error()}")
+                        }
+                    }
+                }
             }
+        })
+    }
+
+    private fun startFingerScan() {
+        // All required face scan options.
+        val avatarValues: HashMap<String, Any> = HashMap()
+        avatarValues["sec_ent_scanLength"] = 60
+        avatarValues["str_ent_instruction1"] = "Instruction 1"
+        avatarValues["str_ent_instruction2"] = "Instruction 2"
+
+        if (!areFingerScanConfigOptionsValid(avatarValues)) {
+            Log.d(TAG, "AHI ERROR: Finger Scan inputs invalid.")
+            return
         }
+
+        AHIMultiScan.initiateScan("finger", avatarValues, activityResultRegistry, completionBlock = {
+            lifecycleScope.launch(Dispatchers.Main) {
+                if (!it.isDone) {
+                    Log.i(TAG, "Waiting of results, can show waiting screen here")
+                }
+                val result = withContext(Dispatchers.IO) { it.get() }
+                when (result) {
+                    is AHIResult.Success -> {
+                        Log.d(TAG, "initiateScan: ${result.value}")
+                    }
+                    else -> {
+                        if (result.error() == AHIFingerScanError.FINGER_SCAN_CANCELLED) {
+                            Log.i(TAG, "User cancelled scan")
+                        } else {
+                            Log.d(TAG, "initiateScan: ${result.error()}")
+                        }
+                    }
+                }
+            }
+        })
     }
 
     private fun startBodyScan() {
         val avatarValues: HashMap<String, Any> = HashMap()
-        /* All required body scan options. Does not currentlt conform to the SDK Schema */
         avatarValues["enum_ent_sex"] = "male"
         avatarValues["cm_ent_height"] = 180
         avatarValues["kg_ent_weight"] = 85
@@ -296,22 +358,30 @@ class MainActivity : ComponentActivity() {
             Log.d(TAG, "AHI ERROR: Body Scan inputs invalid.")
             return
         }
-        MultiScan.waitForResult(
-            MultiScan.shared().initiateScan(MSScanType.BODY, MSPaymentType.PAYG, avatarValues)
-        ) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> {
-                    Log.d(TAG, "AHI: SCAN RESULT: ${it.result}\n")
-                    if (areBodyScanSmoothingResultsValid(it.resultMap)) {
-                        val res = JSONObject(it.result)
-                        val id = res["id"].toString()
-                        getBodyScanExtras(id)
+
+        AHIMultiScan.initiateScan("body", avatarValues, activityResultRegistry, completionBlock = {
+            lifecycleScope.launch(Dispatchers.Main) {
+                if (!it.isDone) {
+                    Log.i(TAG, "Waiting of results, can show waiting screen here")
+                }
+
+                val result = withContext(Dispatchers.IO) { it.get() }
+                when (result) {
+                    is AHIResult.Success -> {
+                        Log.d(TAG, "initiateScan: ${result.value}")
+                        // get scan extra
+                        getBodyScanExtras(result.value)
+                    }
+                    else -> {
+                        if (result.error() == BodyScanError.BODY_SCAN_CANCELED) {
+                            Log.i(TAG, "User cancelled scan")
+                        } else {
+                            Log.d(TAG, "initiateScan: ${result.error()}")
+                        }
                     }
                 }
-                SdkResultCode.USER_CANCELLED -> Log.d(TAG, "AHI: INFO: User cancelled the session.")
-                else -> Log.d(TAG, "AHI: ERROR WITH BODY SCAN: ${it.message}\n")
             }
-        }
+        })
     }
 
     /**
@@ -319,28 +389,24 @@ class MainActivity : ComponentActivity() {
      *  The 3D mesh can be created and returned at any time.
      *  We recommend doing this on successful completion of a body scan with the results.
      */
-    private fun getBodyScanExtras(id: String) {
-        val parameters: MutableMap<String, Any> = HashMap()
-        parameters["operation"] = MultiScanOperation.BodyGetMeshObj.name
-        parameters["id"] = id
-        MultiScan.waitForResult(
-            MultiScan.shared().getScanExtra(MSScanType.BODY, parameters)
-        ) {
-            /* Write the mesh to a directory */
-            val objFile = File(applicationContext.filesDir, "$id.obj")
-            /* Print the 3D mesh path */
-            saveAvatarToFile(it, objFile)
-            /* Return the URL */
-            Log.d(TAG, "AHI: Mesh URL: ${applicationContext.filesDir.path}/$id.obj\n")
-        }
+    private  fun getBodyScanExtras(result: Map<String, Any>) {
+        val options = mapOf("extrapolate" to listOf("mesh"))
+        AHIMultiScan.getScanExtra(result, options, completionBlock = {
+            it.fold({
+                val uri = (it["extrapolate"] as? List<Map<*, *>>)?.firstOrNull()?.get("mesh") as? Uri
+                Log.i(TAG, "$uri")
+            }, {
+                Log.e(TAG, it.toString())
+            })
+        })
     }
 
     /**
      * Check if MultiScan is on or offline.
      */
     private fun getMultiScanStatus() {
-        MultiScan.waitForResult(MultiScan.shared().state) {
-            Log.d(TAG, "AHI INFO: Status: ${it.result}")
+        AHIMultiScan.getStatus {
+            Log.d(TAG, "AHI INFO: Status: ${it.toString()}")
         }
     }
 
@@ -348,7 +414,13 @@ class MainActivity : ComponentActivity() {
      * Check your AHI MultiScan organisation details.
      */
     private fun getMultiScanDetails() {
-        Log.d(TAG, "AHI INFO: MultiScan details: ${null}")
+        AHIMultiScan.getDetails {
+            it.fold({
+                Log.d(TAG, "AHI INFO: MultiScan details: ${it}")
+            }, {
+                Log.d(TAG, "AHI INFO: Failed to get details")
+            })
+        }
     }
 
     /**
@@ -356,24 +428,13 @@ class MainActivity : ComponentActivity() {
      *
      * The expected result for <= v21.1.3 is an error called "NO_OP".
      */
-    private fun getUserAuthorizedState(userID: String?) {
-        if (userID.isNullOrEmpty()) {
-            Log.d("-9", "Missing user ID")
-            return
-        }
-        MultiScan.waitForResult(MultiScan.shared().userIsAuthorized(userID)) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> {
-                    Log.d(TAG, "AHI INFO: User is: ${if (it.result == "true") "authorized" else "not authorized"}")
-                }
-                else -> {
-                    if (it.resultCode == SdkResultCode.NO_OP) {
-                        Log.d("-15", "AHI MultiScan SDK functionality not implemented.")
-                    } else {
-                        Log.d(TAG, "AHI ERROR: Failed to get user authorization status")
-                    }
-                }
-            }
+    private fun getUserAuthorizedState() {
+        AHIMultiScan.userIsAuthorized {
+            it.fold({
+                Log.d(TAG, "AHI INFO: User is authorized")
+            }, {
+                Log.d(TAG, "AHI INFO: User is not authorized")
+            })
         }
     }
 
@@ -381,15 +442,12 @@ class MainActivity : ComponentActivity() {
      * Deauthorize the user.
      */
     private fun deauthorizeUser() {
-        MultiScan.waitForResult(MultiScan.shared().userDeauthorize()) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> {
-                    Log.d(TAG, "AHI INFO: User is deauthorized.")
-                }
-                else -> {
-                    Log.d("-15", "AHI MultiScan SDK functionality not implemented.")
-                }
-            }
+        AHIMultiScan.userDeauthorize {
+            it.fold({
+                Log.d(TAG, "AHI INFO: User is deauthorized.")
+            }, {
+                Log.e(TAG, it.toString())
+            })
         }
     }
 
@@ -400,40 +458,36 @@ class MainActivity : ComponentActivity() {
      * The expected result for <= v21.1.3 is an error called "NO_OP".
      */
     private fun releaseMultiScanSDK() {
-        Log.d("-15", "AHI MultiScan SDK functionality not implemented.")
-    }
-
-    /** For the newest AHIMultiScan version 21.1.3 need to implement PersistenceDelegate */
-    object AHIPersistenceDelegate : MultiScanDelegate {
-        override fun request(
-            scanType: MSScanType?,
-            options: MutableMap<String, String>?
-        ): CompletableFuture<SdkResultParcelable> {
-            val future = CompletableFuture<SdkResultParcelable>()
-            if (scanType == MSScanType.BODY) {
-                val rawResultList = mutableListOf<String>()
-                options?.forEach {
-                    rawResultList.add(it.toString())
-                }
-                val jsonArrayString = "[" + rawResultList.joinToString(separator = ",") + "]"
-                future.complete(SdkResultParcelable(SdkResultCode.SUCCESS, jsonArrayString))
-            } else {
-                future.complete(SdkResultParcelable(SdkResultCode.ERROR, ""))
-            }
-            return future
+        AHIMultiScan.releaseSdk {
+            it.fold({
+                Log.d(TAG, "AHI INFO: SDK released Successfuly.")
+            }, {
+                Log.e(TAG, it.toString())
+            })
         }
     }
+
+//    object AHIPersistenceDelegate: IAHIPersistence {
+//        override fun request(
+//            scanType: String,
+//            options: Map<String, Any>,
+//            completionBlock: (result: AHIResult<Array<Map<String, Any>>>) -> Unit
+//        ) {
+////            TODO: implement
+//        }
+//    }
+
 
     /**
      *  All MultiScan scan configs require this information.
      *
      *  BodyScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/BodyScan/Schemas/
      *  FaceScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FaceScan/Schemas/
-     */
+     * */
     private fun areSharedScanConfigOptionsValid(avatarValues: java.util.HashMap<String, Any>): Boolean {
         val sex = avatarValues["enum_ent_sex"].takeIf { it is String }
-        val height = avatarValues["cm_ent_height"].takeIf { it is Int }
-        val weight = avatarValues["kg_ent_weight"].takeIf { it is Int }
+        val height = avatarValues["cm_ent_height"].takeIf { it is Double || it is Int}
+        val weight = avatarValues["kg_ent_weight"].takeIf { it is Double || it is Int}
         return if (sex != null && height != null && weight != null) {
             arrayListOf("male", "female").contains(sex)
         } else {
@@ -445,7 +499,7 @@ class MainActivity : ComponentActivity() {
      *  FaceScan config requirements validation.
      *  Please see the Schemas for more information:
      *  FaceScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FaceScan/Schemas/
-     */
+     * */
     private fun areFaceScanConfigOptionsValid(avatarValues: HashMap<String, Any>): Boolean {
         if (!areSharedScanConfigOptionsValid(avatarValues)) {
             return false
@@ -455,18 +509,19 @@ class MainActivity : ComponentActivity() {
         val diabeticType = avatarValues["enum_ent_diabetic"].takeIf { it is String }
         val hypertension = avatarValues["bool_ent_hypertension"].takeIf { it is Boolean }
         val blood = avatarValues["bool_ent_bloodPressureMedication"].takeIf { it is Boolean }
-        val height = avatarValues["cm_ent_height"].takeIf { it is Int }
-        val weight = avatarValues["kg_ent_weight"].takeIf { it is Int }
+        val height = avatarValues["cm_ent_height"].toString().toDoubleOrNull()
+        val weight = avatarValues["kg_ent_weight"].toString().toDoubleOrNull()
         val age = avatarValues["yr_ent_age"].takeIf { it is Int }
         if (sex != null &&
+            smoke != null &&
             diabeticType != null &&
             hypertension != null &&
             blood != null &&
             height != null &&
             weight != null &&
             age != null &&
-            height in 25..300 &&
-            weight in 25..300 &&
+            height in 50.0..300.0 &&
+            weight in 25.0..300.0 &&
             age in 13..120
         ) {
             return arrayListOf("none", "type1", "type2").contains(diabeticType)
@@ -476,69 +531,59 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
+     *  FingerScan config requirements validation.
+     *  Please see the Schemas for more information:
+     *  FingerScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FingerScan/Schemas/
+     * */
+    private fun areFingerScanConfigOptionsValid(avatarValues: HashMap<String, Any>): Boolean {
+        val scanLength = avatarValues["sec_ent_scanLength"].toString().toIntOrNull()
+        val instruction1 = avatarValues["str_ent_instruction1"].takeIf { it is String }
+        val instruction2 = avatarValues["str_ent_instruction2"].takeIf { it is String }
+        return (scanLength != null &&
+                instruction1 != null &&
+                instruction2 != null &&
+                scanLength >= 20 )
+    }
+
+    /**
      *  BodyScan config requirements validation.
      *  Please see the Schemas for more information:
      *  BodyScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/BodyScan/Schemas/
-     */
+     * */
     private fun areBodyScanConfigOptionsValid(avatarValues: java.util.HashMap<String, Any>): Boolean {
         if (!areSharedScanConfigOptionsValid(avatarValues)) {
             return false
         }
         val sex = avatarValues["enum_ent_sex"].takeIf { it is String }
-        val height = avatarValues["cm_ent_height"].takeIf { it is Int }
-        val weight = avatarValues["kg_ent_weight"].takeIf { it is Int }
-        if (sex != null &&
-            height != null &&
-            weight != null &&
-            height in 50..255 &&
-            weight in 16..300
-        ) {
-            return true
-        }
-        return false
+        val height = avatarValues["cm_ent_height"].toString().toDoubleOrNull()
+        val weight = avatarValues["kg_ent_weight"].toString().toDoubleOrNull()
+        return (sex != null &&
+                height != null &&
+                weight != null &&
+                height in 50.0..255.0 &&
+                weight in 16.0..300.0
+                )
     }
 
-    /** Confirm results have correct set of keys. */
-    private fun areBodyScanSmoothingResultsValid(it: MutableMap<String, String>): Boolean {
-        /* Your token may only provide you access to a smaller subset of results. */
-        /* You should modify this list based on your available config options. */
-        val sdkResultSchema = listOf(
-            "enum_ent_sex",
-            "cm_ent_height",
-            "kg_ent_weight",
-            "cm_raw_chest",
-            "cm_raw_hips",
-            "cm_raw_inseam",
-            "cm_raw_thigh",
-            "cm_raw_waist",
-            "kg_raw_weightPredict",
-            "percent_raw_bodyFat",
-            "ml_raw_fitness",
-            "id",
-            "date"
-        )
-        var isValid = false
-        /* Iterate over results */
-        sdkResultSchema.forEach { str ->
-            /* Check if keys in results contains the required keys. */
-            if (!it.keys.contains(str)) {
-                isValid = true
+    /**
+     * Check camera permissions
+     */
+    private fun checkPermission() {
+        if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.CAMERA)
+            == PackageManager.PERMISSION_DENIED
+        ){
+            requestPermissions(arrayOf(Manifest.permission.CAMERA), PERMISSION_REQUEST_CODE)
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "camera permission granted", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this, "camera permission denied", Toast.LENGTH_LONG).show();
             }
         }
-        return !isValid
-    }
-
-    /** Save 3D avatar mesh result on local device. */
-    private fun saveAvatarToFile(res: SdkResultParcelable, objFile: File) {
-        val meshResObj = JSONObject(res.result)
-        val objString = meshResObj["mesh"].toString()
-        val words: List<String> = objString.split(",")
-        val stream = FileOutputStream(objFile)
-        val writer = BufferedWriter(OutputStreamWriter(stream))
-        for (word in words) {
-            writer.write(word)
-            writer.newLine()
-        }
-        writer.close()
     }
 }
