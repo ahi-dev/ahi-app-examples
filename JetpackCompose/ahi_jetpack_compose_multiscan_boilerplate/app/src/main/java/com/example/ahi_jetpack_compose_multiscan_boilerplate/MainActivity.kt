@@ -229,7 +229,7 @@ class MainActivity : ComponentActivity() {
         AHIMultiScan.userAuthorize(AHI_TEST_USER_ID, AHI_TEST_USER_SALT, AHI_TEST_USER_CLAIMS, completionBlock = {
             it.fold({
                 Log.d(TAG, "AHI: Setup user successfully\n")
-//                viewModel.setIsSetup(true)
+                viewModel.isSetupState.value = true
             }, {
                 Log.d(TAG, "AHI: Auth Error: ${it.message}\n")
                 Log.d(TAG, "AHI: Confirm you are using a valid user id, salt and claims\n")
@@ -242,7 +242,7 @@ class MainActivity : ComponentActivity() {
         AHIMultiScan.areResourcesDownloaded {
             it.fold({
                 if (it) {
-//                    viewModel.setIsFinishedDownloadingResources(true)
+                    viewModel.isFinishedDownloadingResourcesState.value = true
                     Log.d(TAG, "AHI: Resources ready\n")
                 } else {
                     Log.d(TAG, "AHI INFO: Resources are not downloaded\n")
