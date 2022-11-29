@@ -333,7 +333,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      * Check if MultiScan is on or offline.
      */
     private fun getMultiScanStatus() {
-
         AHIMultiScan.getStatus {
             Log.d(TAG, "AHI INFO: Status: ${it.toString()}")
         }
@@ -343,7 +342,13 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      * Check your AHI MultiScan organisation details.
      */
     private fun getMultiScanDetails() {
-        Log.d(TAG, "AHI INFO: MultiScan details: ${null}")
+        AHIMultiScan.getDetails {
+            it.fold({
+                Log.d(TAG, "AHI INFO: MultiScan details: ${it}")
+            }, {
+                Log.d(TAG, "AHI INFO: Failed to get details")
+            })
+        }
     }
 
     /**
@@ -351,12 +356,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      *
      * The expected result for <= v21.1.3 is an error called "NO_OP".
      */
-    private fun getUserAuthorizedState(userID: String?) {
-        if (userID.isNullOrEmpty()) {
-            Log.d("-9", "Missing user ID")
-            return
-        }
-
+    private fun getUserAuthorizedState() {
         AHIMultiScan.userIsAuthorized {
             it.fold({
                 Log.d(TAG, "AHI INFO: User is authorized")
