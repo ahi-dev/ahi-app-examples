@@ -292,10 +292,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     Log.i(TAG, "Waiting of results, can show waiting screen here")
                 }
 
-                when (val result = withContext(Dispatchers.IO) { it.get() }) {
+                val result = withContext(Dispatchers.IO) { it.get() }
+                when (result) {
                     is AHIResult.Success -> {
                         Log.d(TAG, "initiateScan: ${result.value}")
-
                         // get scan extra
                         getBodyScanExtras(result.value)
                     }
