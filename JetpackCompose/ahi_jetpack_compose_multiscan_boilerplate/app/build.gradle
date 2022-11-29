@@ -4,15 +4,13 @@ plugins {
     id 'kotlin-kapt'
 }
 
-ext.compose_version = '1.1.0'
-
 android {
-    compileSdk 33
+    compileSdk 32
 
     defaultConfig {
         applicationId "com.example.ahi_jetpack_compose_multiscan_boilerplate"
-        minSdk 26
-        targetSdk 33
+        minSdk 30
+        targetSdk 32
         versionCode 1
         versionName "1.0"
 
@@ -54,7 +52,7 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.6.10'
+    implementation 'androidx.core:core-ktx:1.7.0'
     implementation "androidx.compose.ui:ui:$compose_version"
     implementation "androidx.compose.material:material:$compose_version"
     implementation "androidx.compose.ui:ui-tooling-preview:$compose_version"
@@ -66,11 +64,11 @@ dependencies {
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
     // AHI SDK
-    def AHISdkVersion = '22.0.+'
-    implementation "com.advancedhumanimaging.sdk:ahi-sdk-multiscan:$AHISdkVersion"
-    implementation "com.advancedhumanimaging.sdk:ahi-sdk-facescan:$AHISdkVersion"
-    implementation "com.advancedhumanimaging.sdk:ahi-sdk-fingerscan:$AHISdkVersion"
-    implementation "com.advancedhumanimaging.sdk:ahi-sdk-bodyscan:$AHISdkVersion"
+    def AHISdkVersion = '21.1.4'
+    kapt "com.myfiziq.sdk:orm:${AHISdkVersion}-release"
+    implementation "com.myfiziq.sdk:orm:${AHISdkVersion}-release"
+    implementation "com.myfiziq.sdk:myfiziqsdk:${AHISdkVersion}-release"
+    implementation "com.myfiziq.sdk:myfiziqsdk-android-face-scan:${AHISdkVersion}-release"
     // Compose ConstraintLayout
     implementation "androidx.constraintlayout:constraintlayout-compose:1.0.0"
 }
