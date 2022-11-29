@@ -73,6 +73,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val inset = 16.dp
         val buttonHeight = 55.dp
+        checkPermission()
         @Composable
         fun defaultButton(buttonText: String, isEnabled: Boolean?, action: ()-> Unit) {
             Button(
@@ -285,8 +286,8 @@ class MainActivity : ComponentActivity() {
         avatarValues["enum_ent_diabetic"] = "none"
         avatarValues["bool_ent_hypertension"] = false
         avatarValues["bool_ent_bloodPressureMedication"] = false
-        avatarValues["cm_ent_height"] = 165
-        avatarValues["kg_ent_weight"] = 67
+        avatarValues["cm_ent_height"] = 165.0
+        avatarValues["kg_ent_weight"] = 67.0
         avatarValues["yr_ent_age"] = 35
         if (!areFaceScanConfigOptionsValid(avatarValues)) {
             Log.d(TAG, "AHI ERROR: Face Scan inputs invalid.")
