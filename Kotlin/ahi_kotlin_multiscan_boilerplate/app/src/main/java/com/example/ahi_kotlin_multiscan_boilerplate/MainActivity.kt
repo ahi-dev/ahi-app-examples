@@ -50,7 +50,7 @@ const val PERMISSION_REQUEST_CODE = 111
 /** Your AHI MultiScan token */
 const val AHI_MULTI_SCAN_TOKEN = ""
 /** Your user ID. NOTE: User ID is hard-coded here for example, BUT should NOT be hard-coded in real integration (user ID from idP is expected). */
-const val AHI_TEST_USER_ID = "EXAMPLE_USER_ID"
+const val AHI_TEST_USER_ID = "AHI_TEST_USER"
 /** Security salt value. This should be hard-coded into your app, and SHOULD NOT be changed (i.e. be the same in both iOS and Android). It can be any string value. */
 const val AHI_TEST_USER_SALT = "EXAMPLE_APP_SALT"
 /** Claims are optional values to increase the security for the user. The order and values should be unique for a given user and be the same on both iOS and Android (e.g. user join date in the format "yyyy", "mm", "dd", "zzzz"). */
@@ -333,7 +333,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      * Check if MultiScan is on or offline.
      */
     private fun getMultiScanStatus() {
-
         AHIMultiScan.getStatus {
             Log.d(TAG, "AHI INFO: Status: ${it.toString()}")
         }
@@ -343,7 +342,13 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      * Check your AHI MultiScan organisation details.
      */
     private fun getMultiScanDetails() {
-        Log.d(TAG, "AHI INFO: MultiScan details: ${null}")
+        AHIMultiScan.getDetails {
+            it.fold({
+                Log.d(TAG, "AHI INFO: MultiScan details: ${it}")
+            }, {
+                Log.d(TAG, "AHI INFO: Failed to get details")
+            })
+        }
     }
 
     /**
@@ -351,12 +356,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      *
      * The expected result for <= v21.1.3 is an error called "NO_OP".
      */
-    private fun getUserAuthorizedState(userID: String?) {
-        if (userID.isNullOrEmpty()) {
-            Log.d("-9", "Missing user ID")
-            return
-        }
-
+    private fun getUserAuthorizedState() {
         AHIMultiScan.userIsAuthorized {
             it.fold({
                 Log.d(TAG, "AHI INFO: User is authorized")
