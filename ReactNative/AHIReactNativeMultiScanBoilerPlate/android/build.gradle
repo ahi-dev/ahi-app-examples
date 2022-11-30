@@ -5,17 +5,16 @@ buildscript {
         kotlin_version = "1.6.10"
         buildToolsVersion = "31.0.0"
         minSdkVersion = 26
-        compileSdkVersion = 31
-        targetSdkVersion = 31
+        compileSdkVersion = 33
+        targetSdkVersion = 33
         ndkVersion = "21.4.7075529"
     }
     repositories {
         google()
-        jcenter()
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:7.0.4")
+        classpath("com.android.tools.build:gradle:7.1.0")
         classpath("com.facebook.react:react-native-gradle-plugin")
         classpath("de.undercouch:gradle-download-task:4.1.2")
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
@@ -42,15 +41,33 @@ allprojects {
             }
         }
         google()
-        jcenter()
-        maven { url 'https://www.jitpack.io' }
+        mavenCentral()
+        // release sdk repo (partner and AHI developer access)
+        def RELEASE_ACCESS_KEY = System.getenv("AHI_RELEASE_AWS_ACCESS_KEY") ?: ""
+        def RELEASE_SECRET = System.getenv("AHI_RELEASE_AWS_SECRET_KEY") ?: ""
         maven {
-            // AHI MultiScan - Maven - Release
-            name "publicRelease"
-            url System.getenv("AHI_MULTISCAN_AWS_URL")
+            url 's3://ahi-prod-sdk-builds/android/release'
             credentials(AwsCredentials) {
-                accessKey System.getenv("AHI_MULTISCAN_AWS_ACCESS_KEY")
-                secretKey System.getenv("AHI_MULTISCAN_AWS_SECRET_KEY")
+                accessKey "$RELEASE_ACCESS_KEY"
+                secretKey "$RELEASE_SECRET"
+            }
+        }
+
+        // staging and dev sdk repo (AHI developer access only)
+        def DEV_ACCESS_KEY = System.getenv("AHI_DEV_AWS_ACCESS_KEY") ?: ""
+        def DEV_SECRET = System.getenv("AHI_DEV_AWS_SECRET_KEY") ?: ""
+        maven {
+            url 's3://ahi-prod-sdk-builds/android/staging'
+            credentials(AwsCredentials) {
+                accessKey "$DEV_ACCESS_KEY"
+                secretKey "$DEV_SECRET"
+            }
+        }
+        maven {
+            url 's3://ahi-dev-sdk-builds/android'
+            credentials(AwsCredentials) {
+                accessKey "$DEV_ACCESS_KEY"
+                secretKey "$DEV_SECRET"
             }
         }
     }

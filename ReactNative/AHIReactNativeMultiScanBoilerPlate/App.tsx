@@ -15,8 +15,8 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-import React, {useState} from 'react';
-import type {ReactNode} from 'react';
+import React, { useState } from 'react';
+import type { ReactNode } from 'react';
 import MultiScanModule from './Modules/MultiScanModule';
 import {
   Pressable,
@@ -65,7 +65,6 @@ const App: () => ReactNode = () => {
   }
 
   function didTapDownloadResources() {
-    downloadAHIResources();
     areAHIResourcesAvailable();
     checkAHIResourcesDownloadSize();
   }
@@ -83,7 +82,6 @@ const App: () => ReactNode = () => {
         if (result !== '') {
           return;
         }
-        setIsSDKSetup(true);
         authorizeUser();
       })
       .catch(error => {
@@ -111,6 +109,7 @@ const App: () => ReactNode = () => {
           );
           return;
         }
+        setIsSDKSetup(true);
         console.log('AHI: Setup user successfully');
       })
       .catch(error => {
@@ -160,6 +159,7 @@ const App: () => ReactNode = () => {
     MultiScanModule.checkAHIResourcesDownloadSize().then((size: any) => {
       console.log(
         'AHI INFO: Size of download is ' + Number(size) / 1024 / 1024,
+        // 'AHI INFO: Size of download is ' + size,
       );
     });
   }
@@ -309,7 +309,7 @@ const App: () => ReactNode = () => {
         console.log('AHI ERROR: deAuthorizeUser ', error);
       });
   }
-  
+
   /**
    * Release the MultiScan SDK session.
    *
@@ -431,7 +431,7 @@ const App: () => ReactNode = () => {
    * FingerScan config requirements validation. Please see the Schemas for more information:
    * FingerScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FingerScan/Schemas/
    */
-   function areFingerScanConfigOptionsValid(
+  function areFingerScanConfigOptionsValid(
     inputValues: Map<string, any>,
   ): boolean {
     var scanLength = inputValues.get('sec_ent_scanLength');
@@ -566,7 +566,7 @@ const styles = StyleSheet.create({
 
 export default App;
 
-const DefaultButton = ({action, buttonText}: any) => {
+const DefaultButton = ({ action, buttonText }: any) => {
   return (
     <TouchableOpacity onPress={action} style={styles.button}>
       <Text style={styles.text}>{buttonText}</Text>
