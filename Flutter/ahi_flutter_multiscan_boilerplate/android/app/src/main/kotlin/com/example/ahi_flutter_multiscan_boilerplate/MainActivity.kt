@@ -17,11 +17,31 @@
 
 package com.example.ahi_flutter_multiscan_boilerplate
 
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.content.IntentSender
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.result.ActivityResultRegistry
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContract
+import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions.Companion.ACTION_REQUEST_PERMISSIONS
+import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions.Companion.EXTRA_PERMISSIONS
+import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult.Companion.EXTRA_ACTIVITY_OPTIONS_BUNDLE
+import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult.Companion.ACTION_INTENT_SENDER_REQUEST
+import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult.Companion.EXTRA_INTENT_SENDER_REQUEST
+import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult.Companion.EXTRA_SEND_INTENT_EXCEPTION
 import androidx.annotation.RequiresApi
+import androidx.core.app.ActivityCompat
+import androidx.core.app.ActivityOptionsCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.advancedhumanimaging.sdk.bodyscan.BodyScan
 import com.advancedhumanimaging.sdk.bodyscan.common.BodyScanError
@@ -177,6 +197,9 @@ class MainActivity : FlutterActivity() {
             result.error("-1", "Missing multi scan token", null)
             return
         }
+
+        checkPermission()
+
         val config: MutableMap<String, String> = HashMap()
         config["TOKEN"] = token as String
         val scans: Array<IAHIScan> = arrayOf(FaceScan(), FingerScan(), BodyScan())
@@ -277,14 +300,78 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    private fun getActivityResultRegistry(arguments: Any?): ActivityResultRegistry? {
-        if (arguments == null || arguments !is Map<*, *>) {
-            return null
+    private val activityResultRegistry = object : ActivityResultRegistry() {
+        override fun <I : Any?, O : Any?> onLaunch(
+            requestCode: Int,
+            contract: ActivityResultContract<I, O>,
+            input: I,
+            options: ActivityOptionsCompat?
+        ) {
+            val activity: Activity = this@MainActivity
+
+            // Immediate result path
+
+            // Immediate result path
+            val synchronousResult: ActivityResultContract.SynchronousResult<O>? = contract.getSynchronousResult(activity, input)
+            if (synchronousResult != null) {
+                Handler(Looper.getMainLooper()).post { dispatchResult<O>(requestCode, synchronousResult.value) }
+                return
+            }
+
+            // Start activity path
+
+            // Start activity path
+            val intent = contract.createIntent(activity, input)
+            var optionsBundle: Bundle? = null
+            // If there are any extras, we should defensively set the classLoader
+            // If there are any extras, we should defensively set the classLoader
+            if (intent.extras != null && intent.extras!!.classLoader == null) {
+                intent.setExtrasClassLoader(activity.classLoader)
+            }
+            if (intent.hasExtra(EXTRA_ACTIVITY_OPTIONS_BUNDLE)) {
+                optionsBundle = intent.getBundleExtra(EXTRA_ACTIVITY_OPTIONS_BUNDLE)
+                intent.removeExtra(EXTRA_ACTIVITY_OPTIONS_BUNDLE)
+            } else if (options != null) {
+                optionsBundle = options.toBundle()
+            }
+            if (ACTION_REQUEST_PERMISSIONS == intent.action) {
+
+                // requestPermissions path
+                var permissions = intent.getStringArrayExtra(EXTRA_PERMISSIONS)
+                if (permissions == null) {
+                    permissions = arrayOfNulls(0)
+                }
+                ActivityCompat.requestPermissions(activity, permissions, requestCode)
+            } else if (ACTION_INTENT_SENDER_REQUEST == intent.action) {
+                val request = intent.getParcelableExtra<IntentSenderRequest>(EXTRA_INTENT_SENDER_REQUEST)
+                try {
+                    // startIntentSenderForResult path
+                    ActivityCompat.startIntentSenderForResult(
+                        activity, request!!.intentSender,
+                        requestCode, request!!.fillInIntent, request!!.flagsMask,
+                        request!!.flagsValues, 0, optionsBundle
+                    )
+                } catch (e: IntentSender.SendIntentException) {
+                    Handler(Looper.getMainLooper()).post {
+                        dispatchResult(
+                            requestCode, RESULT_CANCELED,
+                            Intent().setAction(ACTION_INTENT_SENDER_REQUEST)
+                                .putExtra(EXTRA_SEND_INTENT_EXCEPTION, e)
+                        )
+                    }
+                }
+            } else {
+                // startActivityForResult path
+                ActivityCompat.startActivityForResult(activity, intent, requestCode, optionsBundle)
+            }
         }
 
-        register
+    }
 
-        return null
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (!activityResultRegistry.dispatchResult(requestCode, resultCode, data)) {
+            super.onActivityResult(requestCode, resultCode, data)
+        }
     }
 
     private fun getFaceScanUserInput(arguments: Any?): HashMap<String, Any>? {
@@ -321,13 +408,7 @@ class MainActivity : FlutterActivity() {
             result.error("-3", "Missing user face scan input details", null)
             return
         }
-        val registry = getActivityResultRegistry(arguments)
-        if (registry == null) {
-            result.error("-3", "Missing ActivityResultRegistry", null)
-            return
-        }
-
-        AHIMultiScan.initiateScan("face", userInput, registry, completionBlock = {
+        AHIMultiScan.initiateScan("face", userInput, activityResultRegistry, completionBlock = {
             lifecycleScope.launch(Dispatchers.Main) {
                 if (!it.isDone) {
                     Log.i(TAG, "Waiting of results, can show waiting screen here")
@@ -377,31 +458,26 @@ class MainActivity : FlutterActivity() {
         }
 
 //        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
-
-        val registry = getActivityResultRegistry(arguments)
-        if (registry == null) {
-            result.error("-3", "Missing ActivityResultRegistry", null)
-            return
-        }
-
-        AHIMultiScan.initiateScan("body", userInput, registry, completionBlock = {
+        AHIMultiScan.initiateScan("body", userInput, activityResultRegistry, completionBlock = {
             lifecycleScope.launch(Dispatchers.Main) {
                 if (!it.isDone) {
                     Log.i(TAG, "Waiting of results, can show waiting screen here")
                 }
 
-                val result = withContext(Dispatchers.IO) { it.get() }
-                when (result) {
+                val response = withContext(Dispatchers.IO) { it.get() }
+                when (response) {
                     is AHIResult.Success -> {
-                        Log.d(TAG, "initiateScan: ${result.value}")
+                        Log.d(TAG, "initiateScan: ${response.value}")
                         // get scan extra
-                        getBodyScanExtras(result.value)
+                        getBodyScanExtras(response.value, result)
                     }
                     else -> {
-                        if (result.error() == BodyScanError.BODY_SCAN_CANCELED) {
+                        if (response.error() == BodyScanError.BODY_SCAN_CANCELED) {
                             Log.i(TAG, "User cancelled scan")
+                            result.error(response.error().toString(), "UserCancelled", null)
                         } else {
-                            Log.d(TAG, "initiateScan: ${result.error()}")
+                            Log.d(TAG, "initiateScan: ${response.error()}")
+                            result.error(response.error().toString(), response.toString(), null)
                         }
                     }
                 }
@@ -563,5 +639,28 @@ class MainActivity : FlutterActivity() {
             it.toString()
         }.toMutableList()
         return bodyScanResultsStringList
+    }
+
+
+    /**
+     * Check camera permissions
+     */
+    private fun checkPermission() {
+        if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.CAMERA)
+            == PackageManager.PERMISSION_DENIED
+        ){
+            requestPermissions(arrayOf(Manifest.permission.CAMERA), PERMISSION_REQUEST_CODE)
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "camera permission granted", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this, "camera permission denied", Toast.LENGTH_LONG).show();
+            }
+        }
     }
 }
