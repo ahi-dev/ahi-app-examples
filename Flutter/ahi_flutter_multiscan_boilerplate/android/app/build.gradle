@@ -74,10 +74,11 @@ flutter {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'androidx.appcompat:appcompat:1.5.1'
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.5.1"
 
     implementation 'com.advancedhumanimaging.sdk:ahi-sdk-multiscan:22.0.+'
     implementation 'com.advancedhumanimaging.sdk:ahi-sdk-facescan:22.0.+'
     implementation 'com.advancedhumanimaging.sdk:ahi-sdk-fingerscan:22.0.+'
     implementation 'com.advancedhumanimaging.sdk:ahi-sdk-bodyscan:22.0.+'
-
 }

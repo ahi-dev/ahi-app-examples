@@ -20,11 +20,15 @@ package com.example.ahi_flutter_multiscan_boilerplate
 import android.net.Uri
 import android.os.Build
 import android.util.Log
+import androidx.activity.result.ActivityResultRegistry
 import androidx.annotation.RequiresApi
+import androidx.lifecycle.lifecycleScope
 import com.advancedhumanimaging.sdk.bodyscan.BodyScan
+import com.advancedhumanimaging.sdk.bodyscan.common.BodyScanError
 import com.advancedhumanimaging.sdk.common.IAHIPersistence
 import com.advancedhumanimaging.sdk.common.IAHIScan
 import com.advancedhumanimaging.sdk.common.models.AHIResult
+import com.advancedhumanimaging.sdk.facescan.AHIFaceScanError
 import com.advancedhumanimaging.sdk.facescan.FaceScan
 import com.advancedhumanimaging.sdk.fingerscan.FingerScan
 import com.advancedhumanimaging.sdk.multiscan.AHIMultiScan
@@ -273,6 +277,16 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    private fun getActivityResultRegistry(arguments: Any?): ActivityResultRegistry? {
+        if (arguments == null || arguments !is Map<*, *>) {
+            return null
+        }
+
+        register
+
+        return null
+    }
+
     private fun getFaceScanUserInput(arguments: Any?): HashMap<String, Any>? {
         if (arguments == null || arguments !is Map<*, *>) {
             return null
@@ -307,28 +321,35 @@ class MainActivity : FlutterActivity() {
             result.error("-3", "Missing user face scan input details", null)
             return
         }
+        val registry = getActivityResultRegistry(arguments)
+        if (registry == null) {
+            result.error("-3", "Missing ActivityResultRegistry", null)
+            return
+        }
 
-        /*
-        AHIMultiScan.initiateScan("face", userInput, activityResultRegistry, completionBlock = {
+        AHIMultiScan.initiateScan("face", userInput, registry, completionBlock = {
             lifecycleScope.launch(Dispatchers.Main) {
                 if (!it.isDone) {
                     Log.i(TAG, "Waiting of results, can show waiting screen here")
                 }
-                val result = withContext(Dispatchers.IO) { it.get() }
-                when (result) {
+                val response = withContext(Dispatchers.IO) { it.get() }
+                when (response) {
                     is AHIResult.Success -> {
-                        Log.d(TAG, "initiateScan: ${result.value}")
+                        Log.d(TAG, "initiateScan: ${response.value}")
+                        result.success(response.value)
                     }
                     else -> {
-//                        if (result.error() == AHIFaceScanError.FACE_SCAN_CANCELED) {
-//                            Log.i(TAG, "User cancelled scan")
-//                        } else {
-//                            Log.d(TAG, "initiateScan: ${result.error()}")
-//                        }
+                        if (response.error() == AHIFaceScanError.FACE_SCAN_CANCELED) {
+                            Log.i(TAG, "User cancelled scan")
+                            result.error(response.error().toString(), "UserCancelled", null)
+                        } else {
+                            Log.d(TAG, "initiateScan: ${response.error()}")
+                            result.error(response.error().toString(), response.error().toString(), null)
+                        }
                     }
                 }
             }
-        })*/
+        })
     }
 
     private fun getBodyScanUserInput(arguments: Any?): HashMap<String, Any>? {
@@ -357,8 +378,13 @@ class MainActivity : FlutterActivity() {
 
 //        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
 
-        /*
-        AHIMultiScan.initiateScan("body", userInput, activityResultRegistry, completionBlock = {
+        val registry = getActivityResultRegistry(arguments)
+        if (registry == null) {
+            result.error("-3", "Missing ActivityResultRegistry", null)
+            return
+        }
+
+        AHIMultiScan.initiateScan("body", userInput, registry, completionBlock = {
             lifecycleScope.launch(Dispatchers.Main) {
                 if (!it.isDone) {
                     Log.i(TAG, "Waiting of results, can show waiting screen here")
@@ -381,7 +407,6 @@ class MainActivity : FlutterActivity() {
                 }
             }
         })
-        */
     }
 
     /**
