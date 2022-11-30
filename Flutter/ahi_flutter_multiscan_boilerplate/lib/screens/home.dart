@@ -97,7 +97,7 @@ class _HomeState extends State<Home> {
 
   /// Once successfully setup, you should authorize your user with our service.
   ///
-  /// With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
+  /// With your signed in user, you can authorize them to use the AHI service.
   void authorizeUser() async {
     Map<String, dynamic> ahiConfigTokens = {
       "USER_ID": AHI_TEST_USER_ID,

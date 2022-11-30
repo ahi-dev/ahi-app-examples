@@ -50,6 +50,7 @@ import com.advancedhumanimaging.sdk.common.IAHIScan
 import com.advancedhumanimaging.sdk.common.models.AHIResult
 import com.advancedhumanimaging.sdk.facescan.AHIFaceScanError
 import com.advancedhumanimaging.sdk.facescan.FaceScan
+import com.advancedhumanimaging.sdk.fingerscan.AHIFingerScanError
 import com.advancedhumanimaging.sdk.fingerscan.FingerScan
 import com.advancedhumanimaging.sdk.multiscan.AHIMultiScan
 import io.flutter.embedding.android.FlutterActivity
@@ -78,10 +79,13 @@ enum class AHIMultiScanMethod(val methodKeys: String) {
     /** Will return an integer for the bytes size. */
     checkAHIResourcesDownloadSize("checkAHIResourcesDownloadSize"),
 
-    /** Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG") */
+    /** Requires a map object for the required user inputs */
     startFaceScan("startFaceScan"),
 
-    /** Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG") */
+    /** Requires a map object for the required user inputs */
+    startFingerScan("startFingerScan"),
+
+    /** Requires a map object for the required user inputs */
     startBodyScan("startBodyScan"),
 
     /** Requires a map object of the body scan results and returns a Map object. */
@@ -151,6 +155,11 @@ class MainActivity : FlutterActivity() {
                         arguments = call.arguments, result = result
                     )
                 }
+                AHIMultiScanMethod.startFingerScan -> {
+                    startFingerScan(
+                        arguments = call.arguments, result = result
+                    )
+                }
                 AHIMultiScanMethod.startBodyScan -> {
                     startBodyScan(
                         arguments = call.arguments, result = result
@@ -217,7 +226,7 @@ class MainActivity : FlutterActivity() {
 
     /**
      *  Once successfully setup, you should authorize your user with our service.
-     *  With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
+     *  With your signed in user, you can authorize them to use the AHI service.
      * */
     private fun authorizeUser(
         arguments: Any?,
@@ -421,6 +430,56 @@ class MainActivity : FlutterActivity() {
                     }
                     else -> {
                         if (response.error() == AHIFaceScanError.FACE_SCAN_CANCELED) {
+                            Log.i(TAG, "User cancelled scan")
+                            result.error(response.error().toString(), "UserCancelled", null)
+                        } else {
+                            Log.d(TAG, "initiateScan: ${response.error()}")
+                            result.error(response.error().toString(), response.error().toString(), null)
+                        }
+                    }
+                }
+            }
+        })
+    }
+
+    private fun getFingerScanUserInput(arguments: Any?): HashMap<String, Any>? {
+        if (arguments == null || arguments !is Map<*, *>) {
+            return null
+        }
+        val scanLength = arguments["sec_ent_scanLength"] as? Int ?: return null
+        val instruction1 = arguments["str_ent_instruction1"] as? String ?: return null
+        val instruction2 = arguments["str_ent_instruction2"] as? String ?: return null
+        val miscData = arguments["miscData"]  as? HashMap<String, Any> ?: mapOf()
+        return hashMapOf(
+            "sec_ent_scanLength" to scanLength,
+            "str_ent_instruction1" to instruction1,
+            "str_ent_instruction2" to instruction2,
+            "miscData" to miscData
+        )
+    }
+
+    private fun startFingerScan(
+        arguments: Any?,
+        result: MethodChannel.Result
+    ) {
+        val userInput = getFingerScanUserInput(arguments)
+        if (userInput == null) {
+            result.error("-3", "Missing user finger scan input details", null)
+            return
+        }
+        AHIMultiScan.initiateScan("finger", userInput, activityResultRegistry, completionBlock = {
+            lifecycleScope.launch(Dispatchers.Main) {
+                if (!it.isDone) {
+                    Log.i(TAG, "Waiting of results, can show waiting screen here")
+                }
+                val response = withContext(Dispatchers.IO) { it.get() }
+                when (response) {
+                    is AHIResult.Success -> {
+                        Log.d(TAG, "initiateScan: ${response.value}")
+                        result.success(response.value)
+                    }
+                    else -> {
+                        if (response.error() == AHIFingerScanError.FINGER_SCAN_CANCELLED) {
                             Log.i(TAG, "User cancelled scan")
                             result.error(response.error().toString(), "UserCancelled", null)
                         } else {
