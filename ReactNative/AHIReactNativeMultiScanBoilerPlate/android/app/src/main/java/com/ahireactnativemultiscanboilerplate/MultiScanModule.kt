@@ -17,10 +17,12 @@
 
 package com.ahireactnativemultiscanboilerplate
 
+import android.net.Uri
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.advancedhumanimaging.sdk.bodyscan.BodyScan
 import com.advancedhumanimaging.sdk.bodyscan.common.BodyScanError
+import com.advancedhumanimaging.sdk.common.IAHIPersistence
 import com.advancedhumanimaging.sdk.common.IAHIScan
 import com.advancedhumanimaging.sdk.common.models.AHIResult
 import com.advancedhumanimaging.sdk.facescan.AHIFaceScanError
@@ -34,11 +36,10 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-
 private const val TAG = "MultiScanModule"
 
 class MultiScanModule(private val context: ReactApplicationContext) :
-    ReactContextBaseJavaModule(context) {
+        ReactContextBaseJavaModule(context) {
     override fun getName(): String {
         return "MultiScanModule"
     }
@@ -52,42 +53,63 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         val config: MutableMap<String, String> = HashMap()
         config["TOKEN"] = token
         val scans: Array<IAHIScan> = arrayOf(FaceScan(), FingerScan(), BodyScan())
-        AHIMultiScan.setup(reactApplicationContext.currentActivity!!.application, config, scans, completionBlock = { ahiResult ->
-            ahiResult.fold({
-                promise.resolve("")
-            }, {
-                promise.reject(it.error.code().toString(), it.message)
-            })
-        })
+        AHIMultiScan.setup(
+                reactApplicationContext.currentActivity!!.application,
+                config,
+                scans,
+                completionBlock = { ahiResult ->
+                    ahiResult.fold(
+                            { promise.resolve("") },
+                            {
+                                Log.d(TAG, "AHI: Error setting up: $}\n")
+                                Log.d(TAG, "AHI: Confirm you have a valid token.\n")
+                                promise.reject(it.error.code().toString(), it.message)
+                            }
+                    )
+                }
+        )
     }
 
     /**
      * Once successfully setup, you should authorize your user with our service. With your signed in
-     * user, you can authorize them to use the AHI service, provided that they have agreed to a
-     * payment method.
+     * user, you can authorize them to use the AHI service.
      */
     @ReactMethod
-    private fun authorizeUser(userID: String, salt: String, claims: ReadableArray, promise: Promise) {
+    private fun authorizeUser(
+            userID: String,
+            salt: String,
+            claims: ReadableArray,
+            promise: Promise
+    ) {
         val inputClaims = claims.toArrayList().map { it.toString() }.toTypedArray()
-        AHIMultiScan.userAuthorize(userID, salt, inputClaims, completionBlock = { ahiResult ->
-            ahiResult.fold({
-                promise.resolve("")
-            }, {
-                promise.reject(it.error.code().toString(), it.message)
-            })
-        })
+        AHIMultiScan.userAuthorize(
+                userID,
+                salt,
+                inputClaims,
+                completionBlock = { ahiResult ->
+                    ahiResult.fold(
+                            { promise.resolve("") },
+                            { promise.reject(it.error.code().toString(), it.message) }
+                    )
+                }
+        )
     }
 
-    /** Check if the AHI resources are downloaded. */
+    /**
+     * Check if the AHI resources are downloaded.
+     *
+     * We have remote resources that exceed 100MB that enable our scans to work. You are required to
+     * download them in order to obtain a body scan.
+     *
+     * This function checks if they are already downloaded and available for use.
+     */
     @ReactMethod
     fun areAHIResourcesAvailable(promise: Promise) {
         AHIMultiScan.areResourcesDownloaded { ahiResult ->
-            ahiResult.fold({
-                Log.d(TAG, "bbb: $it")
-                promise.resolve(it)
-            }, {
-                promise.reject(it.error.code().toString(), it.message)
-            })
+            ahiResult.fold(
+                    { promise.resolve(it) },
+                    { promise.reject(it.error.code().toString(), it.message) }
+            )
         }
     }
 
@@ -97,23 +119,26 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      */
     @ReactMethod
     fun downloadAHIResources() {
-        Log.d(TAG, "downloadAHIResources: start")
-        AHIMultiScan.downloadResourcesInBackground()
-        Log.d(TAG, "downloadAHIResources: done")
+        AHIMultiScan.downloadResourcesInForeground(3)
     }
 
     /** Check the size of the AHI resources that require downloading. */
     @ReactMethod
     fun checkAHIResourcesDownloadSize(promise: Promise) {
-        Log.d(TAG, "checkAHIResourcesDownloadSize: start")
         AHIMultiScan.totalEstimatedDownloadSizeInBytes { ahiResult ->
-            ahiResult.fold({
-                Log.d(TAG, "checkAHIResourcesDownloadSize: done")
-                promise.resolve(it.totalBytes.toString())
-            }, {
-                Log.d(TAG, "checkAHIResourcesDownloadSize: reject")
-                promise.reject(it.error.code().toString(), it.message)
-            })
+            ahiResult.fold(
+                    {
+                        Log.d(
+                                TAG,
+                                "AHI INFO: Size of download is ${it.progressBytes / 1024 / 1024} / ${it.totalBytes / 1024 / 1024}\n"
+                        )
+                        promise.resolve(it.totalBytes.toString())
+                    },
+                    {
+                        Log.e(TAG, it.message.toString())
+                        promise.reject(it.error.code().toString(), it.message)
+                    }
+            )
         }
     }
 
@@ -121,72 +146,126 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     fun startFaceScan(userInput: ReadableMap, promise: Promise) {
         val userInputSet = userInput.toHashMap()
         val registry = currentActivity as AppCompatActivity
-        AHIMultiScan.initiateScan("face", userInputSet, registry.activityResultRegistry, completionBlock = {
-            GlobalScope.launch(Dispatchers.Main) {
-                val result = withContext(Dispatchers.IO) { it.get() }
-                when (result) {
-                    is AHIResult.Success -> {
-                        val scanResult = scanResultsToMap(result.value)
-                        promise.resolve(scanResult)
-                    }
-                    else -> {
-                        if (result.error() == AHIFaceScanError.FACE_SCAN_CANCELED) {
-                            promise.reject(AHIFaceScanError.FACE_SCAN_CANCELED.code().toString(), AHIFaceScanError.FACE_SCAN_CANCELED.name)
-                        } else {
-                            promise.reject(result.error()?.code().toString(), result.error().toString())
+        AHIMultiScan.initiateScan(
+                "face",
+                userInputSet,
+                registry.activityResultRegistry,
+                completionBlock = {
+                    GlobalScope.launch(Dispatchers.Main) {
+                        if (!it.isDone) {
+                            Log.d(TAG, "Waiting of results, can show waiting screen here")
+                        }
+                        val result = withContext(Dispatchers.IO) { it.get() }
+                        when (result) {
+                            is AHIResult.Success -> {
+                                Log.d(TAG, "initiateScan: ${result.value}")
+                                val scanResult = scanResultsToMap(result.value)
+                                promise.resolve(scanResult)
+                            }
+                            else -> {
+                                if (result.error() == AHIFaceScanError.FACE_SCAN_CANCELED) {
+                                    Log.d(TAG, "User cancelled scan")
+                                    promise.reject(
+                                            AHIFaceScanError.FACE_SCAN_CANCELED.code().toString(),
+                                            AHIFaceScanError.FACE_SCAN_CANCELED.name
+                                    )
+                                } else {
+                                    Log.d(TAG, "initiateScan: ${result.error()}")
+                                    promise.reject(
+                                            result.error()?.code().toString(),
+                                            result.error().toString()
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-            }
-        })
+        )
     }
 
     @ReactMethod
     fun startFingerScan(userInput: ReadableMap, promise: Promise) {
         val userInputSet = userInput.toHashMap()
         val registry = currentActivity as AppCompatActivity
-        AHIMultiScan.initiateScan("finger", userInputSet, registry.activityResultRegistry, completionBlock = {
-            GlobalScope.launch(Dispatchers.Main) {
-                val result = withContext(Dispatchers.IO) { it.get() }
-                when (result) {
-                    is AHIResult.Success -> {
-                        val scanResult = scanResultsToMap(result.value)
-                        promise.resolve(scanResult)
+        AHIMultiScan.initiateScan(
+                "finger",
+                userInputSet,
+                registry.activityResultRegistry,
+                completionBlock = {
+                    if (!it.isDone) {
+                        Log.d(TAG, "Waiting of results, can show waiting screen here")
                     }
-                    else -> {
-                        if (result.error() == AHIFingerScanError.FINGER_SCAN_CANCELLED) {
-                            promise.reject(AHIFingerScanError.FINGER_SCAN_CANCELLED.code().toString(), AHIFingerScanError.FINGER_SCAN_CANCELLED.name)
-                        } else {
-                            promise.reject(result.error()?.code().toString(), result.error().toString())
+                    GlobalScope.launch(Dispatchers.Main) {
+                        val result = withContext(Dispatchers.IO) { it.get() }
+                        when (result) {
+                            is AHIResult.Success -> {
+                                Log.d(TAG, "initiateScan: ${result.value}")
+                                val scanResult = scanResultsToMap(result.value)
+                                promise.resolve(scanResult)
+                            }
+                            else -> {
+                                if (result.error() == AHIFingerScanError.FINGER_SCAN_CANCELLED) {
+                                    Log.d(TAG, "User cancelled scan")
+                                    promise.reject(
+                                            AHIFingerScanError.FINGER_SCAN_CANCELLED
+                                                    .code()
+                                                    .toString(),
+                                            AHIFingerScanError.FINGER_SCAN_CANCELLED.name
+                                    )
+                                } else {
+                                    Log.d(TAG, "initiateScan: ${result.error()}")
+                                    promise.reject(
+                                            result.error()?.code().toString(),
+                                            result.error().toString()
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-            }
-        })
+        )
     }
 
     @ReactMethod
     fun startBodyScan(userInput: ReadableMap, promise: Promise) {
         val userInputSet = userInput.toHashMap()
         val registry = currentActivity as AppCompatActivity
-        AHIMultiScan.initiateScan("body", userInputSet, registry.activityResultRegistry, completionBlock = {
-            GlobalScope.launch(Dispatchers.IO) {
-                val result = withContext(Dispatchers.IO) { it.get() }
-                when (result) {
-                    is AHIResult.Success -> {
-                        val scanResult = scanResultsToMap(result.value)
-                        promise.resolve(scanResult)
-                    }
-                    else -> {
-                        if (result.error() == BodyScanError.BODY_SCAN_CANCELED) {
-                            promise.reject(BodyScanError.BODY_SCAN_CANCELED.code().toString(), BodyScanError.BODY_SCAN_CANCELED.name)
-                        } else {
-                            promise.reject(result.error()?.code().toString(), result.error().toString())
+        //        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
+        AHIMultiScan.initiateScan(
+                "body",
+                userInputSet,
+                registry.activityResultRegistry,
+                completionBlock = {
+                    GlobalScope.launch(Dispatchers.IO) {
+                        if (!it.isDone) {
+                            Log.d(TAG, "Waiting of results, can show waiting screen here")
+                        }
+                        val result = withContext(Dispatchers.IO) { it.get() }
+                        when (result) {
+                            is AHIResult.Success -> {
+                                Log.d(TAG, "initiateScan: ${result.value}")
+                                val scanResult = scanResultsToMap(result.value)
+                                promise.resolve(scanResult)
+                            }
+                            else -> {
+                                if (result.error() == BodyScanError.BODY_SCAN_CANCELED) {
+                                    Log.d(TAG, "User cancelled scan")
+                                    promise.reject(
+                                            BodyScanError.BODY_SCAN_CANCELED.code().toString(),
+                                            BodyScanError.BODY_SCAN_CANCELED.name
+                                    )
+                                } else {
+                                    Log.d(TAG, "initiateScan: ${result.error()}")
+                                    promise.reject(
+                                            result.error()?.code().toString(),
+                                            result.error().toString()
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-            }
-        })
+        )
     }
 
     /**
@@ -197,65 +276,82 @@ class MultiScanModule(private val context: ReactApplicationContext) :
     fun getBodyScanExtras(bodyScanResult: ReadableMap, promise: Promise) {
         val result = bodyScanResult.toHashMap()
         val options = mapOf("extrapolate" to listOf("mesh"))
-        AHIMultiScan.getScanExtra(result, options, completionBlock = { ahiResult ->
-            ahiResult.fold({
-                val extraWriteableMap = scanResultsToMap(it)
-                promise.resolve(extraWriteableMap)
-            }, {
-                promise.reject(it.error.code().toString(), it.message)
-            })
-        })
+        AHIMultiScan.getScanExtra(
+                result,
+                options,
+                completionBlock = { ahiResult ->
+                    ahiResult.fold(
+                            {
+                                val uri =
+                                        (it["extrapolate"] as? List<Map<*, *>>)
+                                                ?.firstOrNull()
+                                                ?.get("mesh") as?
+                                                Uri
+                                Log.d(TAG, "getBodyScanExtras: URI: $uri")
+                                promise.resolve(uri)
+                            },
+                            {
+                                Log.d(TAG, "getBodyScanExtras: ${it.error}")
+                                promise.reject(it.error.code().toString(), it.message)
+                            }
+                    )
+                }
+        )
     }
 
     /** Check if MultiScan is on or offline. */
-
     @ReactMethod
     fun getMultiScanStatus(promise: Promise) {
         AHIMultiScan.getStatus {
+            Log.d(TAG, "AHI INFO: Status: ${it.name}")
             promise.resolve(it.name)
         }
     }
-
 
     /** Check your AHI MultiScan organisation details. */
     @ReactMethod
     fun getMultiScanDetails(promise: Promise) {
         AHIMultiScan.getDetails { ahiResult ->
-            ahiResult.fold({
-                val details = scanResultsToMap(it)
-                promise.resolve(details)
-            }, {
-                promise.reject(it.error.code().toString(), it.message)
-            })
+            ahiResult.fold(
+                    {
+                        Log.d(TAG, "AHI INFO: MultiScan details: ${it}")
+                        val details = scanResultsToMap(it)
+                        promise.resolve(details)
+                    },
+                    {
+                        Log.d(TAG, "AHI INFO: Failed to get details")
+                        promise.reject(it.error.code().toString(), it.message)
+                    }
+            )
         }
         promise.resolve(WritableNativeMap())
     }
 
-    /** Check if the user is authorized to use the MultiScan service.
-     *
-     * The expected result for <= v21.1.3 is an error called "NO_OP".
-     * */
+    /** Check if the user is authorized to use the MultiScan service. */
     @ReactMethod
     fun getUserAuthorizedState(promise: Promise) {
         AHIMultiScan.userIsAuthorized { ahiResult ->
-            ahiResult.fold({
-                promise.resolve("AHI INFO: User is authorized")
-            }, {
-                promise.reject(it.error.code().toString(), it.message)
-            })
+            ahiResult.fold(
+                    { promise.resolve("AHI INFO: User is authorized") },
+                    { promise.reject(it.error.code().toString(), it.message) }
+            )
         }
     }
-
 
     /** Deauthorize the user. */
     @ReactMethod
     fun deauthorizeUser(promise: Promise) {
         AHIMultiScan.userDeauthorize { ahiResult ->
-            ahiResult.fold({
-                promise.resolve("")
-            }, {
-                promise.reject(it.error.code().toString(), it.message)
-            })
+            ahiResult.fold(
+                    {
+                        Log.d(TAG, "AHI INFO: User is deauthorized.")
+                        promise.resolve("")
+                    },
+                    {
+                        Log.d(TAG, "AHI INFO: User is not deauthorized")
+                        promise.reject(it.error.code().toString(), it.message)
+                    }
+            )
         }
     }
 
@@ -263,80 +359,45 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      * Release the MultiScan SDK session.
      *
      * If you use this, you will need to call setupSDK again.
-     * The expected result for <= v21.1.3 is an error called "NO_OP".
      */
     @ReactMethod
     fun releaseMultiScanSDK(promise: Promise) {
         AHIMultiScan.releaseSdk { ahiResult ->
-            ahiResult.fold({
-                promise.resolve("")
-            }, {
-                promise.reject(it.error.code().toString(), it.message)
-            })
+            ahiResult.fold(
+                    {
+                        Log.d(TAG, "AHI INFO: SDK is released.")
+                        promise.resolve("")
+                    },
+                    {
+                        Log.d(TAG, "AHI INFO: User is not released")
+                        promise.reject(it.error.code().toString(), it.message)
+                    }
+            )
         }
     }
-
 
     /**
      * The MultiScan SDK can provide personalised results.
      *
      * Optionally call this function on load of the SDK.
-     *//*
+     */
     @ReactMethod
     fun setMultiScanPersistenceDelegate(results: ReadableArray) {
-        AHIPersistenceDelegate.let { it ->
-            it.bodyScanResults = results.toArrayList().map { it.toString() }.toMutableList()
-            MultiScan.shared().registerDelegate(it)
-        }
+        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
+        AHIPersistenceDelegate.bodyScanResult =
+                results.toArrayList().map { it.toString() }.toTypedArray().toMutableList()
     }
-    */
 
-    /** For the newest AHIMultiScan version 21.1.3 need to implement PersistenceDelegate *//*
-    object AHIPersistenceDelegate : MultiScanDelegate {
-        */
-    /**
-     * You should have your body scan results stored somewhere in your app that this function
-     * can access.
-     *//*
-        var bodyScanResults = mutableListOf<String>()
-
+    object AHIPersistenceDelegate : IAHIPersistence {
+        var bodyScanResult = mutableListOf<String>()
         override fun request(
-            scanType: MSScanType?,
-            options: MutableMap<String, String>?,
-        ): CompletableFuture<SdkResultParcelable> {
-            val future = CompletableFuture<SdkResultParcelable>()
-            if (scanType == MSScanType.BODY) {
-                options?.forEach { bodyScanResults.add(it.toString()) }
-                val jsonArrayString = "[" + bodyScanResults.joinToString(separator = ",") + "]"
-                future.complete(SdkResultParcelable(SdkResultCode.SUCCESS, jsonArrayString))
-            } else {
-                future.complete(SdkResultParcelable(SdkResultCode.ERROR, ""))
-            }
-            return future
+                scanType: String,
+                options: Map<String, Any>,
+                completionBlock: (result: AHIResult<Array<Map<String, Any>>>) -> Unit
+        ) {
+            // TODO
         }
     }
-
-    */
-    /** Save 3D avatar mesh result on local device. *//*
-    private fun saveAvatarToFile(res: SdkResultParcelable, objFile: File): Boolean {
-        return try {
-            val meshResObj = JSONObject(res.result)
-            val objString = meshResObj["mesh"].toString()
-            val words: List<String> = objString.split(",")
-            val stream = FileOutputStream(objFile)
-            val writer = BufferedWriter(OutputStreamWriter(stream))
-            for (word in words) {
-                writer.write(word)
-                writer.newLine()
-            }
-            writer.close()
-            true
-        } catch (e: Exception) {
-            print("AHI ERROR: KOTLIN: Exception when attempting to write file: $e")
-            false
-        }
-    }
-    */
 
     private fun scanResultsToMap(scanResult: Map<String, Any>?): WritableNativeMap {
         if (scanResult == null || scanResult.isEmpty()) {

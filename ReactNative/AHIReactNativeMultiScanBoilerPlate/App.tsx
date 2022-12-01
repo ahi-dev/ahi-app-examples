@@ -65,6 +65,7 @@ const App: () => ReactNode = () => {
   }
 
   function didTapDownloadResources() {
+    downloadAHIResources();
     areAHIResourcesAvailable();
     checkAHIResourcesDownloadSize();
   }
