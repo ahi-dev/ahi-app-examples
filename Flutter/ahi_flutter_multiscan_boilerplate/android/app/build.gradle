@@ -77,8 +77,10 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.5.1'
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.5.1"
 
-    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-multiscan:22.0.+'
-    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-facescan:22.0.+'
-    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-fingerscan:22.0.+'
-    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-bodyscan:22.0.+'
+    // AHI SDK
+    def AHISdkVersion = '22.0.+'
+    implementation "com.advancedhumanimaging.sdk:ahi-sdk-multiscan:$AHISdkVersion"
+    implementation "com.advancedhumanimaging.sdk:ahi-sdk-facescan:$AHISdkVersion"
+    implementation "com.advancedhumanimaging.sdk:ahi-sdk-fingerscan:$AHISdkVersion"
+    implementation "com.advancedhumanimaging.sdk:ahi-sdk-bodyscan:$AHISdkVersion"
 }
