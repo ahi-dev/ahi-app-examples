@@ -26,7 +26,8 @@ apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
-    compileSdkVersion flutter.compileSdkVersion
+    // set compileSdkVersion to 33
+    compileSdkVersion 33
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
@@ -45,7 +46,8 @@ android {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId "com.example.ahi_flutter_multiscan_boilerplate"
         minSdkVersion 28
-        targetSdkVersion flutter.targetSdkVersion
+        // set targetSdkVersion to 33
+        targetSdkVersion 33
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
@@ -58,6 +60,12 @@ android {
         }
     }
     namespace 'com.example.ahi_flutter_multiscan_boilerplate'
+
+    packagingOptions {
+        jniLibs {
+            pickFirsts += ['**/*.so']
+        }
+    }
 }
 
 flutter {
@@ -66,10 +74,11 @@ flutter {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'androidx.appcompat:appcompat:1.5.1'
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.5.1"
 
-    def AHISdkVersion = '21.1.4'
-    annotationProcessor( "com.myfiziq.sdk:orm:${AHISdkVersion}-release")
-    implementation "com.myfiziq.sdk:orm:${AHISdkVersion}-release"
-    implementation "com.myfiziq.sdk:myfiziqsdk:${AHISdkVersion}-release"
-    implementation "com.myfiziq.sdk:myfiziqsdk-android-face-scan:${AHISdkVersion}-release"
+    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-multiscan:22.0.+'
+    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-facescan:22.0.+'
+    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-fingerscan:22.0.+'
+    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-bodyscan:22.0.+'
 }

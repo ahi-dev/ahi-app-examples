@@ -17,27 +17,48 @@
 
 package com.example.ahi_flutter_multiscan_boilerplate
 
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.content.IntentSender
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import android.widget.Toast
+import androidx.activity.result.ActivityResultRegistry
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContract
+import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions.Companion.ACTION_REQUEST_PERMISSIONS
+import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions.Companion.EXTRA_PERMISSIONS
+import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult.Companion.EXTRA_ACTIVITY_OPTIONS_BUNDLE
+import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult.Companion.ACTION_INTENT_SENDER_REQUEST
+import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult.Companion.EXTRA_INTENT_SENDER_REQUEST
+import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult.Companion.EXTRA_SEND_INTENT_EXCEPTION
 import androidx.annotation.RequiresApi
-import com.myfiziq.sdk.MultiScan
-import com.myfiziq.sdk.MultiScanDelegate
-import com.myfiziq.sdk.MultiScanOperation
-import com.myfiziq.sdk.enums.MSPaymentType
-import com.myfiziq.sdk.enums.MSScanType
-import com.myfiziq.sdk.enums.SdkResultCode
-import com.myfiziq.sdk.vo.SdkResultParcelable
+import androidx.core.app.ActivityCompat
+import androidx.core.app.ActivityOptionsCompat
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import com.advancedhumanimaging.sdk.bodyscan.BodyScan
+import com.advancedhumanimaging.sdk.bodyscan.common.BodyScanError
+import com.advancedhumanimaging.sdk.common.IAHIPersistence
+import com.advancedhumanimaging.sdk.common.IAHIScan
+import com.advancedhumanimaging.sdk.common.models.AHIResult
+import com.advancedhumanimaging.sdk.facescan.AHIFaceScanError
+import com.advancedhumanimaging.sdk.facescan.FaceScan
+import com.advancedhumanimaging.sdk.fingerscan.AHIFingerScanError
+import com.advancedhumanimaging.sdk.fingerscan.FingerScan
+import com.advancedhumanimaging.sdk.multiscan.AHIMultiScan
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import kotlinx.coroutines.*
 import org.json.JSONObject
-import java.io.BufferedWriter
-import java.io.File
-import java.io.FileOutputStream
-import java.io.OutputStreamWriter
-import java.lang.Exception
 import java.util.*
-import java.util.concurrent.CompletableFuture
 
 enum class AHIMultiScanMethod(val methodKeys: String) {
     /** Default. */
@@ -58,10 +79,13 @@ enum class AHIMultiScanMethod(val methodKeys: String) {
     /** Will return an integer for the bytes size. */
     checkAHIResourcesDownloadSize("checkAHIResourcesDownloadSize"),
 
-    /** Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG") */
+    /** Requires a map object for the required user inputs */
     startFaceScan("startFaceScan"),
 
-    /** Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG") */
+    /** Requires a map object for the required user inputs */
+    startFingerScan("startFingerScan"),
+
+    /** Requires a map object for the required user inputs */
     startBodyScan("startBodyScan"),
 
     /** Requires a map object of the body scan results and returns a Map object. */
@@ -85,6 +109,9 @@ enum class AHIMultiScanMethod(val methodKeys: String) {
     /** Use the AHIMultiScan persistence delegate and set historical body scan results */
     setMultiScanPersistenceDelegate("setMultiScanPersistenceDelegate"),
 }
+
+const val TAG = "MainActivityAHI"
+const val PERMISSION_REQUEST_CODE = 111
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "ahi_multiscan_flutter_wrapper"
@@ -111,16 +138,25 @@ class MainActivity : FlutterActivity() {
                     )
                 }
                 AHIMultiScanMethod.areAHIResourcesAvailable -> {
-                    areAHIResourcesAvailable(result = result)
+                    areAHIResourcesAvailable(
+                        result = result
+                    )
                 }
                 AHIMultiScanMethod.downloadAHIResources -> {
                     downloadAHIResources()
                 }
                 AHIMultiScanMethod.checkAHIResourcesDownloadSize -> {
-                    checkAHIResourcesDownloadSize(result = result)
+                    checkAHIResourcesDownloadSize(
+                        result = result
+                    )
                 }
                 AHIMultiScanMethod.startFaceScan -> {
                     startFaceScan(
+                        arguments = call.arguments, result = result
+                    )
+                }
+                AHIMultiScanMethod.startFingerScan -> {
+                    startFingerScan(
                         arguments = call.arguments, result = result
                     )
                 }
@@ -170,25 +206,27 @@ class MainActivity : FlutterActivity() {
             result.error("-1", "Missing multi scan token", null)
             return
         }
+
+        checkPermission()
+
         val config: MutableMap<String, String> = HashMap()
         config["TOKEN"] = token as String
-        MultiScan.waitForResult(MultiScan.shared().setup(config)) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> {
+        val scans: Array<IAHIScan> = arrayOf(FaceScan(), FingerScan(), BodyScan())
+        AHIMultiScan.setup(application, config, scans, completionBlock = {
+            it.fold({
                     result.success(null)
-                }
-                else -> {
-                    result.error(
-                        it.resultCode.toString(), it.message, null
-                    )
-                }
-            }
-        }
+            }, {
+                Log.d(TAG, "AHI: Error setting up: $}\n")
+                Log.d(TAG, "AHI: Confirm you have a valid token.\n")
+                result.error(it.error.code().toString(), it.message, null)
+            })
+        })
+
     }
 
     /**
      *  Once successfully setup, you should authorize your user with our service.
-     *  With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
+     *  With your signed in user, you can authorize them to use the AHI service.
      * */
     private fun authorizeUser(
         arguments: Any?,
@@ -221,20 +259,15 @@ class MainActivity : FlutterActivity() {
             return
         }
         val claimsArray: Array<String> = claims.toTypedArray()
-        MultiScan.waitForResult(
-            MultiScan.shared().userAuthorize(userID, salt, claimsArray)
-        ) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> {
+
+        AHIMultiScan.userAuthorize(userID, salt, claimsArray, completionBlock = {
+            it.fold({
                     result.success(null)
-                }
-                else -> {
-                    result.error(
-                        it.resultCode.toString(), it.message, null
-                    )
-                }
-            }
-        }
+            }, {
+                result.error(it.error.code().toString(), it.message, null)
+            })
+        })
+
     }
 
     /** Check if the AHI resources are downloaded.
@@ -245,8 +278,13 @@ class MainActivity : FlutterActivity() {
      * This function checks if they are already downloaded and available for use.
      * */
     private fun areAHIResourcesAvailable(result: MethodChannel.Result) {
-        MultiScan.waitForResult(MultiScan.shared().areResourcesDownloaded()) {
-            result.success(it)
+        AHIMultiScan.areResourcesDownloaded {
+            it.fold({
+                result.success(it)
+            }, {
+                Log.d(TAG, "AHI: Error in resource downloading \n")
+                result.error(it.error.code().toString(), it.message, null)
+            })
         }
     }
 
@@ -255,21 +293,94 @@ class MainActivity : FlutterActivity() {
      *  We recommend only calling this function once per session to prevent duplicate background resource calls.
      */
     private fun downloadAHIResources() {
-        MultiScan.shared().downloadResourcesInBackground()
+        AHIMultiScan.downloadResourcesInForeground()
     }
 
     /** Check the size of the AHI resources that require downloading. */
     private fun checkAHIResourcesDownloadSize(result: MethodChannel.Result) {
-        MultiScan.waitForResult(MultiScan.shared().totalEstimatedDownloadSizeInBytes()) {
-            result.success(it)
+        AHIMultiScan.totalEstimatedDownloadSizeInBytes {
+            it.fold({
+                Log.d(TAG, "AHI INFO: Size of download is ${it.progressBytes / 1024 / 1024} / ${it.totalBytes / 1024 / 1024}\n")
+                result.success(it.progressBytes)
+            }, {
+                Log.e(TAG, it.message.toString())
+                result.error(it.error.toString(), it.message, null)
+            })
         }
     }
 
-    private fun getPaymentType(arguments: Any?): String? {
-        if (arguments == null || arguments !is Map<*, *>) {
-            return null
+    private val activityResultRegistry = object : ActivityResultRegistry() {
+        override fun <I : Any?, O : Any?> onLaunch(
+            requestCode: Int,
+            contract: ActivityResultContract<I, O>,
+            input: I,
+            options: ActivityOptionsCompat?
+        ) {
+            val activity: Activity = this@MainActivity
+
+            // Immediate result path
+
+            // Immediate result path
+            val synchronousResult: ActivityResultContract.SynchronousResult<O>? = contract.getSynchronousResult(activity, input)
+            if (synchronousResult != null) {
+                Handler(Looper.getMainLooper()).post { dispatchResult<O>(requestCode, synchronousResult.value) }
+                return
+            }
+
+            // Start activity path
+
+            // Start activity path
+            val intent = contract.createIntent(activity, input)
+            var optionsBundle: Bundle? = null
+            // If there are any extras, we should defensively set the classLoader
+            // If there are any extras, we should defensively set the classLoader
+            if (intent.extras != null && intent.extras!!.classLoader == null) {
+                intent.setExtrasClassLoader(activity.classLoader)
+            }
+            if (intent.hasExtra(EXTRA_ACTIVITY_OPTIONS_BUNDLE)) {
+                optionsBundle = intent.getBundleExtra(EXTRA_ACTIVITY_OPTIONS_BUNDLE)
+                intent.removeExtra(EXTRA_ACTIVITY_OPTIONS_BUNDLE)
+            } else if (options != null) {
+                optionsBundle = options.toBundle()
+            }
+            if (ACTION_REQUEST_PERMISSIONS == intent.action) {
+
+                // requestPermissions path
+                var permissions = intent.getStringArrayExtra(EXTRA_PERMISSIONS)
+                if (permissions == null) {
+                    permissions = arrayOfNulls(0)
+                }
+                ActivityCompat.requestPermissions(activity, permissions, requestCode)
+            } else if (ACTION_INTENT_SENDER_REQUEST == intent.action) {
+                val request = intent.getParcelableExtra<IntentSenderRequest>(EXTRA_INTENT_SENDER_REQUEST)
+                try {
+                    // startIntentSenderForResult path
+                    ActivityCompat.startIntentSenderForResult(
+                        activity, request!!.intentSender,
+                        requestCode, request!!.fillInIntent, request!!.flagsMask,
+                        request!!.flagsValues, 0, optionsBundle
+                    )
+                } catch (e: IntentSender.SendIntentException) {
+                    Handler(Looper.getMainLooper()).post {
+                        dispatchResult(
+                            requestCode, RESULT_CANCELED,
+                            Intent().setAction(ACTION_INTENT_SENDER_REQUEST)
+                                .putExtra(EXTRA_SEND_INTENT_EXCEPTION, e)
+                        )
+                    }
+                }
+            } else {
+                // startActivityForResult path
+                ActivityCompat.startActivityForResult(activity, intent, requestCode, optionsBundle)
+            }
         }
-        return arguments["paymentType"] as? String ?: null
+
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (!activityResultRegistry.dispatchResult(requestCode, resultCode, data)) {
+            super.onActivityResult(requestCode, resultCode, data)
+        }
     }
 
     private fun getFaceScanUserInput(arguments: Any?): HashMap<String, Any>? {
@@ -306,32 +417,79 @@ class MainActivity : FlutterActivity() {
             result.error("-3", "Missing user face scan input details", null)
             return
         }
-        val pType = when (getPaymentType(arguments)) {
-            "PAYG" -> MSPaymentType.PAYG
-            "SUBSCRIBER" -> MSPaymentType.SUBS
-            else -> null
-        }
-        if (pType == null) {
-            result.error("-4", "Missing user face scan payment type.", null)
-            return
-        }
-        MultiScan.waitForResult(
-            MultiScan.shared().initiateScan(MSScanType.FACE, pType, userInput)
-        ) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> {
-                    val scanResultsMap = scanResultsToMap(it.result)
-                    result.success(
-                        scanResultsMap
-                    )
+        AHIMultiScan.initiateScan("face", userInput, activityResultRegistry, completionBlock = {
+            lifecycleScope.launch(Dispatchers.Main) {
+                if (!it.isDone) {
+                    Log.i(TAG, "Waiting of results, can show waiting screen here")
                 }
-                else -> {
-                    result.error(
-                        it.resultCode.toString(), it.message, null
-                    )
+                val response = withContext(Dispatchers.IO) { it.get() }
+                when (response) {
+                    is AHIResult.Success -> {
+                        Log.d(TAG, "initiateScan: ${response.value}")
+                        result.success(response.value)
+                    }
+                    else -> {
+                        if (response.error() == AHIFaceScanError.FACE_SCAN_CANCELED) {
+                            Log.i(TAG, "User cancelled scan")
+                            result.error(response.error().toString(), "UserCancelled", null)
+                        } else {
+                            Log.d(TAG, "initiateScan: ${response.error()}")
+                            result.error(response.error().toString(), response.error().toString(), null)
+                        }
+                    }
                 }
             }
+        })
+    }
+
+    private fun getFingerScanUserInput(arguments: Any?): HashMap<String, Any>? {
+        if (arguments == null || arguments !is Map<*, *>) {
+            return null
         }
+        val scanLength = arguments["sec_ent_scanLength"] as? Int ?: return null
+        val instruction1 = arguments["str_ent_instruction1"] as? String ?: return null
+        val instruction2 = arguments["str_ent_instruction2"] as? String ?: return null
+        val miscData = arguments["miscData"]  as? HashMap<String, Any> ?: mapOf()
+        return hashMapOf(
+            "sec_ent_scanLength" to scanLength,
+            "str_ent_instruction1" to instruction1,
+            "str_ent_instruction2" to instruction2,
+            "miscData" to miscData
+        )
+    }
+
+    private fun startFingerScan(
+        arguments: Any?,
+        result: MethodChannel.Result
+    ) {
+        val userInput = getFingerScanUserInput(arguments)
+        if (userInput == null) {
+            result.error("-3", "Missing user finger scan input details", null)
+            return
+        }
+        AHIMultiScan.initiateScan("finger", userInput, activityResultRegistry, completionBlock = {
+            lifecycleScope.launch(Dispatchers.Main) {
+                if (!it.isDone) {
+                    Log.i(TAG, "Waiting of results, can show waiting screen here")
+                }
+                val response = withContext(Dispatchers.IO) { it.get() }
+                when (response) {
+                    is AHIResult.Success -> {
+                        Log.d(TAG, "initiateScan: ${response.value}")
+                        result.success(response.value)
+                    }
+                    else -> {
+                        if (response.error() == AHIFingerScanError.FINGER_SCAN_CANCELLED) {
+                            Log.i(TAG, "User cancelled scan")
+                            result.error(response.error().toString(), "UserCancelled", null)
+                        } else {
+                            Log.d(TAG, "initiateScan: ${response.error()}")
+                            result.error(response.error().toString(), response.error().toString(), null)
+                        }
+                    }
+                }
+            }
+        })
     }
 
     private fun getBodyScanUserInput(arguments: Any?): HashMap<String, Any>? {
@@ -357,34 +515,33 @@ class MainActivity : FlutterActivity() {
             result.error("-5", "Missing user body scan input details", null)
             return
         }
-        val pType = when (getPaymentType(arguments)) {
-            "PAYG" -> MSPaymentType.PAYG
-            "SUBSCRIBER" -> MSPaymentType.SUBS
-            else -> null
-        }
-        if (pType == null) {
-            result.error("-6", "Missing user body scan payment type.", null)
-            return
-        }
-        MultiScan.shared().registerDelegate(AHIPersistenceDelegate)
-        MultiScan.waitForResult(
-            MultiScan.shared()
-                .initiateScan(MSScanType.BODY, pType, userInput)
-        ) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> {
-                    val scanResultsMap = scanResultsToMap(it.result)
-                    result.success(
-                        scanResultsMap
-                    )
+
+//        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
+        AHIMultiScan.initiateScan("body", userInput, activityResultRegistry, completionBlock = {
+            lifecycleScope.launch(Dispatchers.Main) {
+                if (!it.isDone) {
+                    Log.i(TAG, "Waiting of results, can show waiting screen here")
                 }
-                else -> {
-                    result.error(
-                        it.resultCode.toString(), it.message, null
-                    )
+
+                val response = withContext(Dispatchers.IO) { it.get() }
+                when (response) {
+                    is AHIResult.Success -> {
+                        Log.d(TAG, "initiateScan: ${response.value}")
+                        // get scan extra
+                        getBodyScanExtras(response.value, result)
+                    }
+                    else -> {
+                        if (response.error() == BodyScanError.BODY_SCAN_CANCELED) {
+                            Log.i(TAG, "User cancelled scan")
+                            result.error(response.error().toString(), "UserCancelled", null)
+                        } else {
+                            Log.d(TAG, "initiateScan: ${response.error()}")
+                            result.error(response.error().toString(), response.toString(), null)
+                        }
+                    }
                 }
             }
-        }
+        })
     }
 
     /**
@@ -401,27 +558,28 @@ class MainActivity : FlutterActivity() {
             result.error("-8", "Missing valid body scan result.", null)
             return
         }
-        val parameters: MutableMap<String, Any> = HashMap()
-        parameters["operation"] = MultiScanOperation.BodyGetMeshObj.name
-        parameters["id"] = resultID
-        /** Write the mesh to a directory */
-        val objFilePath = File(context.filesDir, "$resultID.obj")
-        MultiScan.waitForResult(MultiScan.shared().getScanExtra(MSScanType.BODY, parameters)) {
-            var bsExtras = mutableMapOf<String, String>()
-            when (saveAvatarToFile(it, objFilePath)) {
-                true -> bsExtras["meshURL"] = objFilePath.path
-                false -> bsExtras["meshURL"] = ""
-            }
-            result.success(bsExtras)
-        }
+
+        val options = mapOf("extrapolate" to listOf("mesh"))
+        AHIMultiScan.getScanExtra(bodyScanResult as Map<String, Any>, options, completionBlock = {
+            it.fold({
+                val uri = (it["extrapolate"] as? List<Map<*, *>>)?.firstOrNull()?.get("mesh") as? Uri
+                Log.i(TAG, "$uri")
+                result.success(uri)
+            }, {
+                Log.e(TAG, it.toString())
+                result.error(it.error.code().toString(), it.message, null)
+            })
+        })
     }
 
     /**
      * Check if MultiScan is on or offline.
      * */
     private fun getMultiScanStatus(result: MethodChannel.Result) {
-        MultiScan.waitForResult(MultiScan.shared().state) {
-            result.success(it.result.toString())
+
+        AHIMultiScan.getStatus {
+            Log.d(TAG, "AHI INFO: Status: ${it.toString()}")
+            result.success(it.toString())
         }
     }
 
@@ -429,7 +587,15 @@ class MainActivity : FlutterActivity() {
      * Check your AHI MultiScan organisation details.
      * */
     private fun getMultiScanDetails(result: MethodChannel.Result) {
-        result.success(null)
+        AHIMultiScan.getDetails {
+            it.fold({
+                Log.d(TAG, "AHI INFO: MultiScan details: ${it}")
+                result.success(it)
+            }, {
+                Log.d(TAG, "AHI INFO: Failed to get details")
+                result.error(it.error.code().toString(), it.error.toString(), it)
+            })
+        }
     }
 
     /** Check if the user is authorized to use the MuiltScan service. */
@@ -439,17 +605,15 @@ class MainActivity : FlutterActivity() {
             result.error("-9", "Missing user ID", null)
             return
         }
-        MultiScan.waitForResult(MultiScan.shared().userIsAuthorized(userID)) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> {
-                    result.success(it.result)
-                }
-                else -> {
-                    result.error(
-                        it.resultCode.toString(), it.message, null
-                    )
-                }
-            }
+
+        AHIMultiScan.userIsAuthorized {
+            it.fold({
+                Log.d(TAG, "AHI INFO: User is authorized")
+                result.success(null)
+            }, {
+                Log.d(TAG, "AHI INFO: User is not authorized")
+                result.error(it.error.code().toString(), it.error.toString(), it)
+            })
         }
     }
 
@@ -457,17 +621,15 @@ class MainActivity : FlutterActivity() {
      * Deuauthorize the user.
      * */
     private fun deauthorizeUser(result: MethodChannel.Result) {
-        MultiScan.waitForResult(MultiScan.shared().userDeauthorize()) {
-            when (it.resultCode) {
-                SdkResultCode.SUCCESS -> {
-                    result.success(null)
-                }
-                else -> {
-                    result.error(
-                        it.resultCode.toString(), it.message, null
-                    )
-                }
-            }
+
+        AHIMultiScan.userDeauthorize {
+            it.fold({
+                Log.d(TAG, "AHI INFO: User is deauthorized.")
+                result.success(null)
+            }, {
+                Log.e(TAG, it.toString())
+                result.error(it.error.code().toString(), it.error.toString(), it)
+            })
         }
     }
 
@@ -477,7 +639,14 @@ class MainActivity : FlutterActivity() {
      * If you  use this, you will need to call setupSDK again.
      * */
     private fun releaseMultiScanSDK(result: MethodChannel.Result) {
-        result.success(null)
+        AHIMultiScan.releaseSdk {
+            it.fold({
+                Log.d(TAG, "AHI INFO: SDK is released.")
+                result.success(null)
+            }, {
+                Log.e(TAG, it.toString())
+            })
+        }
     }
 
     /** The MultiScan SDK can provide personalised results.
@@ -488,48 +657,21 @@ class MainActivity : FlutterActivity() {
         val bodyScanResults = convertBodyScanResultsToSDKFormat(results)
         AHIPersistenceDelegate.let { it ->
             it.bodyScanResults = bodyScanResults
-            MultiScan.shared().registerDelegate(it)
+            AHIMultiScan.delegatePersistence = it
         }
     }
 
     /** For the newest AHIMultiScan version 21.1.3 need to implement PersistenceDelegate */
-    object AHIPersistenceDelegate : MultiScanDelegate {
+    object AHIPersistenceDelegate : IAHIPersistence {
         /** You should have your body scan results stored somewhere in your app that this function can access.*/
         var bodyScanResults = mutableListOf<String>()
 
         override fun request(
-            scanType: MSScanType?,
-            options: MutableMap<String, String>?
-        ): CompletableFuture<SdkResultParcelable> {
-            val future = CompletableFuture<SdkResultParcelable>()
-            if (scanType == MSScanType.BODY) {
-                options?.forEach { bodyScanResults.add(it.toString()) }
-                val jsonArrayString = "[" + bodyScanResults.joinToString(separator = ",") + "]"
-                future.complete(SdkResultParcelable(SdkResultCode.SUCCESS, jsonArrayString))
-            } else {
-                future.complete(SdkResultParcelable(SdkResultCode.ERROR, ""))
-            }
-            return future
-        }
-    }
-
-    /** Save 3D avatar mesh result on local device. */
-    private fun saveAvatarToFile(res: SdkResultParcelable, objFile: File): Boolean {
-        return try {
-            val meshResObj = JSONObject(res.result)
-            val objString = meshResObj["mesh"].toString()
-            val words: List<String> = objString.split(",")
-            val stream = FileOutputStream(objFile)
-            val writer = BufferedWriter(OutputStreamWriter(stream))
-            for (word in words) {
-                writer.write(word)
-                writer.newLine()
-            }
-            writer.close()
-            true
-        } catch (e: Exception) {
-            print("AHI ERROR: KOTLIN: Exception when attempting to write file: $e")
-            false
+            scanType: String,
+            options: Map<String, Any>,
+            completionBlock: (result: AHIResult<Array<Map<String, Any>>>) -> Unit
+        ) {
+//            TODO("Not yet implemented")
         }
     }
 
@@ -556,5 +698,28 @@ class MainActivity : FlutterActivity() {
             it.toString()
         }.toMutableList()
         return bodyScanResultsStringList
+    }
+
+
+    /**
+     * Check camera permissions
+     */
+    private fun checkPermission() {
+        if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.CAMERA)
+            == PackageManager.PERMISSION_DENIED
+        ){
+            requestPermissions(arrayOf(Manifest.permission.CAMERA), PERMISSION_REQUEST_CODE)
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "camera permission granted", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this, "camera permission denied", Toast.LENGTH_LONG).show();
+            }
+        }
     }
 }
