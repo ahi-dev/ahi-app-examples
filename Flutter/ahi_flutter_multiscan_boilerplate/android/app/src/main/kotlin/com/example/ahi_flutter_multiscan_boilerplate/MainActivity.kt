@@ -293,7 +293,7 @@ class MainActivity : FlutterActivity() {
      *  We recommend only calling this function once per session to prevent duplicate background resource calls.
      */
     private fun downloadAHIResources() {
-        AHIMultiScan.downloadResourcesInForeground()
+        AHIMultiScan.downloadResourcesInForeground(3)
     }
 
     /** Check the size of the AHI resources that require downloading. */
@@ -527,8 +527,7 @@ class MainActivity : FlutterActivity() {
                 when (response) {
                     is AHIResult.Success -> {
                         Log.d(TAG, "initiateScan: ${response.value}")
-                        // get scan extra
-                        getBodyScanExtras(response.value, result)
+                        result.success(response.value)
                     }
                     else -> {
                         if (response.error() == BodyScanError.BODY_SCAN_CANCELED) {

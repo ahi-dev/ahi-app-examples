@@ -20,16 +20,6 @@ allprojects {
         maven {
             url "https://jitpack.io"
         }
-//        maven {
-//             // AHI MultiScan - Maven - Release
-//            name "publicRelease"
-//            url System.getenv("AHI_MULTISCAN_AWS_URL")
-//            credentials(AwsCredentials) {
-//                accessKey System.getenv("AHI_MULTISCAN_AWS_ACCESS_KEY")
-//                secretKey System.getenv("AHI_MULTISCAN_AWS_SECRET_KEY")
-//            }
-//        }
-
 
         // release sdk repo (partner and AHI developer access)
         def RELEASE_ACCESS_KEY = System.getenv("AHI_RELEASE_AWS_ACCESS_KEY") ?: ""
