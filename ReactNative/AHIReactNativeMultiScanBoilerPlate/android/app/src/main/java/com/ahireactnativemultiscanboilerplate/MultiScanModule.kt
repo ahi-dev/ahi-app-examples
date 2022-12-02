@@ -244,6 +244,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
                     when (result) {
                         is AHIResult.Success -> {
                             Log.d(TAG, "initiateScan: ${result.value}")
+                            AHIPersistenceDelegate.bodyScanResult.add(result.value)
                             val scanResult = scanResultsToMap(result.value)
                             promise.resolve(scanResult)
                         }
