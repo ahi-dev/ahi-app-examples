@@ -190,7 +190,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun didTapStartBodyScan() {
-        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
         startBodyScan()
     }
 
@@ -216,6 +215,8 @@ class MainActivity : ComponentActivity() {
         AHIMultiScan.setup(application, config, scans, completionBlock = {
             it.fold({
                 authorizeUser()
+                // Set results persistence delegate
+                AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
             }, {
                 Log.d(TAG, "AHI: Error setting up: $}\n")
                 Log.d(TAG, "AHI: Confirm you have a valid token.\n")
@@ -294,7 +295,6 @@ class MainActivity : ComponentActivity() {
             Log.d(TAG, "AHI ERROR: Face Scan inputs invalid.")
             return
         }
-
         AHIMultiScan.initiateScan("face", avatarValues, activityResultRegistry, completionBlock = {
             lifecycleScope.launch(Dispatchers.Main) {
                 if (!it.isDone) {
@@ -323,12 +323,10 @@ class MainActivity : ComponentActivity() {
         avatarValues["sec_ent_scanLength"] = 60
         avatarValues["str_ent_instruction1"] = "Instruction 1"
         avatarValues["str_ent_instruction2"] = "Instruction 2"
-
         if (!areFingerScanConfigOptionsValid(avatarValues)) {
             Log.d(TAG, "AHI ERROR: Finger Scan inputs invalid.")
             return
         }
-
         AHIMultiScan.initiateScan("finger", avatarValues, activityResultRegistry, completionBlock = {
             lifecycleScope.launch(Dispatchers.Main) {
                 if (!it.isDone) {
@@ -360,17 +358,16 @@ class MainActivity : ComponentActivity() {
             Log.d(TAG, "AHI ERROR: Body Scan inputs invalid.")
             return
         }
-
         AHIMultiScan.initiateScan("body", avatarValues, activityResultRegistry, completionBlock = {
             lifecycleScope.launch(Dispatchers.Main) {
                 if (!it.isDone) {
                     Log.i(TAG, "Waiting of results, can show waiting screen here")
                 }
                 val result = withContext(Dispatchers.IO) { it.get() }
-
                 when (result) {
                     is AHIResult.Success -> {
                         Log.d(TAG, "initiateScan: ${result.value}")
+                        AHIPersistenceDelegate.bodyScanResult.add(result.value)
                         // get scan extra
                         getBodyScanExtras(result.value)
                     }
@@ -486,7 +483,6 @@ class MainActivity : ComponentActivity() {
                 }
                 else -> mutableListOf()
             }
-
             val sort = options["SORT"] as? String
             val order = options["ORDER"] as? String
             if (sort != null) {
