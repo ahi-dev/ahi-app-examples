@@ -61,6 +61,9 @@ android {
     }
     namespace 'com.example.ahi_flutter_multiscan_boilerplate'
 
+    buildFeatures {
+        viewBinding true
+    }
     packagingOptions {
         jniLibs {
             pickFirsts += ['**/*.so']

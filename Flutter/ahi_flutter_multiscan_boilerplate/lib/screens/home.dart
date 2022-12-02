@@ -300,10 +300,8 @@ class _HomeState extends State<Home> {
 
   void handleBodyScanExtras(dynamic extras) {
     print("AHI EXTRAS: ${extras}");
-    if (extras is Map<String, dynamic>) {
-      var path = extras["meshURL"];
-      print("AHI 3D Mesh path: $path");
-    }
+    var path = extras["meshURL"];
+    print("AHI 3D Mesh path: $path");
   }
 
   // Check if MultiScan is on or offline.
