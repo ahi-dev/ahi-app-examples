@@ -19,6 +19,9 @@ import React, { useState } from 'react';
 import type { ReactNode } from 'react';
 import MultiScanModule from './Modules/MultiScanModule';
 import {
+  Button,
+  PermissionsAndroid,
+  StatusBar,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -65,10 +68,11 @@ const App: () => ReactNode = () => {
   }
 
   function didTapDownloadResources() {
-    downloadAHIResources();
     areAHIResourcesAvailable();
     checkAHIResourcesDownloadSize();
   }
+
+  requestCameraPermission();
 
   /**
    * Setup the MultiScan SDK
@@ -130,10 +134,12 @@ const App: () => ReactNode = () => {
   const areAHIResourcesAvailable = async () => {
     MultiScanModule.areAHIResourcesAvailable().then((areAvailable: boolean) => {
       if (!areAvailable) {
-        setResourcesDownloading(true);
         console.log('AHI INFO: Resources are not downloaded');
         // start download.
-        downloadAHIResources();
+        if (resourcesDownloading != true) {
+          downloadAHIResources();
+        }
+        setResourcesDownloading(true);
         checkAHIResourcesDownloadSize();
         setTimeout(() => areAHIResourcesAvailable(), 30000);
       } else {
@@ -548,6 +554,29 @@ const App: () => ReactNode = () => {
       </ScrollView>
     </SafeAreaView>
   );
+};
+
+const requestCameraPermission = async () => {
+  try {
+    const granted = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.CAMERA,
+      {
+        title: "Camera Permission",
+        message:
+          "All scans need to granted permission",
+        buttonNeutral: "Ask Me Later",
+        buttonNegative: "Cancel",
+        buttonPositive: "OK"
+      }
+    );
+    if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+      console.log("You can use the camera");
+    } else {
+      console.log("Camera permission denied");
+    }
+  } catch (err) {
+    console.warn(err);
+  }
 };
 
 const styles = StyleSheet.create({
