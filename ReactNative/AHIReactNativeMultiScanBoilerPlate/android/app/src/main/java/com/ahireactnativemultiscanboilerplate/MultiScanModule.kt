@@ -35,7 +35,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.math.abs
 
 private const val TAG = "MultiScanModule"
 
@@ -228,6 +227,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
 
     @ReactMethod
     fun startBodyScan(userInput: ReadableMap, promise: Promise) {
+        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
         val userInputSet = userInput.toHashMap()
         val registry = currentActivity as AppCompatActivity
         //        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
@@ -273,7 +273,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      * time. We recommend doing this on successful completion of a body scan with the results.
      */
     @ReactMethod
-    fun getBodyScanExtras(bodyScanResult: ReadableMap, promise: Promise) {
+    fun getBodyScanExtra(bodyScanResult: ReadableMap, promise: Promise) {
         val result = bodyScanResult.toHashMap()
         val options = mapOf("extrapolate" to listOf("mesh"))
         AHIMultiScan.getScanExtra(
@@ -397,13 +397,31 @@ class MultiScanModule(private val context: ReactApplicationContext) :
             options: Map<String, Any>,
             completionBlock: (result: AHIResult<Array<Map<String, Any>>>) -> Unit,
         ) {
-            val data: Array<Map<String, Any>> = when(scanType) {
+            val data: MutableList<Map<String, Any>> = when (scanType) {
                 "body" -> {
-                    bodyScanResult.toTypedArray()
+                    bodyScanResult
                 }
-                else -> arrayOf()
+                else -> mutableListOf()
             }
-            completionBlock(AHIResult.success(data))
+
+            val sort = options["SORT"] as? String
+            val order = options["ORDER"] as? String
+            if (sort != null) {
+                if (order == "descending") {
+                    data.sortByDescending { it[sort].toString().toDoubleOrNull() }
+                } else {
+                    data.sortBy { it[sort].toString().toDoubleOrNull() }
+                }
+            }
+            val since = options["SINCE"] as? Long
+            if (since != null) {
+                data.removeIf { (it["date"] as? Long)?.let { date -> date >= since } == true }
+            }
+            val count = options["COUNT"] as? Int
+            if (count != null) {
+                data.dropLast(data.size - count)
+            }
+            completionBlock(AHIResult.success(data.toTypedArray()))
         }
     }
 
