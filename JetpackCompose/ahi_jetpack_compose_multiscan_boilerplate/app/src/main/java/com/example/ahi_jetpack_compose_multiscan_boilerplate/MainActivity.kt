@@ -41,6 +41,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.advancedhumanimaging.sdk.bodyscan.BodyScan
 import com.advancedhumanimaging.sdk.bodyscan.common.BodyScanError
+import com.advancedhumanimaging.sdk.common.IAHIPersistence
 import com.advancedhumanimaging.sdk.common.IAHIScan
 import com.advancedhumanimaging.sdk.common.models.AHIResult
 import com.advancedhumanimaging.sdk.facescan.AHIFaceScanError
@@ -189,7 +190,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun didTapStartBodyScan() {
-//        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
         startBodyScan()
     }
 
@@ -215,6 +215,8 @@ class MainActivity : ComponentActivity() {
         AHIMultiScan.setup(application, config, scans, completionBlock = {
             it.fold({
                 authorizeUser()
+                // Set results persistence delegate
+                AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
             }, {
                 Log.d(TAG, "AHI: Error setting up: $}\n")
                 Log.d(TAG, "AHI: Confirm you have a valid token.\n")
@@ -293,7 +295,6 @@ class MainActivity : ComponentActivity() {
             Log.d(TAG, "AHI ERROR: Face Scan inputs invalid.")
             return
         }
-
         AHIMultiScan.initiateScan("face", avatarValues, activityResultRegistry, completionBlock = {
             lifecycleScope.launch(Dispatchers.Main) {
                 if (!it.isDone) {
@@ -322,12 +323,10 @@ class MainActivity : ComponentActivity() {
         avatarValues["sec_ent_scanLength"] = 60
         avatarValues["str_ent_instruction1"] = "Instruction 1"
         avatarValues["str_ent_instruction2"] = "Instruction 2"
-
         if (!areFingerScanConfigOptionsValid(avatarValues)) {
             Log.d(TAG, "AHI ERROR: Finger Scan inputs invalid.")
             return
         }
-
         AHIMultiScan.initiateScan("finger", avatarValues, activityResultRegistry, completionBlock = {
             lifecycleScope.launch(Dispatchers.Main) {
                 if (!it.isDone) {
@@ -359,17 +358,16 @@ class MainActivity : ComponentActivity() {
             Log.d(TAG, "AHI ERROR: Body Scan inputs invalid.")
             return
         }
-
         AHIMultiScan.initiateScan("body", avatarValues, activityResultRegistry, completionBlock = {
             lifecycleScope.launch(Dispatchers.Main) {
                 if (!it.isDone) {
                     Log.i(TAG, "Waiting of results, can show waiting screen here")
                 }
-
                 val result = withContext(Dispatchers.IO) { it.get() }
                 when (result) {
                     is AHIResult.Success -> {
                         Log.d(TAG, "initiateScan: ${result.value}")
+                        AHIPersistenceDelegate.bodyScanResult.add(result.value)
                         // get scan extra
                         getBodyScanExtras(result.value)
                     }
@@ -394,8 +392,9 @@ class MainActivity : ComponentActivity() {
         val options = mapOf("extrapolate" to listOf("mesh"))
         AHIMultiScan.getScanExtra(result, options, completionBlock = {
             it.fold({
+                Log.d(TAG, "AHI: GetBodyScanExtras: $it")
                 val uri = (it["extrapolate"] as? List<Map<*, *>>)?.firstOrNull()?.get("mesh") as? Uri
-                Log.i(TAG, "$uri")
+                Log.i(TAG, "AHI: 3D Mesh: $uri")
             }, {
                 Log.e(TAG, it.toString())
             })
@@ -468,15 +467,42 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-//    object AHIPersistenceDelegate: IAHIPersistence {
-//        override fun request(
-//            scanType: String,
-//            options: Map<String, Any>,
-//            completionBlock: (result: AHIResult<Array<Map<String, Any>>>) -> Unit
-//        ) {
-////            TODO: implement
-//        }
-//    }
+    object AHIPersistenceDelegate : IAHIPersistence {
+        /**
+         * You should have your body scan results stored somewhere in your app that this function can access.
+         * */
+        var bodyScanResult = mutableListOf<Map<String, Any>>()
+        override fun request(
+            scanType: String,
+            options: Map<String, Any>,
+            completionBlock: (result: AHIResult<Array<Map<String, Any>>>) -> Unit,
+        ) {
+            val data: MutableList<Map<String, Any>> = when (scanType) {
+                "body" -> {
+                    bodyScanResult
+                }
+                else -> mutableListOf()
+            }
+            val sort = options["SORT"] as? String
+            val order = options["ORDER"] as? String
+            if (sort != null) {
+                if (order == "descending") {
+                    data.sortByDescending { it[sort].toString().toDoubleOrNull() }
+                } else {
+                    data.sortBy { it[sort].toString().toDoubleOrNull() }
+                }
+            }
+            val since = options["SINCE"] as? Long
+            if (since != null) {
+                data.removeIf { (it["date"] as? Long)?.let { date -> date >= since } == true }
+            }
+            val count = options["COUNT"] as? Int
+            if (count != null) {
+                data.dropLast(data.size - count)
+            }
+            completionBlock(AHIResult.success(data.toTypedArray()))
+        }
+    }
 
 
     /**
