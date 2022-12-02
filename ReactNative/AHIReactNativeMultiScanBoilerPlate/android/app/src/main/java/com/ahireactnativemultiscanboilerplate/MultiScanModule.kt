@@ -287,7 +287,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
                                 ?.get("mesh") as?
                                     Uri
                         Log.d(TAG, "getBodyScanExtras: URI: $uri")
-                        promise.resolve(uri)
+                        promise.resolve(scanResultsToMap(it))
                     },
                     {
                         Log.d(TAG, "getBodyScanExtras: ${it.error}")
