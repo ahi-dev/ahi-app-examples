@@ -49,13 +49,10 @@ const val PERMISSION_REQUEST_CODE = 111
 /** The required tokens for the MultiScan Setup and Authorization. */
 /** Your AHI MultiScan token */
 const val AHI_MULTI_SCAN_TOKEN = ""
-
 /** Your user ID. NOTE: User ID is hard-coded here for example, BUT should NOT be hard-coded in real integration (user ID from idP is expected). */
 const val AHI_TEST_USER_ID = "EXAMPLE_USER_ID"
-
 /** Security salt value. This should be hard-coded into your app, and SHOULD NOT be changed (i.e. be the same in both iOS and Android). It can be any string value. */
 const val AHI_TEST_USER_SALT = "EXAMPLE_APP_SALT"
-
 /** Claims are optional values to increase the security for the user. The order and values should be unique for a given user and be the same on both iOS and Android (e.g. user join date in the format "yyyy", "mm", "dd", "zzzz"). */
 val AHI_TEST_USER_CLAIMS = arrayOf("EXAMPLE_CLAIM")
 
@@ -69,6 +66,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         viewModel = ViewModelProvider(this).get(MultiScanViewModel::class.java)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+//        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
         viewModel.isSetup.observe(this, Observer {
             if (it) {
                 binding.setupButton.visibility = View.GONE
@@ -122,6 +120,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun didTapStartBodyScan() {
         startBodyScan()
+//        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
     }
 
     private fun didTapDownloadResources() {
@@ -141,10 +140,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         val scans: Array<IAHIScan> = arrayOf(FaceScan(), FingerScan(), BodyScan())
         AHIMultiScan.setup(application, config, scans, completionBlock = {
             it.fold({
-                // Set results persistence delegate
-                AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
-
-                authorizeUser()
+                    authorizeUser()
             }, {
                 Log.d(TAG, "AHI: Error setting up: $}\n")
                 Log.d(TAG, "AHI: Confirm you have a valid token.\n")
@@ -301,8 +297,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                 when (result) {
                     is AHIResult.Success -> {
                         Log.d(TAG, "initiateScan: ${result.value}")
-                        // persist results
-                        AHIPersistenceDelegate.bodyScanResult.add(result.value)
                         // get scan extra
                         getBodyScanExtras(result.value)
                     }
@@ -323,7 +317,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      *  The 3D mesh can be created and returned at any time.
      *  We recommend doing this on successful completion of a body scan with the results.
      * */
-    private fun getBodyScanExtras(result: Map<String, Any>) {
+    private  fun getBodyScanExtras(result: Map<String, Any>) {
         val options = mapOf("extrapolate" to listOf("mesh"))
         AHIMultiScan.getScanExtra(result, options, completionBlock = {
             it.fold({
@@ -401,44 +395,15 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         }
     }
 
-    object AHIPersistenceDelegate : IAHIPersistence {
-        /**
-         * You should have your body scan results stored somewhere in your app that this function can access.
-         * */
-        var bodyScanResult = mutableListOf<Map<String, Any>>()
-
-        override fun request(
-            scanType: String,
-            options: Map<String, Any>,
-            completionBlock: (result: AHIResult<Array<Map<String, Any>>>) -> Unit,
-        ) {
-            val data: MutableList<Map<String, Any>> = when (scanType) {
-                "body" -> {
-                    bodyScanResult
-                }
-                else -> mutableListOf()
-            }
-
-            val sort = options["SORT"] as? String
-            val order = options["ORDER"] as? String
-            if (sort != null) {
-                if (order == "descending") {
-                    data.sortByDescending { it[sort].toString().toDoubleOrNull() }
-                } else {
-                    data.sortBy { it[sort].toString().toDoubleOrNull() }
-                }
-            }
-            val since = options["SINCE"] as? Long
-            if (since != null) {
-                data.removeIf { (it["date"] as? Long)?.let { date -> date >= since } == true }
-            }
-            val count = options["COUNT"] as? Int
-            if (count != null) {
-                data.dropLast(data.size - count)
-            }
-            completionBlock(AHIResult.success(data.toTypedArray()))
-        }
-    }
+//    object AHIPersistenceDelegate: IAHIPersistence {
+//        override fun request(
+//            scanType: String,
+//            options: Map<String, Any>,
+//            completionBlock: (result: AHIResult<Array<Map<String, Any>>>) -> Unit
+//        ) {
+////            TODO: implement
+//        }
+//    }
 
 
     /**
@@ -449,8 +414,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      * */
     private fun areSharedScanConfigOptionsValid(avatarValues: java.util.HashMap<String, Any>): Boolean {
         val sex = avatarValues["enum_ent_sex"].takeIf { it is String }
-        val height = avatarValues["cm_ent_height"].takeIf { it is Double || it is Int }
-        val weight = avatarValues["kg_ent_weight"].takeIf { it is Double || it is Int }
+        val height = avatarValues["cm_ent_height"].takeIf { it is Double || it is Int}
+        val weight = avatarValues["kg_ent_weight"].takeIf { it is Double || it is Int}
         return if (sex != null && height != null && weight != null) {
             arrayListOf("male", "female").contains(sex)
         } else {
@@ -503,9 +468,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         val instruction1 = avatarValues["str_ent_instruction1"].takeIf { it is String }
         val instruction2 = avatarValues["str_ent_instruction2"].takeIf { it is String }
         return (scanLength != null &&
-                instruction1 != null &&
-                instruction2 != null &&
-                scanLength >= 20)
+            instruction1 != null &&
+            instruction2 != null &&
+            scanLength >= 20 )
     }
 
     /**
@@ -521,11 +486,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         val height = avatarValues["cm_ent_height"].toString().toDoubleOrNull()
         val weight = avatarValues["kg_ent_weight"].toString().toDoubleOrNull()
         return (sex != null &&
-                height != null &&
-                weight != null &&
-                height in 50.0..255.0 &&
-                weight in 16.0..300.0
-                )
+            height != null &&
+            weight != null &&
+            height in 50.0..255.0 &&
+            weight in 16.0..300.0
+        )
     }
 
     /**
@@ -534,7 +499,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     private fun checkPermission() {
         if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.CAMERA)
             == PackageManager.PERMISSION_DENIED
-        ) {
+        ){
             requestPermissions(arrayOf(Manifest.permission.CAMERA), PERMISSION_REQUEST_CODE)
         }
     }
