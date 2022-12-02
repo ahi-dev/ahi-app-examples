@@ -563,7 +563,7 @@ class MainActivity : FlutterActivity() {
             it.fold({
                 val uri = (it["extrapolate"] as? List<Map<*, *>>)?.firstOrNull()?.get("mesh") as? Uri
                 Log.i(TAG, "$uri")
-                result.success(uri)
+                result.success(mapOf<String, String>("meshURL" to uri.toString()))
             }, {
                 Log.e(TAG, it.toString())
                 result.error(it.error.code().toString(), it.message, null)
