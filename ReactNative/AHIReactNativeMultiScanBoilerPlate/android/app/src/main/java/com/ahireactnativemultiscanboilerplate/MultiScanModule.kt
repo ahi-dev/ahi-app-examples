@@ -35,6 +35,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.abs
 
 private const val TAG = "MultiScanModule"
 
@@ -381,20 +382,28 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      * Optionally call this function on load of the SDK.
      */
     @ReactMethod
-    fun setMultiScanPersistenceDelegate(results: ReadableArray) {
+    fun setMultiScanPersistenceDelegate(results: ReadableMap) {
+        AHIPersistenceDelegate.bodyScanResult.add(results.toHashMap())
         AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
-        AHIPersistenceDelegate.bodyScanResult =
-            results.toArrayList().map { it.toString() }.toTypedArray().toMutableList()
     }
 
     object AHIPersistenceDelegate : IAHIPersistence {
-        var bodyScanResult = mutableListOf<String>()
+        /**
+         * You should have your body scan results stored somewhere in your app that this function can access.
+         * */
+        var bodyScanResult = mutableListOf<Map<String, Any>>()
         override fun request(
             scanType: String,
             options: Map<String, Any>,
             completionBlock: (result: AHIResult<Array<Map<String, Any>>>) -> Unit,
         ) {
-            // TODO
+            val data: Array<Map<String, Any>> = when(scanType) {
+                "body" -> {
+                    bodyScanResult.toTypedArray()
+                }
+                else -> arrayOf()
+            }
+            completionBlock(AHIResult.success(data))
         }
     }
 
