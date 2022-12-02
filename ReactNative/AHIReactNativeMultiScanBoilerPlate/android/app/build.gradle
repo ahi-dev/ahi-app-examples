@@ -136,14 +136,14 @@ android {
     compileSdkVersion rootProject.ext.compileSdkVersion
 
     packagingOptions {
-        pickFirst 'lib/x86/libc++_shared.so'
-        pickFirst 'lib/x86_64/libc++_shared.so'
-        pickFirst 'lib/armeabi-v7a/libc++_shared.so'
-        pickFirst 'lib/arm64-v8a/libc++_shared.so'
         jniLibs {
             pickFirsts += ['**/*.so']
         }
     }
+    buildFeatures {
+        viewBinding true
+    }
+
 
     defaultConfig {
         applicationId "com.ahireactnativemultiscanboilerplate"
@@ -267,11 +267,12 @@ dependencies {
     implementation "com.facebook.react:react-native:+"  // From node_modules
 
     // AHI SDK
-    def AHISdkVersion = '21.1.4'
-    annotationProcessor "com.myfiziq.sdk:orm:${AHISdkVersion}-release"
-    implementation "com.myfiziq.sdk:orm:${AHISdkVersion}-release"
-    implementation "com.myfiziq.sdk:myfiziqsdk:${AHISdkVersion}-release"
-    implementation "com.myfiziq.sdk:myfiziqsdk-android-face-scan:${AHISdkVersion}-release"
+    def AHISdkVersion = '22.0.+'
+    implementation "com.advancedhumanimaging.sdk:ahi-sdk-multiscan:$AHISdkVersion"
+    implementation "com.advancedhumanimaging.sdk:ahi-sdk-facescan:$AHISdkVersion"
+    implementation "com.advancedhumanimaging.sdk:ahi-sdk-fingerscan:$AHISdkVersion"
+    implementation "com.advancedhumanimaging.sdk:ahi-sdk-bodyscan:$AHISdkVersion"
+
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9"
     debugImplementation("com.facebook.flipper:flipper:0.142.0") {
