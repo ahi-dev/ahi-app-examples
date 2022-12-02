@@ -119,7 +119,9 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      */
     @ReactMethod
     fun downloadAHIResources() {
-        AHIMultiScan.downloadResourcesInForeground(3)
+        GlobalScope.launch(Dispatchers.Main) {
+            AHIMultiScan.downloadResourcesInForeground(3)
+        }
     }
 
     /** Check the size of the AHI resources that require downloading. */
