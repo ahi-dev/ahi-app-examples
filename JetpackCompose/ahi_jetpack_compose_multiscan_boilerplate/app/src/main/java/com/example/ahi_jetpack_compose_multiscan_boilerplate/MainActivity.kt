@@ -41,6 +41,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.advancedhumanimaging.sdk.bodyscan.BodyScan
 import com.advancedhumanimaging.sdk.bodyscan.common.BodyScanError
+import com.advancedhumanimaging.sdk.common.IAHIPersistence
 import com.advancedhumanimaging.sdk.common.IAHIScan
 import com.advancedhumanimaging.sdk.common.models.AHIResult
 import com.advancedhumanimaging.sdk.facescan.AHIFaceScanError
@@ -56,7 +57,7 @@ const val PERMISSION_REQUEST_CODE = 111
 
 /** The required tokens for the MultiScan Setup and Authorization. */
 /** Your AHI MultiScan token */
-const val AHI_MULTI_SCAN_TOKEN = ""
+const val AHI_MULTI_SCAN_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJicTNKYXN5M0hMVmRxMkRja05MR1FXdGk2WEZIM2dVUElndUVNOXIyUTdXR05WRGVHTkV5ajR0T09XYXZxa3Y2VHEvYXJEVmtJNUZFSzZ4STFJUmcwRlVMK0t1MVdZV1UrOUtqSGsvS3pHVFk4bllES29WU2J6WEw1eVljOGprMndkMlNmeFBhYXJmT3pPZS9odFJvdUJwa2RSM09BS1V3TGtITTJYT3Fyays4d0MyenE2Y01pczFNZThTVWtGZ2RDS1ZsNVFLbkU0b2xGYzBNRTBVOEVqTW5mUUZSd1ZSZ2VVWlVOdkVWL3R2K1B0aEpJZGJKUnpxa0JUaE5YNDZBaXJaT2ZPV0tsczVoalZXMzNDS2xSczgxd3VwRWYrU0FQY3MxRmUwV2Urd1diN3VKSTdqTXRJeE1pcEdWdUQxMXNEODVKaW1GNm51bnBYRlY3NWc5TmVBR0JpdzZETDVnbXRPenRVNFVTaStKbWhvc1lIc3ZLMWhZay9YRTVKREFEeHV3eWJVaVlxVFJwVWdUeWRYUU02V1BpVUMvaVRmWEJIc1BKK3liRlBTcVpSVWhWa21EYUZ4TjJvNXluL1ZzRkNQU3IvSEs3WmcweEhZUGh4UHVpby8ydkRaZjRNZk1RU0tZaVhDbUxUNks0dmQwYy94OUg1ZngrYzdhMWlTRmR2dTNjWnV0aG1jdG5aYjVLU2prblVkcFlWamJaaytWb1B6eWczUVVpRXhqWDNuaVRZR0NaS3M5RkYyVFNUTW9PenZmVnVYcHpoVGhYMm5IeEpGdzNwN2phcGNvN21tZVhpYzF2VWpVVDhhQ09Xc3hqK1o1MUVRRHBielNyTjllSVV2N3pRZmtsNDhLQXpUUng3M0dkMWZuUmVMM0xzTWExcDBEc2hDakRlcz0iLCJleHAiOjE4MTQ3MDc1MzcsInZlciI6M30.EJTaMwDwzMtgIuY1DtwnCDyCnp9_2NauN7n91O7UIco8YpBbSxXWQWbbcvT-72pbpAQagAQ7hgKkjWEce5kKniDh3KhVa546kdQeneuWd1vu7iV1s3nZsMnPCxmFcv5uL30Cv8HWIkDEZb5UozZTgOcHDFAKyKQVT7Tmw0XA5GOjZqKZRtYtRXjzkQw7nidI_I0YkAshC6H8eakeyrVp-u-SilU95_ppIgZOtZHk1nSo04HATGXxl0inTDa57bi_UTU_OHLLlzKm-4GYtSKKdxyHcAipZklkQic4I_g4K43FeLNlWEyGpHt0dnabJm4auU033RZa5L87qCWFDSkTlBDTb3xTfSVtPtsyXTpHDMXS1-1WzQm97P8QcZ2zJl4z1wDk1WClwYRvk4E2JiA9ZwTef0OG2nQVlRJw0O4IpUWI8NLfg-2YcZR9-DZs2iC2QAIV0K1MVc9Ro2LMkgIm0nycgvYagmn-PZLuq9pATjVlW3oF1pJahEJcltoBc-JE0b_NjMsOFMeH3FQNf7_fCBYbRZA3SkOX87uPOqn2BXkYP77sHJ91mFw89TDilx4iVJSbErUej7tr8ZdagCVG1x0ltJ8qVAFCK5wnHZxp5FdfVBuaZNA2e7VzCFB7cYEFUfsuHd9NK2TzLcxizw7L2PxYHP2RdNCKMR3ebR572-w"
 
 /** Your user id. Hardcode a valid user id for testing purposes. */
 const val AHI_TEST_USER_ID = "EXAMPLE_USER_ID"
@@ -189,7 +190,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun didTapStartBodyScan() {
-//        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
+        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
         startBodyScan()
     }
 
@@ -365,8 +366,8 @@ class MainActivity : ComponentActivity() {
                 if (!it.isDone) {
                     Log.i(TAG, "Waiting of results, can show waiting screen here")
                 }
-
                 val result = withContext(Dispatchers.IO) { it.get() }
+
                 when (result) {
                     is AHIResult.Success -> {
                         Log.d(TAG, "initiateScan: ${result.value}")
@@ -394,8 +395,9 @@ class MainActivity : ComponentActivity() {
         val options = mapOf("extrapolate" to listOf("mesh"))
         AHIMultiScan.getScanExtra(result, options, completionBlock = {
             it.fold({
+                Log.d(TAG, "AHI: GetBodyScanExtras: $it")
                 val uri = (it["extrapolate"] as? List<Map<*, *>>)?.firstOrNull()?.get("mesh") as? Uri
-                Log.i(TAG, "$uri")
+                Log.i(TAG, "AHI: 3D Mesh: $uri")
             }, {
                 Log.e(TAG, it.toString())
             })
@@ -468,15 +470,43 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-//    object AHIPersistenceDelegate: IAHIPersistence {
-//        override fun request(
-//            scanType: String,
-//            options: Map<String, Any>,
-//            completionBlock: (result: AHIResult<Array<Map<String, Any>>>) -> Unit
-//        ) {
-////            TODO: implement
-//        }
-//    }
+    object AHIPersistenceDelegate : IAHIPersistence {
+        /**
+         * You should have your body scan results stored somewhere in your app that this function can access.
+         * */
+        var bodyScanResult = mutableListOf<Map<String, Any>>()
+        override fun request(
+            scanType: String,
+            options: Map<String, Any>,
+            completionBlock: (result: AHIResult<Array<Map<String, Any>>>) -> Unit,
+        ) {
+            val data: MutableList<Map<String, Any>> = when (scanType) {
+                "body" -> {
+                    bodyScanResult
+                }
+                else -> mutableListOf()
+            }
+
+            val sort = options["SORT"] as? String
+            val order = options["ORDER"] as? String
+            if (sort != null) {
+                if (order == "descending") {
+                    data.sortByDescending { it[sort].toString().toDoubleOrNull() }
+                } else {
+                    data.sortBy { it[sort].toString().toDoubleOrNull() }
+                }
+            }
+            val since = options["SINCE"] as? Long
+            if (since != null) {
+                data.removeIf { (it["date"] as? Long)?.let { date -> date >= since } == true }
+            }
+            val count = options["COUNT"] as? Int
+            if (count != null) {
+                data.dropLast(data.size - count)
+            }
+            completionBlock(AHIResult.success(data.toTypedArray()))
+        }
+    }
 
 
     /**
