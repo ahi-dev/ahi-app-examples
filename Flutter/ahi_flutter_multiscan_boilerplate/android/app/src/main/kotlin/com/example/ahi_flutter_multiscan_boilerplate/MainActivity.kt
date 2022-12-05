@@ -306,6 +306,7 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    /** Activity result registry needed to start a scan */
     private val activityResultRegistry = object : ActivityResultRegistry() {
         override fun <I : Any?, O : Any?> onLaunch(
             requestCode: Int,
@@ -313,9 +314,6 @@ class MainActivity : FlutterActivity() {
             input: I,
             options: ActivityOptionsCompat?
         ) {
-            val activity: Activity = this@MainActivity
-
-            // Immediate result path
 
             // Immediate result path
             val synchronousResult: ActivityResultContract.SynchronousResult<O>? = contract.getSynchronousResult(activity, input)
@@ -325,11 +323,8 @@ class MainActivity : FlutterActivity() {
             }
 
             // Start activity path
-
-            // Start activity path
             val intent = contract.createIntent(activity, input)
             var optionsBundle: Bundle? = null
-            // If there are any extras, we should defensively set the classLoader
             // If there are any extras, we should defensively set the classLoader
             if (intent.extras != null && intent.extras!!.classLoader == null) {
                 intent.setExtrasClassLoader(activity.classLoader)
@@ -340,22 +335,14 @@ class MainActivity : FlutterActivity() {
             } else if (options != null) {
                 optionsBundle = options.toBundle()
             }
-            if (ACTION_REQUEST_PERMISSIONS == intent.action) {
-
-                // requestPermissions path
-                var permissions = intent.getStringArrayExtra(EXTRA_PERMISSIONS)
-                if (permissions == null) {
-                    permissions = arrayOfNulls(0)
-                }
-                ActivityCompat.requestPermissions(activity, permissions, requestCode)
-            } else if (ACTION_INTENT_SENDER_REQUEST == intent.action) {
+            if (ACTION_INTENT_SENDER_REQUEST == intent.action) {
                 val request = intent.getParcelableExtra<IntentSenderRequest>(EXTRA_INTENT_SENDER_REQUEST)
                 try {
                     // startIntentSenderForResult path
                     ActivityCompat.startIntentSenderForResult(
                         activity, request!!.intentSender,
-                        requestCode, request!!.fillInIntent, request!!.flagsMask,
-                        request!!.flagsValues, 0, optionsBundle
+                        requestCode, request.fillInIntent, request.flagsMask,
+                        request.flagsValues, 0, optionsBundle
                     )
                 } catch (e: IntentSender.SendIntentException) {
                     Handler(Looper.getMainLooper()).post {
