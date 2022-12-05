@@ -105,9 +105,6 @@ enum class AHIMultiScanMethod(val methodKeys: String) {
 
     /** Released the actively registered SDK session. */
     releaseMultiScanSDK("releaseMultiScanSDK"),
-
-    /** Use the AHIMultiScan persistence delegate and set historical body scan results */
-    setMultiScanPersistenceDelegate("setMultiScanPersistenceDelegate"),
 }
 
 const val TAG = "MainActivityAHI"
@@ -186,9 +183,6 @@ class MainActivity : FlutterActivity() {
                 AHIMultiScanMethod.releaseMultiScanSDK -> {
                     releaseMultiScanSDK(result = result)
                 }
-                AHIMultiScanMethod.setMultiScanPersistenceDelegate -> {
-                    setPersistenceDelegate(results = call.arguments)
-                }
                 else -> {
                     Log.d("AHI ERROR", "AHI: Invalid method name.")
                 }
@@ -210,11 +204,14 @@ class MainActivity : FlutterActivity() {
         checkPermission()
 
         val config: MutableMap<String, String> = HashMap()
-        config["TOKEN"] = token as String
+        config["TOKEN"] = token
         val scans: Array<IAHIScan> = arrayOf(FaceScan(), FingerScan(), BodyScan())
         AHIMultiScan.setup(application, config, scans, completionBlock = {
             it.fold({
-                    result.success(null)
+                // Set results persistence delegate
+                AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
+
+                result.success(null)
             }, {
                 Log.d(TAG, "AHI: Error setting up: $}\n")
                 Log.d(TAG, "AHI: Confirm you have a valid token.\n")
@@ -262,7 +259,7 @@ class MainActivity : FlutterActivity() {
 
         AHIMultiScan.userAuthorize(userID, salt, claimsArray, completionBlock = {
             it.fold({
-                    result.success(null)
+                result.success(null)
             }, {
                 result.error(it.error.code().toString(), it.message, null)
             })
@@ -309,6 +306,7 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    /** Activity result registry needed to start a scan */
     private val activityResultRegistry = object : ActivityResultRegistry() {
         override fun <I : Any?, O : Any?> onLaunch(
             requestCode: Int,
@@ -316,9 +314,6 @@ class MainActivity : FlutterActivity() {
             input: I,
             options: ActivityOptionsCompat?
         ) {
-            val activity: Activity = this@MainActivity
-
-            // Immediate result path
 
             // Immediate result path
             val synchronousResult: ActivityResultContract.SynchronousResult<O>? = contract.getSynchronousResult(activity, input)
@@ -328,11 +323,8 @@ class MainActivity : FlutterActivity() {
             }
 
             // Start activity path
-
-            // Start activity path
             val intent = contract.createIntent(activity, input)
             var optionsBundle: Bundle? = null
-            // If there are any extras, we should defensively set the classLoader
             // If there are any extras, we should defensively set the classLoader
             if (intent.extras != null && intent.extras!!.classLoader == null) {
                 intent.setExtrasClassLoader(activity.classLoader)
@@ -343,22 +335,14 @@ class MainActivity : FlutterActivity() {
             } else if (options != null) {
                 optionsBundle = options.toBundle()
             }
-            if (ACTION_REQUEST_PERMISSIONS == intent.action) {
-
-                // requestPermissions path
-                var permissions = intent.getStringArrayExtra(EXTRA_PERMISSIONS)
-                if (permissions == null) {
-                    permissions = arrayOfNulls(0)
-                }
-                ActivityCompat.requestPermissions(activity, permissions, requestCode)
-            } else if (ACTION_INTENT_SENDER_REQUEST == intent.action) {
+            if (ACTION_INTENT_SENDER_REQUEST == intent.action) {
                 val request = intent.getParcelableExtra<IntentSenderRequest>(EXTRA_INTENT_SENDER_REQUEST)
                 try {
                     // startIntentSenderForResult path
                     ActivityCompat.startIntentSenderForResult(
                         activity, request!!.intentSender,
-                        requestCode, request!!.fillInIntent, request!!.flagsMask,
-                        request!!.flagsValues, 0, optionsBundle
+                        requestCode, request.fillInIntent, request.flagsMask,
+                        request.flagsValues, 0, optionsBundle
                     )
                 } catch (e: IntentSender.SendIntentException) {
                     Handler(Looper.getMainLooper()).post {
@@ -449,7 +433,7 @@ class MainActivity : FlutterActivity() {
         val scanLength = arguments["sec_ent_scanLength"] as? Int ?: return null
         val instruction1 = arguments["str_ent_instruction1"] as? String ?: return null
         val instruction2 = arguments["str_ent_instruction2"] as? String ?: return null
-        val miscData = arguments["miscData"]  as? HashMap<String, Any> ?: mapOf()
+        val miscData = arguments["miscData"] as? HashMap<String, Any> ?: mapOf()
         return hashMapOf(
             "sec_ent_scanLength" to scanLength,
             "str_ent_instruction1" to instruction1,
@@ -515,8 +499,6 @@ class MainActivity : FlutterActivity() {
             result.error("-5", "Missing user body scan input details", null)
             return
         }
-
-//        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
         AHIMultiScan.initiateScan("body", userInput, activityResultRegistry, completionBlock = {
             lifecycleScope.launch(Dispatchers.Main) {
                 if (!it.isDone) {
@@ -526,6 +508,9 @@ class MainActivity : FlutterActivity() {
                 val response = withContext(Dispatchers.IO) { it.get() }
                 when (response) {
                     is AHIResult.Success -> {
+                        // persist results
+                        AHIPersistenceDelegate.bodyScanResults.add(response.value)
+
                         Log.d(TAG, "initiateScan: ${response.value}")
                         result.success(response.value)
                     }
@@ -648,33 +633,48 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    /** The MultiScan SDK can provide personalised results.
-     *
-     * Optionally call this function on load of the SDK.
-     * */
-    private fun setPersistenceDelegate(results: Any?) {
-        val bodyScanResults = convertBodyScanResultsToSDKFormat(results)
-        AHIPersistenceDelegate.let { it ->
-            it.bodyScanResults = bodyScanResults
-            AHIMultiScan.delegatePersistence = it
-        }
-    }
-
-    /** For the newest AHIMultiScan version 21.1.3 need to implement PersistenceDelegate */
+    /** If you choose to use this, you will obtain two sets of results - one containing the "raw" output and another set containing "adj" output.
+    "adj" means adjusted and is used to help provide historical results as a reference for the newest result to provide results tailored to the user.
+    We recommend using this for individual users results; avoid using this if the app is a single user ID with multiple users results.
+    More info found here: https://docs.advancedhumanimaging.io/MultiScan%20SDK/Data/ */
     object AHIPersistenceDelegate : IAHIPersistence {
         /** You should have your body scan results stored somewhere in your app that this function can access.*/
-        var bodyScanResults = mutableListOf<String>()
+        var bodyScanResults = mutableListOf<Map<String, Any>>()
 
         override fun request(
             scanType: String,
             options: Map<String, Any>,
             completionBlock: (result: AHIResult<Array<Map<String, Any>>>) -> Unit
         ) {
-//            TODO("Not yet implemented")
+            val data: MutableList<Map<String, Any>> = when (scanType) {
+                "body" -> {
+                    bodyScanResults
+                }
+                else -> mutableListOf()
+            }
+
+            val sort = options["SORT"] as? String
+            val order = options["ORDER"] as? String
+            if (sort != null) {
+                if (order == "descending") {
+                    data.sortByDescending { it[sort].toString().toDoubleOrNull() }
+                } else {
+                    data.sortBy { it[sort].toString().toDoubleOrNull() }
+                }
+            }
+            val since = options["SINCE"] as? Long
+            if (since != null) {
+                data.removeIf { (it["date"] as? Long)?.let { date -> date >= since } == true }
+            }
+            val count = options["COUNT"] as? Int
+            if (count != null) {
+                data.dropLast(data.size - count)
+            }
+            completionBlock(AHIResult.success(data.toTypedArray()))
         }
     }
 
-    /** The Android MultiScan SDK is currently returning results and a JSONString which needs to be converted to a Map to ensure consistency with Flutter and iOS. */ 
+    /** The Android MultiScan SDK is currently returning results and a JSONString which needs to be converted to a Map to ensure consistency with Flutter and iOS. */
     private fun scanResultsToMap(results: String?): Map<String, Any> {
         if (results == null) {
             return emptyMap<String, Any>()
@@ -706,7 +706,7 @@ class MainActivity : FlutterActivity() {
     private fun checkPermission() {
         if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.CAMERA)
             == PackageManager.PERMISSION_DENIED
-        ){
+        ) {
             requestPermissions(arrayOf(Manifest.permission.CAMERA), PERMISSION_REQUEST_CODE)
         }
     }
