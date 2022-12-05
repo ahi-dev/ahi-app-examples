@@ -228,9 +228,9 @@ const App: () => ReactNode = () => {
       return;
     }
     MultiScanModule.startBodyScan(userBodyScanInput)
-      .then((bodyScanResults: Map<String, any>) => {
-        console.log('AHI: SCAN RESULTS: ' + JSON.stringify(bodyScanResults));
-        getBodyScanExtras(bodyScanResults);
+      .then((bodyScanResult: Map<String, any>) => {
+        console.log('AHI: SCAN RESULTS: ' + JSON.stringify(bodyScanResult));
+        getBodyScanExtra(bodyScanResult);
       })
       .catch(error => {
         console.log('AHI ERROR: Body Scan error: ' + error);
@@ -243,17 +243,21 @@ const App: () => ReactNode = () => {
    * The 3D mesh can be created and returned at any time.
    * We recommend doing this on successful completion of a body scan with the results.
    */
-  function getBodyScanExtras(bodyScanResults: Map<String, any>) {
-    if (bodyScanResults == null) {
+  function getBodyScanExtra(bodyScanResult: Map<String, any>) {
+    if (bodyScanResult == null) {
       console.log('AHI ERROR: Body scan results must not be null.');
       return;
     }
-    var results = JSON.parse(JSON.stringify(bodyScanResults));
-    if (!areBodyScanSmoothingResultsValid([bodyScanResults])) {
+    // Check bodyScanResult has contains output schema.
+    if (!areBodyScanSmoothingResultsValid(bodyScanResult)) {
       console.log('AHI ERROR: Body scan results not valid for extras.');
       return;
     }
-    MultiScanModule.getBodyScanExtras(results).then((path: any) => {
+    // Set bodyScanResult to MultiScanPersistenceDelagate.
+    setMultiScanPersistenceDelegate(bodyScanResult)
+    // Get body scan extra.
+    var result = JSON.parse(JSON.stringify(bodyScanResult));
+    MultiScanModule.getBodyScanExtra(result).then((path: any) => {
       console.log('AHI 3D Mesh : ' + path['meshURL']);
       console.log('AHI 3D Mesh : ' + JSON.stringify(path));
     });
@@ -342,38 +346,21 @@ const App: () => ReactNode = () => {
    * We recommend using this for individual users results; avoid using this if the app is a single user ID with multiple users results.
    * More info found here: https://docs.advancedhumanimaging.io/MultiScan%20SDK/Data/
    */
-  function setMultiScanPersistenceDelegate(scanResult?: any) {
+  function setMultiScanPersistenceDelegate(scanResult: Map<String, any>) {
     /* Each result requires: 
      * - _ent_ values 
      * - _raw_ values 
      * - id value 
      * - date value 
-     * Your token may only provide you access to a smaller subset of results.
-       The persistence delegate will still work with your results provided you adhere to the validation check. 
+     * The persistence delegate will still work with your result provided you add here to the validation check. 
      */
-    var exampleResult = {
-      enum_ent_sex: 'male',
-      cm_ent_height: 180,
-      kg_ent_weight: 85,
-      cm_raw_chest: 104.5213096618652,
-      cm_raw_hips: 100.4377449035645,
-      cm_raw_inseam: 82.3893051147461,
-      cm_raw_thigh: 60.23823547363281,
-      cm_raw_waist: 84.81353988647462,
-      kg_raw_weightPredict: 82.55660247802734,
-      ml_raw_fitness: 0.8,
-      percent_raw_bodyFat: 17.3342390826027,
-      id: 'ee2367211649040093',
-      date: 1649040093,
-    };
-    var exampleResults: Array<any> = [exampleResult];
-    if (!areBodyScanSmoothingResultsValid(exampleResults)) {
+    if (!areBodyScanSmoothingResultsValid(scanResult)) {
       console.log(
         'AHI WARN: Results are not valid for the persistence delegate. Please compare your results against the schema for more information.',
       );
       return;
     }
-    MultiScanModule.setMultiScanPersistenceDelegate(exampleResults);
+    MultiScanModule.setMultiScanPersistenceDelegate(scanResult);
   }
 
   /**
@@ -478,7 +465,7 @@ const App: () => ReactNode = () => {
 
   /** Confirm results have correct set of keys. */
   function areBodyScanSmoothingResultsValid(
-    resultsList: Array<Map<String, any>>,
+    result: Map<String, any>,
   ): boolean {
     /* Your token may only provide you access to a smaller subset of results. */
     /* You should modify this list based on your available config options. */
@@ -497,12 +484,10 @@ const App: () => ReactNode = () => {
       'date',
     ];
     var isValid = true;
-    for (var result of resultsList) {
-      for (var key of sdkResultSchema) {
-        /* Check if keys in result contains the required keys. */
-        if (!result.hasOwnProperty(key)) {
-          isValid = false;
-        }
+    for (var key of sdkResultSchema) {
+      /* Check if keys in result contains the required keys. */
+      if (!result.hasOwnProperty(key)) {
+        isValid = false;
       }
     }
     return isValid;

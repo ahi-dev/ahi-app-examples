@@ -15,8 +15,8 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-import {NativeModules} from 'react-native';
-const {MultiScanModule} = NativeModules;
+import { NativeModules } from 'react-native';
+const { MultiScanModule } = NativeModules;
 
 /** Multi Scan SDK */
 interface MultiScanInterface {
@@ -44,7 +44,7 @@ interface MultiScanInterface {
     userInput: Object,
   ): Promise<Map<String, any>>;
   /** Requires a map object of the body scan results and returns a Map object. */
-  getBodyScanExtras(scanResults: Map<String, any>): Promise<Map<String, any>>;
+  getBodyScanExtra(scanResults: Map<String, any>): Promise<Map<String, any>>;
   /** Returns the SDK status. */
   getMultiScanStatus(): Promise<string>;
   /** Returns a Map containing the SDK details. */
@@ -56,6 +56,6 @@ interface MultiScanInterface {
   /** Released the actively registered SDK session. */
   releaseMultiScanSDK(): Promise<string>;
   /** Use the AHIMultiScan persistence delegate and set historical body scan results */
-  setMultiScanPersistenceDelegate(result: any): void;
+  setMultiScanPersistenceDelegate(scanResult: Map<String, any>): void;
 }
 export default MultiScanModule as MultiScanInterface;

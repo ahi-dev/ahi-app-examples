@@ -227,6 +227,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
 
     @ReactMethod
     fun startBodyScan(userInput: ReadableMap, promise: Promise) {
+        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
         val userInputSet = userInput.toHashMap()
         val registry = currentActivity as AppCompatActivity
         //        AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
@@ -243,6 +244,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
                     when (result) {
                         is AHIResult.Success -> {
                             Log.d(TAG, "initiateScan: ${result.value}")
+                            AHIPersistenceDelegate.bodyScanResult.add(result.value)
                             val scanResult = scanResultsToMap(result.value)
                             promise.resolve(scanResult)
                         }
@@ -272,7 +274,7 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      * time. We recommend doing this on successful completion of a body scan with the results.
      */
     @ReactMethod
-    fun getBodyScanExtras(bodyScanResult: ReadableMap, promise: Promise) {
+    fun getBodyScanExtra(bodyScanResult: ReadableMap, promise: Promise) {
         val result = bodyScanResult.toHashMap()
         val options = mapOf("extrapolate" to listOf("mesh"))
         AHIMultiScan.getScanExtra(
@@ -381,20 +383,46 @@ class MultiScanModule(private val context: ReactApplicationContext) :
      * Optionally call this function on load of the SDK.
      */
     @ReactMethod
-    fun setMultiScanPersistenceDelegate(results: ReadableArray) {
+    fun setMultiScanPersistenceDelegate(results: ReadableMap) {
+        AHIPersistenceDelegate.bodyScanResult.add(results.toHashMap())
         AHIMultiScan.delegatePersistence = AHIPersistenceDelegate
-        AHIPersistenceDelegate.bodyScanResult =
-            results.toArrayList().map { it.toString() }.toTypedArray().toMutableList()
     }
 
     object AHIPersistenceDelegate : IAHIPersistence {
-        var bodyScanResult = mutableListOf<String>()
+        /**
+         * You should have your body scan results stored somewhere in your app that this function can access.
+         * */
+        var bodyScanResult = mutableListOf<Map<String, Any>>()
         override fun request(
             scanType: String,
             options: Map<String, Any>,
             completionBlock: (result: AHIResult<Array<Map<String, Any>>>) -> Unit,
         ) {
-            // TODO
+            val data: MutableList<Map<String, Any>> = when (scanType) {
+                "body" -> {
+                    bodyScanResult
+                }
+                else -> mutableListOf()
+            }
+
+            val sort = options["SORT"] as? String
+            val order = options["ORDER"] as? String
+            if (sort != null) {
+                if (order == "descending") {
+                    data.sortByDescending { it[sort].toString().toDoubleOrNull() }
+                } else {
+                    data.sortBy { it[sort].toString().toDoubleOrNull() }
+                }
+            }
+            val since = options["SINCE"] as? Long
+            if (since != null) {
+                data.removeIf { (it["date"] as? Long)?.let { date -> date >= since } == true }
+            }
+            val count = options["COUNT"] as? Int
+            if (count != null) {
+                data.dropLast(data.size - count)
+            }
+            completionBlock(AHIResult.success(data.toTypedArray()))
         }
     }
 
