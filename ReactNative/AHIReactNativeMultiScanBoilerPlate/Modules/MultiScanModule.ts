@@ -34,6 +34,8 @@ interface MultiScanInterface {
   downloadAHIResources(): void;
   /** Will return an integer for the bytes size. */
   checkAHIResourcesDownloadSize(): Promise<string>;
+  /** Will return an map for current download progress report. */
+  getResourcesDownloadProgressReport(): void;
   startFaceScan(
     userInput: Object,
   ): Promise<Map<String, any>>;

@@ -29,6 +29,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  DeviceEventEmitter,
 } from 'react-native';
 
 /** The required tokens for the MultiScan Setup and Authorization. */
@@ -137,18 +138,34 @@ const App: () => ReactNode = () => {
         console.log('AHI INFO: Resources are not downloaded');
         // start download.
         if (resourcesDownloading != true) {
+          getResourcesDownloadProgressReport();
           downloadAHIResources();
         }
         setResourcesDownloading(true);
-        checkAHIResourcesDownloadSize();
-        setTimeout(() => areAHIResourcesAvailable(), 30000);
       } else {
         console.log('AHI: Resources ready');
-        // control view state
         setResourcesDownloaded(true);
       }
     });
   };
+
+  const getResourcesDownloadProgressReport = () => {
+    DeviceEventEmitter.addListener('progress_report', (value) => {
+      if (value == "done") {
+        setResourcesDownloaded(true);
+        setResourcesDownloading(false);
+        //console.log('AHI INFO: Download Finished')
+      } else {
+        console.log('AHI INFO: Size of Download is ' +
+          (Number(value["progress"]) / 1024 / 1024).toFixed(1) + ' / ' +
+          (Number(value["total"]) / 1024 / 1024).toFixed(1)
+        );
+      }
+    }
+    );
+    MultiScanModule.getResourcesDownloadProgressReport();
+  };
+
 
   /**
    * Download scan resources.

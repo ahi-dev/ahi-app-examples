@@ -22,6 +22,7 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.advancedhumanimaging.sdk.bodyscan.BodyScan
 import com.advancedhumanimaging.sdk.bodyscan.common.BodyScanError
+import com.advancedhumanimaging.sdk.common.IAHIDownloadProgress
 import com.advancedhumanimaging.sdk.common.IAHIPersistence
 import com.advancedhumanimaging.sdk.common.IAHIScan
 import com.advancedhumanimaging.sdk.common.models.AHIResult
@@ -31,10 +32,8 @@ import com.advancedhumanimaging.sdk.fingerscan.AHIFingerScanError
 import com.advancedhumanimaging.sdk.fingerscan.FingerScan
 import com.advancedhumanimaging.sdk.multiscan.AHIMultiScan
 import com.facebook.react.bridge.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
+import kotlinx.coroutines.*
 
 private const val TAG = "MultiScanModule"
 
@@ -124,7 +123,35 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         }
     }
 
-    /** Check the size of the AHI resources that require downloading. */
+    /** Use AHIMultiscan delegateDownloadProgress register to listen download progress report. */
+    @ReactMethod
+    fun getResourcesDownloadProgressReport() {
+        AHIMultiScan.delegateDownloadProgress = object : IAHIDownloadProgress {
+            override fun downloadProgressReport(status: AHIResult<Unit>) {
+                GlobalScope.launch(Dispatchers.IO) {
+                    AHIMultiScan.totalEstimatedDownloadSizeInBytes { ahiResult ->
+                        ahiResult.fold(
+                            { downloadState ->
+                                val progressReport = mutableMapOf<String, Any>(
+                                    "progress" to downloadState.progressBytes,
+                                    "total" to downloadState.totalBytes,
+                                )
+                                if (downloadState.progressBytes != downloadState.totalBytes) {
+                                    reactApplicationContext.getJSModule(RCTDeviceEventEmitter::class.java)
+                                        .emit("progress_report", scanResultsToMap(progressReport))
+                                }else {
+                                    reactApplicationContext.getJSModule(RCTDeviceEventEmitter::class.java)
+                                        .emit("progress_report", "done")
+                                }
+                            }, {}
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    /** Check the size of the AHI resources that require downloading in single time. */
     @ReactMethod
     fun checkAHIResourcesDownloadSize(promise: Promise) {
         AHIMultiScan.totalEstimatedDownloadSizeInBytes { ahiResult ->
@@ -437,3 +464,5 @@ class MultiScanModule(private val context: ReactApplicationContext) :
         return resultsMap
     }
 }
+
+private fun Double.format(digits: Int) = "%.${digits}f".format(this)
