@@ -154,7 +154,9 @@ const App: () => ReactNode = () => {
       if (value == "done") {
         setResourcesDownloaded(true);
         setResourcesDownloading(false);
-        //console.log('AHI INFO: Download Finished')
+        console.log('AHI INFO: Download Finished')
+      } else if (value == "failed") {
+        console.log('AHI INFO: Download Failed.')
       } else {
         console.log('AHI INFO: Size of Download is ' +
           (Number(value["progress"]) / 1024 / 1024).toFixed(1) + ' / ' +

@@ -143,7 +143,10 @@ class MultiScanModule(private val context: ReactApplicationContext) :
                                     reactApplicationContext.getJSModule(RCTDeviceEventEmitter::class.java)
                                         .emit("progress_report", "done")
                                 }
-                            }, {}
+                            }, {
+                                reactApplicationContext.getJSModule(RCTDeviceEventEmitter::class.java)
+                                    .emit("progress_report", "failed")
+                            }
                         )
                     }
                 }
