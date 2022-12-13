@@ -18,7 +18,6 @@
 package com.example.ahi_flutter_multiscan_boilerplate
 
 import android.Manifest
-import android.app.Activity
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
@@ -32,8 +31,6 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultRegistry
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContract
-import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions.Companion.ACTION_REQUEST_PERMISSIONS
-import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions.Companion.EXTRA_PERMISSIONS
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult.Companion.EXTRA_ACTIVITY_OPTIONS_BUNDLE
 import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult.Companion.ACTION_INTENT_SENDER_REQUEST
 import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult.Companion.EXTRA_INTENT_SENDER_REQUEST
@@ -45,6 +42,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.advancedhumanimaging.sdk.bodyscan.BodyScan
 import com.advancedhumanimaging.sdk.bodyscan.common.BodyScanError
+import com.advancedhumanimaging.sdk.common.IAHIDownloadProgress
 import com.advancedhumanimaging.sdk.common.IAHIPersistence
 import com.advancedhumanimaging.sdk.common.IAHIScan
 import com.advancedhumanimaging.sdk.common.models.AHIResult
@@ -55,10 +53,11 @@ import com.advancedhumanimaging.sdk.fingerscan.FingerScan
 import com.advancedhumanimaging.sdk.multiscan.AHIMultiScan
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.EventChannel.StreamHandler
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.*
 import org.json.JSONObject
-import java.util.*
 
 enum class AHIMultiScanMethod(val methodKeys: String) {
     /** Default. */
@@ -104,7 +103,7 @@ enum class AHIMultiScanMethod(val methodKeys: String) {
     deauthorizeUser("deauthorizeUser"),
 
     /** Released the actively registered SDK session. */
-    releaseMultiScanSDK("releaseMultiScanSDK"),
+    releaseMultiScanSDK("releaseMultiScanSDK")
 }
 
 const val TAG = "MainActivityAHI"
@@ -112,10 +111,22 @@ const val PERMISSION_REQUEST_CODE = 111
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "ahi_multiscan_flutter_wrapper"
+    private val EVENT_CAHNEEL = "ahi_multiscan_flutter_event_channel"
 
     @RequiresApi(Build.VERSION_CODES.N)
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        EventChannel(
+            flutterEngine.dartExecutor,
+            EVENT_CAHNEEL
+        ).setStreamHandler(object : StreamHandler {
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                getResouseDownloadProgressReport(events)
+            }
+
+            override fun onCancel(arguments: Any?) {}
+        })
+
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             CHANNEL
@@ -190,6 +201,29 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    private fun getResouseDownloadProgressReport(event: EventChannel.EventSink?) {
+        if (event != null) {
+            AHIMultiScan.delegateDownloadProgress = object : IAHIDownloadProgress {
+                override fun downloadProgressReport(status: AHIResult<Unit>) {
+                    AHIMultiScan.totalEstimatedDownloadSizeInBytes { ahiResult ->
+                        ahiResult.fold(
+                            { downloadState ->
+                                val progressReportString = "${downloadState.progressBytes}:${downloadState.totalBytes}"
+                                if (downloadState.progressBytes < downloadState.totalBytes) {
+                                    event.success(progressReportString)
+                                } else {
+                                    event.success("done")
+                                }
+                            }, {
+                                event.success("failed")
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     /**
      *  Setup the MultiScan SDK
      *  This must happen before requesting a scan.
@@ -227,7 +261,7 @@ class MainActivity : FlutterActivity() {
      * */
     private fun authorizeUser(
         arguments: Any?,
-        result: MethodChannel.Result
+        result: MethodChannel.Result,
     ) {
         if (arguments == null || arguments !is Map<*, *>) {
             result.error("-2", "Missing user authorization details.", null)
@@ -312,7 +346,7 @@ class MainActivity : FlutterActivity() {
             requestCode: Int,
             contract: ActivityResultContract<I, O>,
             input: I,
-            options: ActivityOptionsCompat?
+            options: ActivityOptionsCompat?,
         ) {
 
             // Immediate result path
@@ -394,7 +428,7 @@ class MainActivity : FlutterActivity() {
 
     private fun startFaceScan(
         arguments: Any?,
-        result: MethodChannel.Result
+        result: MethodChannel.Result,
     ) {
         val userInput = getFaceScanUserInput(arguments)
         if (userInput == null) {
@@ -444,7 +478,7 @@ class MainActivity : FlutterActivity() {
 
     private fun startFingerScan(
         arguments: Any?,
-        result: MethodChannel.Result
+        result: MethodChannel.Result,
     ) {
         val userInput = getFingerScanUserInput(arguments)
         if (userInput == null) {
@@ -492,7 +526,7 @@ class MainActivity : FlutterActivity() {
 
     private fun startBodyScan(
         arguments: Any?,
-        result: MethodChannel.Result
+        result: MethodChannel.Result,
     ) {
         val userInput = getBodyScanUserInput(arguments)
         if (userInput == null) {
@@ -644,7 +678,7 @@ class MainActivity : FlutterActivity() {
         override fun request(
             scanType: String,
             options: Map<String, Any>,
-            completionBlock: (result: AHIResult<Array<Map<String, Any>>>) -> Unit
+            completionBlock: (result: AHIResult<Array<Map<String, Any>>>) -> Unit,
         ) {
             val data: MutableList<Map<String, Any>> = when (scanType) {
                 "body" -> {
