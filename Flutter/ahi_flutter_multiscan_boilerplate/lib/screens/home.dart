@@ -34,6 +34,7 @@ class _HomeState extends State<Home> {
   bool _downloadResourcesButtonEnabled = true;
   // Communicate with native layer
   final platform = const MethodChannel('ahi_multiscan_flutter_wrapper');
+  final event = const EventChannel('ahi_multiscan_flutter_event_channel');
 
   /// The required tokens for the MultiScan Setup and Authorization.
 
@@ -70,12 +71,26 @@ class _HomeState extends State<Home> {
   }
 
   didTapDownloadResources() {
-    downloadAHIResources();
     areAHIResourcesAvailable();
-    checkAHIResourcesDownloadSize();
-    setState(() {
-      _downloadResourcesButtonEnabled = false;
-    });
+    event.receiveBroadcastStream().listen(getResourceDownloadProgressReport);
+    downloadAHIResources();
+  }
+
+  void getResourceDownloadProgressReport(dynamic report) {
+    final progressReport = report.toString().split(':');
+    final progress = double.parse(progressReport[0]) / 1024 / 1024;
+    final total = double.parse(progressReport[1]) / 1024 / 1024;
+    if (report.toString().contains('done')) {
+      setState(() {
+        _downloadResourcesButtonEnabled = false;
+      });
+      print("AHI INFO: Download Finished");
+    } else if (report.toString().contains('failed')) {
+      print("AHI INFO: Download Failed");
+    } else {
+      print(
+          "AHI INFO: Size of Download is ${progress.toStringAsFixed(1)} / ${total.toStringAsFixed(1)}");
+    }
   }
 
   /// Setup the MultiScan SDK
