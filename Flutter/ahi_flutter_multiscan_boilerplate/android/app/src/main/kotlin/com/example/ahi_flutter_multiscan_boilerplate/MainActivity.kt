@@ -222,18 +222,6 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }
-        /*GlobalScope.launch(Dispatchers.Main) {
-            if (event != null) {
-                (1..5).forEach {
-                    val progressReport = mutableMapOf<String, Any>(
-                        "progress" to it+1,
-                        "total" to it-1
-                    )
-                    delay(1000)
-                    event.success(progressReport)
-                }
-            }
-        }*/
     }
 
     /**
