@@ -31,6 +31,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.advancedhumanimaging.sdk.bodyscan.BodyScan
 import com.advancedhumanimaging.sdk.bodyscan.common.BodyScanError
+import com.advancedhumanimaging.sdk.common.IAHIDownloadProgress
 import com.advancedhumanimaging.sdk.common.IAHIPersistence
 import com.advancedhumanimaging.sdk.common.IAHIScan
 import com.advancedhumanimaging.sdk.common.models.AHIResult
@@ -125,9 +126,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun didTapDownloadResources() {
-        downloadAHIResources()
-        areAHIResourcesAvailable()
-        checkAHIResourcesDownloadSize()
+        getResourcesDownloadProgressReport()
     }
 
     /**
@@ -170,7 +169,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
 
     /** Check if the AHI resources are downloaded. */
     private fun areAHIResourcesAvailable() {
-
         AHIMultiScan.areResourcesDownloaded {
             it.fold({
                 if (it) {
@@ -178,11 +176,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     Log.d(TAG, "AHI: Resources ready\n")
                 } else {
                     Log.d(TAG, "AHI INFO: Resources are not downloaded\n")
-                    GlobalScope.launch {
-                        delay(30000)
-                        checkAHIResourcesDownloadSize()
-                        areAHIResourcesAvailable()
-                    }
                 }
             }, {
                 Log.d(TAG, "AHI: Error in resource downloading \n")
@@ -195,14 +188,50 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      *  We recommend only calling this function once per session to prevent duplicate background resource calls.
      */
     private fun downloadAHIResources() {
-        AHIMultiScan.downloadResourcesInForeground()
+        AHIMultiScan.downloadResourcesInForeground(3)
+    }
+
+    /**
+     *  Get resources download progress report.
+     **/
+    private fun getResourcesDownloadProgressReport() {
+        GlobalScope.launch(Dispatchers.IO) {
+            AHIMultiScan.areResourcesDownloaded { ahiResult ->
+                ahiResult.fold({
+                    if (it) {
+                        viewModel.setIsFinishedDownloadingResources(true)
+                        Log.d(TAG, "AHI: Resources ready\n")
+                    } else {
+                        Log.d(TAG, "AHI INFO: Resources are not downloaded\n")
+                        AHIMultiScan.delegateDownloadProgress = object : IAHIDownloadProgress {
+                            override fun downloadProgressReport(status: AHIResult<Unit>) {
+                                if (status.isFailure) {
+                                    Log.d(TAG, "AHI: Failed to download resources: ${status.error().toString()}")
+                                } else {
+                                    checkAHIResourcesDownloadSize()
+                                }
+                            }
+                        }
+                        downloadAHIResources()
+                    }
+                }, {
+                    Log.d(TAG, "AHI INFO: Resources download failed\n")
+                })
+            }
+        }
     }
 
     /** Check the size of the AHI resources that require downloading. */
     private fun checkAHIResourcesDownloadSize() {
         AHIMultiScan.totalEstimatedDownloadSizeInBytes {
-            it.fold({
-                Log.d(TAG, "AHI INFO: Size of download is ${it.progressBytes / 1024 / 1024} / ${it.totalBytes / 1024 / 1024}\n")
+            it.fold({ downloadState ->
+                val mB = 1024.0 * 1024.0
+                val progress = downloadState.progressBytes / mB
+                val total = downloadState.totalBytes / mB
+                if (progress == total) {
+                    viewModel.setIsFinishedDownloadingResources(true)
+                }
+                Log.d(TAG, "AHI INFO: Size of download is ${progress.format(2)}MB / ${total.format(2)}MB")
             }, {
                 Log.e(TAG, it.message.toString())
             })
@@ -549,4 +578,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             }
         }
     }
+
+    private fun Double.format(digits: Int) = "%.${digits}f".format(this)
 }
