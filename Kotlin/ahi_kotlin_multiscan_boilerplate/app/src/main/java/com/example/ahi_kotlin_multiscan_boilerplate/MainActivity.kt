@@ -126,9 +126,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun didTapDownloadResources() {
-        checkAHIResourcesDownloadSize()
-        downloadAHIResources()
-        areAHIResourcesAvailable()
+        getResourcesDownloadProgressReport()
     }
 
     /**
@@ -190,31 +188,53 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
      *  We recommend only calling this function once per session to prevent duplicate background resource calls.
      */
     private fun downloadAHIResources() {
-        AHIMultiScan.downloadResourcesInForeground()
+        AHIMultiScan.downloadResourcesInForeground(3)
+    }
+
+    /**
+     *  Get resources download progress report.
+     **/
+    private fun getResourcesDownloadProgressReport() {
+        GlobalScope.launch(Dispatchers.IO) {
+            AHIMultiScan.areResourcesDownloaded { ahiResult ->
+                ahiResult.fold({
+                    if (it) {
+                        viewModel.setIsFinishedDownloadingResources(true)
+                        Log.d(TAG, "AHI: Resources ready\n")
+                    } else {
+                        Log.d(TAG, "AHI INFO: Resources are not downloaded\n")
+                        AHIMultiScan.delegateDownloadProgress = object : IAHIDownloadProgress {
+                            override fun downloadProgressReport(status: AHIResult<Unit>) {
+                                if (status.isFailure) {
+                                    Log.d(TAG, "AHI: Failed to download resources: ${status.error().toString()}")
+                                } else {
+                                    checkAHIResourcesDownloadSize()
+                                }
+                            }
+                        }
+                        downloadAHIResources()
+                    }
+                }, {
+                    Log.d(TAG, "AHI INFO: Resources download failed\n")
+                })
+            }
+        }
     }
 
     /** Check the size of the AHI resources that require downloading. */
     private fun checkAHIResourcesDownloadSize() {
-        AHIMultiScan.delegateDownloadProgress = object : IAHIDownloadProgress {
-            override fun downloadProgressReport(status: AHIResult<Unit>) {
-                if(status.isFailure){
-                    Log.d(TAG, "AHI: Failed to download resources: ${status.error().toString()}")
-                }else {
-                    AHIMultiScan.totalEstimatedDownloadSizeInBytes {
-                        it.fold({downloadState->
-                            val mB = 1024.0 * 1024.0
-                            val progress = downloadState.progressBytes / mB
-                            val total = downloadState.totalBytes / mB
-                            if (progress == total) {
-                                viewModel.setIsFinishedDownloadingResources(true)
-                            }
-                            Log.d(TAG, "AHI INFO: Size of download is ${progress.format(2)}MB / ${total.format(2)}MB")
-                        }, {
-                            Log.e(TAG, it.message.toString())
-                        })
-                    }
+        AHIMultiScan.totalEstimatedDownloadSizeInBytes {
+            it.fold({ downloadState ->
+                val mB = 1024.0 * 1024.0
+                val progress = downloadState.progressBytes / mB
+                val total = downloadState.totalBytes / mB
+                if (progress == total) {
+                    viewModel.setIsFinishedDownloadingResources(true)
                 }
-            }
+                Log.d(TAG, "AHI INFO: Size of download is ${progress.format(2)}MB / ${total.format(2)}MB")
+            }, {
+                Log.e(TAG, it.message.toString())
+            })
         }
     }
 
