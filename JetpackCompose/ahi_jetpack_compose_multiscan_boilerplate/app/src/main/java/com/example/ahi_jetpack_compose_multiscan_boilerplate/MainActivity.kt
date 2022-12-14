@@ -51,7 +51,10 @@ import com.advancedhumanimaging.sdk.fingerscan.AHIFingerScanError
 import com.advancedhumanimaging.sdk.fingerscan.FingerScan
 import com.advancedhumanimaging.sdk.multiscan.AHIMultiScan
 import com.example.ahi_jetpack_compose_multiscan_boilerplate.viewmodel.MultiScanViewModel
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private const val TAG = "MainActivityAHI"
 const val PERMISSION_REQUEST_CODE = 111
@@ -199,9 +202,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun didTapDownloadResources() {
-        checkAHIResourcesDownloadSize()
-        downloadAHIResources()
-        areAHIResourcesAvailable()
+        getResourcesDownloadProgressReport()
     }
 
     /**
@@ -265,28 +266,50 @@ class MainActivity : ComponentActivity() {
         AHIMultiScan.downloadResourcesInForeground(3)
     }
 
+    /**
+     *  Get resources download progress report.
+     **/
+    private fun getResourcesDownloadProgressReport() {
+        GlobalScope.launch(Dispatchers.IO) {
+            AHIMultiScan.areResourcesDownloaded { ahiResult ->
+                ahiResult.fold({
+                    if (it) {
+                        viewModel.isFinishedDownloadingResourcesState.value = true
+                        Log.d(TAG, "AHI: Resources ready\n")
+                    } else {
+                        Log.d(TAG, "AHI INFO: Resources are not downloaded\n")
+                        AHIMultiScan.delegateDownloadProgress = object : IAHIDownloadProgress {
+                            override fun downloadProgressReport(status: AHIResult<Unit>) {
+                                if (status.isFailure) {
+                                    Log.d(TAG, "AHI: Failed to download resources: ${status.error().toString()}")
+                                } else {
+                                    checkAHIResourcesDownloadSize()
+                                }
+                            }
+                        }
+                        downloadAHIResources()
+                    }
+                }, {
+                    Log.d(TAG, "AHI INFO: Resources download failed\n")
+                })
+            }
+        }
+    }
+
     /** Check the size of the AHI resources that require downloading. */
     private fun checkAHIResourcesDownloadSize() {
-        AHIMultiScan.delegateDownloadProgress = object : IAHIDownloadProgress {
-            override fun downloadProgressReport(status: AHIResult<Unit>) {
-                if(status.isFailure){
-                    Log.d(TAG, "AHI: Failed to download resources: ${status.error().toString()}")
-                }else {
-                    AHIMultiScan.totalEstimatedDownloadSizeInBytes {
-                        it.fold({downloadState->
-                            val mB = 1024.0 * 1024.0
-                            val progress = downloadState.progressBytes / mB
-                            val total = downloadState.totalBytes / mB
-                            if (progress == total) {
-                                viewModel.isFinishedDownloadingResourcesState.value = true
-                            }
-                            Log.d(TAG, "AHI INFO: Size of download is ${progress.format(2)}MB / ${total.format(2)}MB")
-                        }, {
-                            Log.e(TAG, it.message.toString())
-                        })
-                    }
+        AHIMultiScan.totalEstimatedDownloadSizeInBytes {
+            it.fold({ downloadState ->
+                val mB = 1024.0 * 1024.0
+                val progress = downloadState.progressBytes / mB
+                val total = downloadState.totalBytes / mB
+                if (progress == total) {
+                    viewModel.isFinishedDownloadingResourcesState.value = true
                 }
-            }
+                Log.d(TAG, "AHI INFO: Size of download is ${progress.format(2)}MB / ${total.format(2)}MB")
+            }, {
+                Log.e(TAG, it.message.toString())
+            })
         }
     }
 
@@ -623,5 +646,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
     private fun Double.format(digits: Int) = "%.${digits}f".format(this)
 }
