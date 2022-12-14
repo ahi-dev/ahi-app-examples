@@ -41,6 +41,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.advancedhumanimaging.sdk.bodyscan.BodyScan
 import com.advancedhumanimaging.sdk.bodyscan.common.BodyScanError
+import com.advancedhumanimaging.sdk.common.IAHIDownloadProgress
 import com.advancedhumanimaging.sdk.common.IAHIPersistence
 import com.advancedhumanimaging.sdk.common.IAHIScan
 import com.advancedhumanimaging.sdk.common.models.AHIResult
@@ -50,7 +51,10 @@ import com.advancedhumanimaging.sdk.fingerscan.AHIFingerScanError
 import com.advancedhumanimaging.sdk.fingerscan.FingerScan
 import com.advancedhumanimaging.sdk.multiscan.AHIMultiScan
 import com.example.ahi_jetpack_compose_multiscan_boilerplate.viewmodel.MultiScanViewModel
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private const val TAG = "MainActivityAHI"
 const val PERMISSION_REQUEST_CODE = 111
@@ -76,7 +80,7 @@ class MainActivity : ComponentActivity() {
         val buttonHeight = 55.dp
         checkPermission()
         @Composable
-        fun defaultButton(buttonText: String, isEnabled: Boolean?, action: ()-> Unit) {
+        fun defaultButton(buttonText: String, isEnabled: Boolean?, action: () -> Unit) {
             Button(
                 colors = buttonColors(backgroundColor = Color.Black),
                 modifier = Modifier.height(buttonHeight),
@@ -198,9 +202,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun didTapDownloadResources() {
-        downloadAHIResources()
-        areAHIResourcesAvailable()
-        checkAHIResourcesDownloadSize()
+        getResourcesDownloadProgressReport()
     }
 
     /**
@@ -249,11 +251,6 @@ class MainActivity : ComponentActivity() {
                     Log.d(TAG, "AHI: Resources ready\n")
                 } else {
                     Log.d(TAG, "AHI INFO: Resources are not downloaded\n")
-                    GlobalScope.launch {
-                        delay(30000)
-                        checkAHIResourcesDownloadSize()
-                        areAHIResourcesAvailable()
-                    }
                 }
             }, {
                 Log.d(TAG, "AHI: Error in resource downloading \n")
@@ -266,14 +263,50 @@ class MainActivity : ComponentActivity() {
      *  We recommend only calling this function once per session to prevent duplicate background resource calls.
      */
     private fun downloadAHIResources() {
-        AHIMultiScan.downloadResourcesInForeground()
+        AHIMultiScan.downloadResourcesInForeground(3)
+    }
+
+    /**
+     *  Get resources download progress report.
+     **/
+    private fun getResourcesDownloadProgressReport() {
+        GlobalScope.launch(Dispatchers.IO) {
+            AHIMultiScan.areResourcesDownloaded { ahiResult ->
+                ahiResult.fold({
+                    if (it) {
+                        viewModel.isFinishedDownloadingResourcesState.value = true
+                        Log.d(TAG, "AHI: Resources ready\n")
+                    } else {
+                        Log.d(TAG, "AHI INFO: Resources are not downloaded\n")
+                        AHIMultiScan.delegateDownloadProgress = object : IAHIDownloadProgress {
+                            override fun downloadProgressReport(status: AHIResult<Unit>) {
+                                if (status.isFailure) {
+                                    Log.d(TAG, "AHI: Failed to download resources: ${status.error().toString()}")
+                                } else {
+                                    checkAHIResourcesDownloadSize()
+                                }
+                            }
+                        }
+                        downloadAHIResources()
+                    }
+                }, {
+                    Log.d(TAG, "AHI INFO: Resources download failed\n")
+                })
+            }
+        }
     }
 
     /** Check the size of the AHI resources that require downloading. */
     private fun checkAHIResourcesDownloadSize() {
         AHIMultiScan.totalEstimatedDownloadSizeInBytes {
-            it.fold({
-                Log.d(TAG, "AHI INFO: Size of download is ${it.progressBytes / 1024 / 1024} / ${it.totalBytes / 1024 / 1024}\n")
+            it.fold({ downloadState ->
+                val mB = 1024.0 * 1024.0
+                val progress = downloadState.progressBytes / mB
+                val total = downloadState.totalBytes / mB
+                if (progress == total) {
+                    viewModel.isFinishedDownloadingResourcesState.value = true
+                }
+                Log.d(TAG, "AHI INFO: Size of download is ${progress.format(2)}MB / ${total.format(2)}MB")
             }, {
                 Log.e(TAG, it.message.toString())
             })
@@ -388,7 +421,7 @@ class MainActivity : ComponentActivity() {
      *  The 3D mesh can be created and returned at any time.
      *  We recommend doing this on successful completion of a body scan with the results.
      */
-    private  fun getBodyScanExtras(result: Map<String, Any>) {
+    private fun getBodyScanExtras(result: Map<String, Any>) {
         val options = mapOf("extrapolate" to listOf("mesh"))
         AHIMultiScan.getScanExtra(result, options, completionBlock = {
             it.fold({
@@ -513,8 +546,8 @@ class MainActivity : ComponentActivity() {
      * */
     private fun areSharedScanConfigOptionsValid(avatarValues: java.util.HashMap<String, Any>): Boolean {
         val sex = avatarValues["enum_ent_sex"].takeIf { it is String }
-        val height = avatarValues["cm_ent_height"].takeIf { it is Double || it is Int}
-        val weight = avatarValues["kg_ent_weight"].takeIf { it is Double || it is Int}
+        val height = avatarValues["cm_ent_height"].takeIf { it is Double || it is Int }
+        val weight = avatarValues["kg_ent_weight"].takeIf { it is Double || it is Int }
         return if (sex != null && height != null && weight != null) {
             arrayListOf("male", "female").contains(sex)
         } else {
@@ -569,7 +602,7 @@ class MainActivity : ComponentActivity() {
         return (scanLength != null &&
                 instruction1 != null &&
                 instruction2 != null &&
-                scanLength >= 20 )
+                scanLength >= 20)
     }
 
     /**
@@ -598,7 +631,7 @@ class MainActivity : ComponentActivity() {
     private fun checkPermission() {
         if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.CAMERA)
             == PackageManager.PERMISSION_DENIED
-        ){
+        ) {
             requestPermissions(arrayOf(Manifest.permission.CAMERA), PERMISSION_REQUEST_CODE)
         }
     }
@@ -613,4 +646,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    private fun Double.format(digits: Int) = "%.${digits}f".format(this)
 }
