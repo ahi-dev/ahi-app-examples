@@ -27,6 +27,7 @@ import AHIFaceScan
 import AHIFingerScan
 
 private let CHANNEL = "ahi_multiscan_flutter_wrapper"
+private let EVENT_CHANNEL = "ahi_multiscan_flutter_event_channel"
 
 @UIApplicationMain
 @objc class AppDelegate: FlutterAppDelegate, FlutterStreamHandler {
@@ -69,7 +70,6 @@ private let CHANNEL = "ahi_multiscan_flutter_wrapper"
     /// Event sink used to send scan status events back to the Flutter code
     private var eventSink: FlutterEventSink?
     let multiScan = AHIMultiScanModule()
-    
     override func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -304,6 +304,7 @@ extension AHIMultiScanModule {
     ///
     /// We recomment only calling this function once per session to prevent duplicate background resource calls.
     fileprivate func downloadAHIResources() {
+        ahi.delegateDownloadProgress = self
         ahi.downloadResourcesInBackground()
     }
     
@@ -489,6 +490,28 @@ extension AHIMultiScanModule: AHIDelegatePersistence {
         completionBlock(nil, bodyScanResults)
     }
 }
+
+// MARK: - Download Progress report example
+extension AHIMultiScanModule:AHIDelegateDownloadProgress{
+    func downloadProgressReport(_ error: Error?) {
+        if(error != nil){
+            print("AHI: Download Failed.")
+            return
+        }
+        DispatchQueue.main.sync {
+            ahi.totalEstimatedDownloadSizeInBytes(){ bytes, totalBytes, error in
+                if(bytes>=totalBytes){
+                    print("AHI: INFO: Download Finished")
+                }else {
+                    let progress = bytes/1024/1024
+                    let total = totalBytes/1024/1024
+                    print("AHI: Download Size: \(progress) / \(total)")
+                }
+            }
+        }
+    }
+}
+
 
 // MARK: - Error Safety
 
