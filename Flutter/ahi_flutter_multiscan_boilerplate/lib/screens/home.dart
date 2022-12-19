@@ -72,22 +72,25 @@ class _HomeState extends State<Home> {
 
   didTapDownloadResources() {
     areAHIResourcesAvailable();
+
+    /// register download progress report's event observer
     event.receiveBroadcastStream().listen(getResourceDownloadProgressReport);
     downloadAHIResources();
   }
 
   void getResourceDownloadProgressReport(dynamic report) {
-    final progressReport = report.toString().split(':');
-    final progress = double.parse(progressReport[0]) / 1024 / 1024;
-    final total = double.parse(progressReport[1]) / 1024 / 1024;
     if (report.toString().contains('done')) {
       setState(() {
         _downloadResourcesButtonEnabled = false;
+        _resourcesAreAvailable = true;
       });
       print("AHI INFO: Download Finished");
     } else if (report.toString().contains('failed')) {
       print("AHI INFO: Download Failed");
     } else {
+      final progressReport = report.toString().split(':');
+      final progress = double.parse(progressReport[0]) / 1024 / 1024;
+      final total = double.parse(progressReport[1]) / 1024 / 1024;
       print(
           "AHI INFO: Size of Download is ${progress.toStringAsFixed(1)} / ${total.toStringAsFixed(1)}");
     }
@@ -152,11 +155,6 @@ class _HomeState extends State<Home> {
   void handleResourcesAvailable(bool resourcesAvailable) {
     if (!resourcesAvailable) {
       print("AHI INFO: Resources are not downloaded.");
-      // We recommend polling to check resource state.
-      Future.delayed(const Duration(milliseconds: 30000), () {
-        checkAHIResourcesDownloadSize();
-        areAHIResourcesAvailable();
-      });
       return;
     }
     setState(() {

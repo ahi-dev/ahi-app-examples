@@ -495,13 +495,13 @@ extension AHIMultiScanModule: AHIDelegatePersistence {
 extension AHIMultiScanModule:AHIDelegateDownloadProgress{
     func downloadProgressReport(_ error: Error?) {
         if(error != nil){
-            print("AHI: Download Failed.")
+            ((UIApplication.shared.delegate as? AppDelegate)?.eventSink?("failed"))
             return
         }
         DispatchQueue.main.sync {
             ahi.totalEstimatedDownloadSizeInBytes(){ bytes, totalBytes, error in
                 if(bytes>=totalBytes){
-                    print("AHI: INFO: Download Finished")
+                    ((UIApplication.shared.delegate as? AppDelegate)?.eventSink?("done"))
                 }else {
                     ((UIApplication.shared.delegate as? AppDelegate)?.eventSink?("\(bytes):\(totalBytes)"))
                 }
