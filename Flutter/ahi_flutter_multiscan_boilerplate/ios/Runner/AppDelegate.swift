@@ -68,7 +68,7 @@ private let EVENT_CHANNEL = "ahi_multiscan_flutter_event_channel"
     }
 
     /// Event sink used to send scan status events back to the Flutter code
-    private var eventSink: FlutterEventSink?
+    var eventSink: FlutterEventSink?
     let multiScan = AHIMultiScanModule()
     override func application(
         _ application: UIApplication,
@@ -93,7 +93,7 @@ extension AppDelegate {
     fileprivate func setupFlutter() {
         let controller: FlutterViewController = window?.rootViewController as! FlutterViewController
         let boilerPlateChannel = FlutterMethodChannel(name: CHANNEL, binaryMessenger: controller.binaryMessenger)
-        let eventBoilerPlateChannel = FlutterEventChannel(name: CHANNEL, binaryMessenger: controller.binaryMessenger)
+        let eventBoilerPlateChannel = FlutterEventChannel(name: EVENT_CHANNEL, binaryMessenger: controller.binaryMessenger)
         eventBoilerPlateChannel.setStreamHandler(self)
         boilerPlateChannel.setMethodCallHandler({
             [weak self] (call: FlutterMethodCall, resultHandler: @escaping FlutterResult) -> Void in
@@ -503,9 +503,7 @@ extension AHIMultiScanModule:AHIDelegateDownloadProgress{
                 if(bytes>=totalBytes){
                     print("AHI: INFO: Download Finished")
                 }else {
-                    let progress = bytes/1024/1024
-                    let total = totalBytes/1024/1024
-                    print("AHI: Download Size: \(progress) / \(total)")
+                    ((UIApplication.shared.delegate as? AppDelegate)?.eventSink?("\(bytes):\(totalBytes)"))
                 }
             }
         }
