@@ -1,13 +1,16 @@
 PODS:
-  - AHIMultiScan (21.1.3):
-    - Bolts
-    - MyFiziqSDKCommon (~> 21.1.2)
-  - Bolts (1.9.1):
-    - Bolts/AppLinks (= 1.9.1)
-    - Bolts/Tasks (= 1.9.1)
-  - Bolts/AppLinks (1.9.1):
-    - Bolts/Tasks
-  - Bolts/Tasks (1.9.1)
+  - AHIBodyScan (22.1.1942):
+    - AHICommon (~> 22.1.0)
+    - AHIOpenCV
+  - AHICommon (22.1.1167)
+  - AHIFaceScan (22.1.1131):
+    - AHICommon (~> 22.1.0)
+    - AHIOpenCV
+  - AHIFingerScan (22.1.193):
+    - AHICommon (~> 22.1.0)
+  - AHIMultiScan (22.1.1075):
+    - AHICommon (~> 22.1.0)
+  - AHIOpenCV (4.5.1)
   - boost (1.76.0)
   - DoubleConversion (1.1.6)
   - FBLazyVector (0.68.0)
@@ -19,23 +22,7 @@ PODS:
     - React-jsi (= 0.68.0)
     - ReactCommon/turbomodule/core (= 0.68.0)
   - fmt (6.2.1)
-  - GBDeviceInfo (6.7.0):
-    - GBDeviceInfo/Core (= 6.7.0)
-  - GBDeviceInfo/Core (6.7.0)
   - glog (0.3.5)
-  - MFZFaceScan (21.1.3):
-    - MyFiziqSDKCommon (~> 21.1.1)
-    - OpenCV
-  - MyFaCSS (19.1.6)
-  - MyFiziqSDKCommon (21.1.2):
-    - Bolts
-    - GBDeviceInfo (~> 6.5)
-    - MyFaCSS (~> 19.1.5)
-    - PureLayout
-  - MyFiziqSDKCoreLite (21.1.3):
-    - MyFiziqSDKCommon
-  - OpenCV (4.3.0)
-  - PureLayout (3.1.9)
   - RCT-Folly (2021.06.28.00-v2):
     - boost
     - DoubleConversion
@@ -311,14 +298,15 @@ PODS:
   - Yoga (1.14.0)
 
 DEPENDENCIES:
-  - AHIMultiScan (~> 21.1.3)
+  - AHIBodyScan (~> 22.0)
+  - AHIFaceScan (~> 22.0)
+  - AHIFingerScan (~> 22.0)
+  - AHIMultiScan (~> 22.0)
   - boost (from `../node_modules/react-native/third-party-podspecs/boost.podspec`)
   - DoubleConversion (from `../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - FBReactNativeSpec (from `../node_modules/react-native/React/FBReactNativeSpec`)
   - glog (from `../node_modules/react-native/third-party-podspecs/glog.podspec`)
-  - MFZFaceScan (~> 21.1.3)
-  - MyFiziqSDKCoreLite (~> 21.1.3)
   - RCT-Folly (from `../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
   - RCTRequired (from `../node_modules/react-native/Libraries/RCTRequired`)
   - RCTTypeSafety (from `../node_modules/react-native/Libraries/TypeSafety`)
@@ -349,18 +337,15 @@ DEPENDENCIES:
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
-  https://git-codecommit.ap-southeast-1.amazonaws.com/v1/repos/myfiziq-sdk-podrepo:
+  https://github.com/ahi-dev/ahi-pod-ios-cocoapods-dev.git:
+    - AHIBodyScan
+    - AHICommon
+    - AHIFaceScan
+    - AHIFingerScan
     - AHIMultiScan
-    - MFZFaceScan
-    - MyFaCSS
-    - MyFiziqSDKCommon
-    - MyFiziqSDKCoreLite
-  https://github.com/CocoaPods/Specs.git:
-    - Bolts
+    - AHIOpenCV
+  trunk:
     - fmt
-    - GBDeviceInfo
-    - OpenCV
-    - PureLayout
 
 EXTERNAL SOURCES:
   boost:
@@ -427,21 +412,18 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  AHIMultiScan: 5e086db7395476290df8c170a2ca590c286a5f87
-  Bolts: 8c1e8aab2f603387b8b9924f57d1d64f43d3ffdc
+  AHIBodyScan: 844bb4b40e265ee723d1f06432480d42966db385
+  AHICommon: 23c1fea45fefb64140e93bb3eb90c0ce82ab9582
+  AHIFaceScan: a2662017a6b3282322d792f7ded2faf3c0d6e527
+  AHIFingerScan: 71943b5ab2fe0a3d783ae8c15bffaf6254ccdbce
+  AHIMultiScan: 33cc09dc76cdb38e26cd0501b7ab9c9af0dab588
+  AHIOpenCV: fd0ebbf0a77743b2380c13734b140aa5c44505ec
   boost: a7c83b31436843459a1961bfd74b96033dc77234
   DoubleConversion: 831926d9b8bf8166fd87886c4abab286c2422662
   FBLazyVector: d2fd875e2b24bbc350722df0df9d383cb891b9f2
   FBReactNativeSpec: 7493e074a31512df3253160059295264a84b8149
   fmt: ff9d55029c625d3757ed641535fd4a75fedc7ce9
-  GBDeviceInfo: c1a46e3fe1b5406a0ebaa60f8a871cfed9da9a42
   glog: 476ee3e89abb49e07f822b48323c51c57124b572
-  MFZFaceScan: 2b14a76cf6b1804029da76b3bfcbca13daaa62da
-  MyFaCSS: 80be5c5156037f4de0277fc316ded7773417d2c8
-  MyFiziqSDKCommon: 783e08ce5859d9a616d36e418a05325d98d1be8f
-  MyFiziqSDKCoreLite: e2c59b0598be82a69274bdbaf39eb7452485fd7b
-  OpenCV: 681e0451c1e54c5930a8922277f817ed5d5ab459
-  PureLayout: 5fb5e5429519627d60d079ccb1eaa7265ce7cf88
   RCT-Folly: 4d8508a426467c48885f1151029bc15fa5d7b3b8
   RCTRequired: bab4a7c3d7eb9553b13773ee190f279712efd1fc
   RCTTypeSafety: efbeb6e450ff6cef8e19c2cb5314c6d8bfeeef77
@@ -469,6 +451,6 @@ SPEC CHECKSUMS:
   ReactCommon: fab89a13b52f1ac42b59a0e4b4f76f21aea9eebe
   Yoga: 6671cf077f614314c22fd09ddf87d7abeee64e96
 
-PODFILE CHECKSUM: 9bd5049c03f45d52e3179b88882819f0a6e4f61e
+PODFILE CHECKSUM: e96d965eb67c560741e5bed74376017ce82fb325
 
 COCOAPODS: 1.11.2

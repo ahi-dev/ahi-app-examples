@@ -316,6 +316,30 @@ extension MultiScanModule {
         ahi.delegatePersistence = self
         bodyScanResults = bsResults
     }
+    @objc
+    func getResourcesDownloadProgressReport(){
+        ahi.delegateDownloadProgress = self
+    }
+}
+
+extension MultiScanModule: AHIDelegateDownloadProgress {
+    func downloadProgressReport(_ error: Error?) {
+        if((error) != nil){
+            print("AHI: Download Failed.")
+            return
+        }
+        DispatchQueue.main.sync {
+            ahi.totalEstimatedDownloadSizeInBytes(){ bytes, totalBytes, error in
+                if(bytes>=totalBytes){
+                    print("AHI: INFO: Download Finished.")
+                }else{
+                    let progress = bytes/1024/1024
+                    let total = totalBytes/1024/1024
+                    print("AHI: Download Size: \(progress) / \(total)")
+                }
+            }
+        }
+    }
 }
 
 extension MultiScanModule: AHIDelegatePersistence {
