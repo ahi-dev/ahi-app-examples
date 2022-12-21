@@ -27,6 +27,7 @@ import AHIFaceScan
 import AHIFingerScan
 
 private let CHANNEL = "ahi_multiscan_flutter_wrapper"
+private let EVENT_CHANNEL = "ahi_multiscan_flutter_event_channel"
 
 @UIApplicationMain
 @objc class AppDelegate: FlutterAppDelegate, FlutterStreamHandler {
@@ -67,9 +68,8 @@ private let CHANNEL = "ahi_multiscan_flutter_wrapper"
     }
 
     /// Event sink used to send scan status events back to the Flutter code
-    private var eventSink: FlutterEventSink?
-    let multiScan = AHIMultiScanModule()
-    
+    fileprivate var eventSink: FlutterEventSink?
+    fileprivate let multiScan = AHIMultiScanModule()
     override func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -93,7 +93,7 @@ extension AppDelegate {
     fileprivate func setupFlutter() {
         let controller: FlutterViewController = window?.rootViewController as! FlutterViewController
         let boilerPlateChannel = FlutterMethodChannel(name: CHANNEL, binaryMessenger: controller.binaryMessenger)
-        let eventBoilerPlateChannel = FlutterEventChannel(name: CHANNEL, binaryMessenger: controller.binaryMessenger)
+        let eventBoilerPlateChannel = FlutterEventChannel(name: EVENT_CHANNEL, binaryMessenger: controller.binaryMessenger)
         eventBoilerPlateChannel.setStreamHandler(self)
         boilerPlateChannel.setMethodCallHandler({
             [weak self] (call: FlutterMethodCall, resultHandler: @escaping FlutterResult) -> Void in
@@ -230,7 +230,7 @@ extension AppDelegate {
 
 // MARK: - AHI MultiScan Module
 
-class AHIMultiScanModule: NSObject {
+private class AHIMultiScanModule: NSObject {
     
     // MARK: Scan Instances
     
@@ -304,6 +304,7 @@ extension AHIMultiScanModule {
     ///
     /// We recomment only calling this function once per session to prevent duplicate background resource calls.
     fileprivate func downloadAHIResources() {
+        ahi.delegateDownloadProgress = self
         ahi.downloadResourcesInBackground()
     }
     
@@ -489,6 +490,26 @@ extension AHIMultiScanModule: AHIDelegatePersistence {
         completionBlock(nil, bodyScanResults)
     }
 }
+
+// MARK: - Download Progress report example
+extension AHIMultiScanModule:AHIDelegateDownloadProgress{
+    func downloadProgressReport(_ error: Error?) {
+        if(error != nil){
+            ((UIApplication.shared.delegate as? AppDelegate)?.eventSink?("failed"))
+            return
+        }
+        DispatchQueue.main.sync {
+            ahi.totalEstimatedDownloadSizeInBytes(){ bytes, totalBytes, error in
+                if(bytes>=totalBytes){
+                    ((UIApplication.shared.delegate as? AppDelegate)?.eventSink?("done"))
+                }else {
+                    ((UIApplication.shared.delegate as? AppDelegate)?.eventSink?("\(bytes):\(totalBytes)"))
+                }
+            }
+        }
+    }
+}
+
 
 // MARK: - Error Safety
 
