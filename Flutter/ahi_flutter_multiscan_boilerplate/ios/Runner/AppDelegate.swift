@@ -68,8 +68,8 @@ private let EVENT_CHANNEL = "ahi_multiscan_flutter_event_channel"
     }
 
     /// Event sink used to send scan status events back to the Flutter code
-    var eventSink: FlutterEventSink?
-    let multiScan = AHIMultiScanModule()
+    fileprivate var eventSink: FlutterEventSink?
+    fileprivate let multiScan = AHIMultiScanModule()
     override func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -230,7 +230,7 @@ extension AppDelegate {
 
 // MARK: - AHI MultiScan Module
 
-class AHIMultiScanModule: NSObject {
+private class AHIMultiScanModule: NSObject {
     
     // MARK: Scan Instances
     
