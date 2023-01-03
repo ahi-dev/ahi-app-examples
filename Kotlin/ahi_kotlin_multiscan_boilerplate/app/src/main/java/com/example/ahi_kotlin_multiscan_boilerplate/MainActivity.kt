@@ -448,7 +448,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             "cm_raw_thigh",
             "cm_raw_waist",
             "kg_raw_weightPredict",
-            "ml_raw_fitness",
+            "ml_gen_fitness",
             "percent_raw_bodyFat",
             "id",
             "date"
