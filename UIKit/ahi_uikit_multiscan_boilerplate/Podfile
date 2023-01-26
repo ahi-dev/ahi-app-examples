@@ -1,8 +1,8 @@
+source 'https://git-codecommit.ap-southeast-2.amazonaws.com/v1/repos/ahi-pod-ios-cocoapods'
 source 'https://cdn.cocoapods.org/'
-source 'https://github.com/ahi-dev/ahi-pod-ios-cocoapods-dev.git'
-#source 'https://git-codecommit.ap-southeast-2.amazonaws.com/v1/repos/ahi-pod-ios-cocoapods'
 
 platform :ios, '15.4'
+
 
 target 'ahi_uikit_multiscan_boilerplate' do
   # Comment the next line if you don't want to use dynamic frameworks
@@ -13,6 +13,4 @@ target 'ahi_uikit_multiscan_boilerplate' do
   pod 'AHIBodyScan', '~> 22.0'
   pod 'AHIFaceScan', '~> 22.0'
   pod 'AHIFingerScan', '~> 22.0'
-  
-
 end

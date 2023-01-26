@@ -87,6 +87,9 @@ RCT_EXTERN_METHOD(
 RCT_EXTERN_METHOD(
                   setMultiScanPersistenceDelegate:(id)results
                   )
+RCT_EXTERN_METHOD(
+                  getResourcesDownloadProgressReport
+                  )
 
 
 @end

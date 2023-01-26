@@ -63,12 +63,5 @@ allprojects {
                 secretKey "$DEV_SECRET"
             }
         }
-        maven {
-            url 's3://ahi-dev-sdk-builds/android'
-            credentials(AwsCredentials) {
-                accessKey "$DEV_ACCESS_KEY"
-                secretKey "$DEV_SECRET"
-            }
-        }
     }
 }
