@@ -24,6 +24,9 @@ You can review the integrations for the following:
 ### iOS and Android - Flutter
 [Flutter integration](Flutter/README.md)
 
+### Web - JavaScript
+[Web integration](Web/README.md)
+
 ## Support
 Contact support@ahi.tech for more information. 
 
