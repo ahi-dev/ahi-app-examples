@@ -1,0 +1,126 @@
+button,
+fieldset,
+input,
+legend,
+select,
+textarea {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+input,
+select,
+textarea {
+  border: 2px solid #333;
+  background-color: white;
+  border-radius: 0.25rem;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px hsl(213, 90%, 70%);
+}
+
+input[type="text"],
+input[type="email"],
+input[type="number"],
+select,
+textarea {
+  font: 1rem / 1.5 sans-serif;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+}
+
+textarea {
+  min-height: 10rem;
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+  height: 1.5em;
+  width: 1.5em;
+  vertical-align: middle;
+}
+
+input[type="radio"] {
+  border-radius: 50%;
+}
+
+input[type="radio"]:checked {
+  background-image: radial-gradient(
+    hsl(213, 73%, 50%) 40%,
+    transparent calc(40% + 1px)
+  );
+}
+
+button {
+  font: 1.25rem sans-serif;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  padding: 0.75rem 1.25rem;
+}
+
+button:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px black;
+}
+
+button[type="submit"] {
+  background-color: hsl(213, 73%, 50%);
+  color: white;
+}
+
+button[type="submit"]:hover {
+  background-color: hsl(213, 73%, 40%);
+}
+
+body {
+  margin: 0;
+  background-color: hsl(0, 0%, 98%);
+  color: #333;
+  font: 100% / normal sans-serif;
+}
+
+main {
+  margin: 0 auto;
+  width: 100%;
+  min-width: 280px;
+  max-width: 600px;
+}
+
+form {
+  box-sizing: border-box;
+  padding: 2rem;
+  border-radius: 1rem;
+  background-color: hsl(0, 0%, 100%);
+  border: 4px solid hsl(0, 0%, 90%);
+}
+
+form > div {
+  margin-bottom: 1rem;
+}
+
+label,
+legend {
+  display: inline-block;
+  font: 1.1rem sans-serif;
+  color: hsl(213, 73%, 50%);
+  margin-bottom: 0.5rem;
+}
+
+.full-width {
+  grid-column: span 2;
+}
+
+option {
+  color: black;
+}
+
+option:first-child {
+  color: rgb(224, 20, 20) !important;
+}
