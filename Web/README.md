@@ -15,24 +15,27 @@ You will need:
 - a web server,
 - a web browser
 
-## Set-up
+## Prepare
 
 To get started we will create several files called in our development folder:
-- `index.html`
-- `styles.css`
-- `indexscript.js`
+- `index.html`to create form input page - **instructions not provided**
+- `indexscript.js` to setup and initialize MultiScan
+- `styles.css` for styling - **instructions not provided**
+- `results.html` to handle scan results passed back from MultiScan SDK
+- `resultsScript.js` to create results page - **instructions not provided**
 
-Our initial plan is as follows:
-- Add scripts to `index.html`.
-- Create a HTML form.
-- Add basic styling.
-- Test and get ready to handle results.
+**Note:** Refer to FaceScan Schemas to view the user input requirements for the form page.
 
-## Adding Scripts
+#### There are three parts to implementing MultiScan Web SDK:
+1. Setting up the system
+2. Initializing the service
+3. Handling the results
 
-The AHI Web MultiScan has two components. Setting up the system, and submitting to the service.
+The form input and results display pages are not a part of this SDK. We recommend that developers build these pages according to their use case and include a scan guide for users to achieve best results.
 
-In the first instance we will configure our code to call the AHI service and set-up MultiScan. This is done by adding the following code before the closing `BODY` tag.
+## 1. Setup MultiScan SDK
+
+In the first instance we will configure our code to call the AHI service and set-up MultiScan. This is done by adding the following code to `index.html` before the closing `BODY` tag
 
 ```html
 <script
@@ -48,7 +51,7 @@ In the first instance we will configure our code to call the AHI service and set
 
 ```javascript
 /**
- * Initializes the AHIMultiScan object and authorizes the user for SDKTEST with an empty permissions array.
+ * Initializes the AHIMultiScan object and authorizes the user.
  * @returns {Promise} A Promise that resolves when the setup and authorization are successful, and 
  * rejects if there's an error.
  */
@@ -78,9 +81,9 @@ function initScan() {
 }
 ```
 
-The above code requires that you add a `<token>` to the MultiScan setup (provided by AHI to the client developer). It also requires that the `<user_id>` and `<salt>` values be supplied, with optional set of `<claims>`. 
+The above code requires that you add a `<TOKEN>` to the MultiScan set up.Please ensure that you have a valid MultiScan token prior to continuing. If you do not have a token please contact AHI via your primary contact to arrange.It also requires that you supply: `<userID>`, `<salt>`, and `<claims>`.  
 
-Details on the requirements for these fields can be found [here](https://ref.advancedhumanimaging.io/js/ahi/AHIMultiScan.html#userAuthorize).
+Details on the authorization requirements for these fields can be found [here](https://ref.advancedhumanimaging.io/js/ahi/AHIMultiScan.html#userAuthorize).
 
 
 An example may look like:
@@ -118,19 +121,19 @@ Therefore Authenication is left as an exercise for the developer in this example
 
 If you do not have a token please contact AHI via your primary contact to arrange.
 
-## Initialize Scan
+## 2. Initialize Scan
 
 One you have a MultiScan Object and your user is authorised you are ready to initialize a FaceScan.
 
-FaceScan has a set of requirements that need to be adhered to in order for a successful Scan session. The following schema specifies the expected parameters that the App must pass to MultiScan `initiateScan()` method: [MultiScan SDK FaceScan Schema](https://docs.advancedhumanimaging.io/v22.0/Reference/SDK/FaceScan/Schemas/).
+FaceScan has a set of requirements that need to be adhered to in order for a successful Scan session. The following schema specifies the expected parameters that the App must pass to MultiScan `initiateScan()` method: [FaceScan Schema - Input](https://www.ahi.tech/knowledge-base/facescan-v22-0-schemas).
 
-### Note to Devleoper: Validation
+#### Validation
 
 It is important to note that the schema gives the type and validation rules required for each field.
 
 Implementing the validation for these requirements is left to the developer for a production system. For our didactical example we will use HTML5's built in validation. We recommend you do not solely rely on this method and implement additional validation as per your preferred framework.
 
-## Submitting Form
+#### Submitting Form
 
 To initalise the form an `onSubmit` action will need to be added.
 
@@ -158,13 +161,13 @@ To initalise the form an `onSubmit` action will need to be added.
       placeholder="Enter your current age in years"
     />
   </div>
-  <!-- ... form code ... -->
+  <!-- ... remaining form code ... -->
 </form>
 ```
 
 In this instance we call `postValidateForm` as we want to satisfy the `MIN` / `MAX` requirements for BMI in the schema. As we can't easily achieve this using the HTML5 validation we call our own custom code.
 
-`postValidateForm` pulls validated **height** and **weight** values from the form to calculate BMI. If this is not within range it will alert the user.
+Add the custom code for `postValidateForm` function to `indexscript.js`. This is for example purposes and we recommend that the developer implement validation according to their own use case and error messaging system as required.
 
 ```javascript
 /**
@@ -202,11 +205,11 @@ function isBMIValid(weight, height) {
 }
 ```
 
-Again, this is didactical and we recommend that the developer implement validation according to their own use case and error messaging system as required.
+`postValidateForm` pulls validated **height** and **weight** values from the form to calculate BMI. If this is not within range it will alert the user.
 
 If the form passes all validation tests then `callScan(event)` is actioned.
 
-## Web Measurement Service
+#### Web Measurement Service
 
 If form validation is successful, the `callScan()` method includes all the params we need to conduct a successful FaceScan.
 
@@ -223,6 +226,15 @@ const params = {
     bloodPressureMedicationInput.value === "yes",
   enum_ent_diabetic: diabeticInput.value,
 };
+  try {
+    const stringifyParams = JSON.stringify(params);
+    // Call the FaceScan
+    multi.initiateScan("face", stringifyParams);
+  } catch (error) {
+    console.error("[Scan] An Error occurred:", error);
+    throw new Error(error.message);
+  }
+ }
 ```
 
 It is important to note that `params` contains a callback url key `cb` in addition to the metrics required for the scan.
@@ -235,9 +247,13 @@ Assuming the process is successful we will expect a callback from the service.
 
 ## Handling Results
 
+See [FaceScan Schema - Output](https://www.ahi.tech/knowledge-base/facescan-v22-0-schemas)
+
 Scan results are returned as a Base64 queryString within the URL.
 
-The results page in the demo simply iterates through the returned results and outputs them to the page. Extrapolating the results and interpreting them is left as an exercise for the developer.
+The developer has to extrapolate and intepret these raw outputs according to their needs.
+
+The sample code below is added to `resultsScript.js`. It simply iterates through the returned results and outputs them to the page.
 
 ```javascript
 /**
@@ -269,8 +285,8 @@ for (const [property, value] of Object.entries(JSON.parse(scanResult))) {
 document.querySelector("#JSONResults").appendChild(resultList);
 ```
 
-### Example Demo
+## Demo
 
-With the above information you should have the core knowledge to work with MultiScan Web and build interfaces that work with various frameworks as required.
+View the AHI styled demo for an example of the full FaceScan Web process. 
 
 [Live Demo](https://ahi-lab.github.io/ahi-app-web/)
