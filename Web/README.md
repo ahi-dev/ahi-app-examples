@@ -18,11 +18,11 @@ You will need:
 ## Prepare
 
 To get started we will create several files called in our development folder:
-- `index.html`to create form input page - **instructions not provided**
+- `index.html`to create form input page - ***instructions not provided***
 - `indexscript.js` to setup and initialize MultiScan
-- `styles.css` for styling - **instructions not provided**
+- `styles.css` for styling - ***instructions not provided***
 - `results.html` to handle scan results passed back from MultiScan SDK
-- `resultsScript.js` to create results page - **instructions not provided**
+- `resultsScript.js` to create results page - ***instructions not provided***
 
 **Note:** Refer to FaceScan Schemas to view the user input requirements for the form page.
 
