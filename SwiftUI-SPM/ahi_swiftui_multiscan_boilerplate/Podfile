@@ -1,0 +1,16 @@
+source 'https://git-codecommit.ap-southeast-2.amazonaws.com/v1/repos/ahi-pod-ios-cocoapods'
+source 'https://cdn.cocoapods.org/'
+
+platform :ios, '15.4'
+
+
+target 'ahi_swiftui_multiscan_boilerplate' do
+  # Comment the next line if you don't want to use dynamic frameworks
+  use_frameworks!
+
+  # Pods for ahi_swiftui_multiscan_boilerplate
+  pod 'AHIMultiScan', '~> 22.0'
+  pod 'AHIBodyScan', '~> 22.0'
+  pod 'AHIFaceScan', '~> 22.0'
+  pod 'AHIFingerScan', '~> 22.0'
+end

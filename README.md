@@ -9,8 +9,11 @@ You can review the integrations for the following:
 ### iOS App - UIKit
 [UIKit integration](UIKit/README.md)
 
-### iOS App - SwiftUI
-[SwiftUI integration](SwiftUI/README.md)
+### iOS App - SwiftUI - CocoaPods
+[SwiftUI integration](SwiftUI-CocoaPods/README.md)
+
+### iOS App - SwiftUI - Swift Package Manager
+[SwiftUI integration](SwiftUI-SPM/README.md)
 
 ### Android App - Kotlin 
 [Kotlin integration](Kotlin/README.md)
