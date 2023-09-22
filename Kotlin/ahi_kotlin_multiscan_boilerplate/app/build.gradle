@@ -52,9 +52,9 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.4'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.0'
 
-    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-multiscan:22.0.+'
-    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-facescan:22.0.+'
-    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-fingerscan:22.0.+'
-    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-bodyscan:22.0.+'
+    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-multiscan:23.8.+'
+    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-facescan:23.8.+'
+    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-fingerscan:23.8.+'
+    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-bodyscan:23.8.+'
 //
 }

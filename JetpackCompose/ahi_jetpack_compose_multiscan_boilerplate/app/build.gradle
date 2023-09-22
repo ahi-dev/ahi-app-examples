@@ -69,7 +69,7 @@ dependencies {
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
     // AHI SDK
-    def AHISdkVersion = '22.0.+'
+    def AHISdkVersion = '23.8.+'
     implementation "com.advancedhumanimaging.sdk:ahi-sdk-multiscan:$AHISdkVersion"
     implementation "com.advancedhumanimaging.sdk:ahi-sdk-facescan:$AHISdkVersion"
     implementation "com.advancedhumanimaging.sdk:ahi-sdk-fingerscan:$AHISdkVersion"

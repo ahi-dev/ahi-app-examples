@@ -367,8 +367,8 @@
 			repositoryURL = "https://git-codecommit.ap-southeast-2.amazonaws.com/v1/repos/ahi-pod-ios-multiscan";
 			requirement = {
 				kind = versionRange;
-				maximumVersion = 22.1.0;
-				minimumVersion = 22.0.0;
+				maximumVersion = 23.9.0;
+				minimumVersion = 23.8.0;
 			};
 		};
 		D9439ED52ABC3D2A00888165 /* XCRemoteSwiftPackageReference "ahi-pod-ios-facescan" */ = {
@@ -376,8 +376,8 @@
 			repositoryURL = "https://git-codecommit.ap-southeast-2.amazonaws.com/v1/repos/ahi-pod-ios-facescan";
 			requirement = {
 				kind = versionRange;
-				maximumVersion = 22.1.0;
-				minimumVersion = 22.0.0;
+				maximumVersion = 23.9.0;
+				minimumVersion = 23.8.0;
 			};
 		};
 		D9439ED62ABC3DBF00888165 /* XCRemoteSwiftPackageReference "ahi-pod-ios-fingerscan" */ = {
@@ -385,8 +385,8 @@
 			repositoryURL = "https://git-codecommit.ap-southeast-2.amazonaws.com/v1/repos/ahi-pod-ios-fingerscan";
 			requirement = {
 				kind = versionRange;
-				maximumVersion = 22.1.0;
-				minimumVersion = 22.0.0;
+				maximumVersion = 23.9.0;
+				minimumVersion = 23.8.0;
 			};
 		};
 		D9439ED92ABC3DE400888165 /* XCRemoteSwiftPackageReference "ahi-pod-ios-bodyscan" */ = {
@@ -394,8 +394,8 @@
 			repositoryURL = "https://git-codecommit.ap-southeast-2.amazonaws.com/v1/repos/ahi-pod-ios-bodyscan";
 			requirement = {
 				kind = versionRange;
-				maximumVersion = 22.1.0;
-				minimumVersion = 22.0.0;
+				maximumVersion = 23.9.0;
+				minimumVersion = 23.8.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
