@@ -3,6 +3,10 @@ We have developed several apps with identical UI and functionality, for both iOS
 
 You can find a guide about using the Example Apps to demonstrate how to seamlessly integrate into your product on our [Developer Docs site](https://docs.advancedhumanimaging.io/).
 
+### Changelog
+
+- Updates for Xcode 15.0
+
 ## Integrations
 You can review the integrations for the following:
 

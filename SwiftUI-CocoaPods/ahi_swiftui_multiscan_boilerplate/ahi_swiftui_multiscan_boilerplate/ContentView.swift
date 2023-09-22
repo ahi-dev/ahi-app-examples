@@ -77,7 +77,7 @@ struct ContentView: View {
                     didTapDownloadResources()
                 }
             }, label: {
-                Text(multiScan.isFinishedDownloadingResources ? "Start BodyScan" : "Download Resources")
+                Text(multiScan.isFinishedDownloadingResources ? "Start BodyScan" : "Download BodyScan")
                     .foregroundColor(Color.white)
                     .frame(maxWidth: .infinity)
             })
@@ -201,9 +201,11 @@ extension AHISDKManager {
     fileprivate func areAHIResourcesAvailable() {
         ahi.areResourcesDownloaded { [weak self] success, error in
             if !success {
-                print("AHI INFO: Resources are not downloaded, Error: \(error)")
-                self?.isDownloadInProgress = true
+                print("AHI INFO: Resources are not downloaded, Error: \(String(describing: error))")
                 weak var weakSelf = self
+                DispatchQueue.main.async {
+                    weakSelf?.isDownloadInProgress = true
+                }
                 // We recommend polling to check resource state.
                 // This is a simple example of how.
                 DispatchQueue.main.asyncAfter(deadline: .now() + 30.0) {
