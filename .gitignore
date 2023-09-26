@@ -10,3 +10,6 @@ Swift/ahi_uikit_multiscan_boilerplate/ahi_uikit_multiscan_boilerplate.xcworkspac
 Swift/ahi_uikit_multiscan_boilerplate/ahi_uikit_multiscan_boilerplate.xcodeproj/project.xcworkspace/xcuserdata
 Swift/ahi_uikit_multiscan_boilerplate/ahi_uikit_multiscan_boilerplate.xcodeproj/project.xcworkspace/xcshareddata
 VERSION.txt
+Podfile.lock
+Pods/
+xcuserdata/

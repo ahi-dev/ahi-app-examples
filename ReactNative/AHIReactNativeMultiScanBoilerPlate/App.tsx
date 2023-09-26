@@ -15,10 +15,13 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-import React, {useState} from 'react';
-import type {ReactNode} from 'react';
+import React, { useState } from 'react';
+import type { ReactNode } from 'react';
 import MultiScanModule from './Modules/MultiScanModule';
 import {
+  Button,
+  PermissionsAndroid,
+  StatusBar,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -26,6 +29,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  DeviceEventEmitter,
 } from 'react-native';
 
 /** The required tokens for the MultiScan Setup and Authorization. */
@@ -71,6 +75,8 @@ const App: () => ReactNode = () => {
     checkAHIResourcesDownloadSize();
   }
 
+  requestCameraPermission();
+
   /**
    * Setup the MultiScan SDK
    *
@@ -84,7 +90,6 @@ const App: () => ReactNode = () => {
         if (result !== '') {
           return;
         }
-        setIsSDKSetup(true);
         authorizeUser();
       })
       .catch(error => {
@@ -112,6 +117,7 @@ const App: () => ReactNode = () => {
           );
           return;
         }
+        setIsSDKSetup(true);
         console.log('AHI: Setup user successfully');
       })
       .catch(error => {
@@ -161,6 +167,7 @@ const App: () => ReactNode = () => {
     MultiScanModule.checkAHIResourcesDownloadSize().then((size: any) => {
       console.log(
         'AHI INFO: Size of download is ' + Number(size) / 1024 / 1024,
+        // 'AHI INFO: Size of download is ' + size,
       );
     });
   }
@@ -289,7 +296,7 @@ const App: () => ReactNode = () => {
         console.log('AHI ERROR: deAuthorizeUser ', error);
       });
   }
-  
+
   /**
    * Release the MultiScan SDK session.
    *
@@ -507,6 +514,29 @@ const App: () => ReactNode = () => {
   );
 };
 
+const requestCameraPermission = async () => {
+  try {
+    const granted = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.CAMERA,
+      {
+        title: "Camera Permission",
+        message:
+          "All scans need to granted permission",
+        buttonNeutral: "Ask Me Later",
+        buttonNegative: "Cancel",
+        buttonPositive: "OK"
+      }
+    );
+    if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+      console.log("You can use the camera");
+    } else {
+      console.log("Camera permission denied");
+    }
+  } catch (err) {
+    console.warn(err);
+  }
+};
+
 const styles = StyleSheet.create({
   button: {
     flex: 1,
@@ -524,7 +554,7 @@ const styles = StyleSheet.create({
 
 export default App;
 
-const DefaultButton = ({action, buttonText}: any) => {
+const DefaultButton = ({ action, buttonText }: any) => {
   return (
     <TouchableOpacity onPress={action} style={styles.button}>
       <Text style={styles.text}>{buttonText}</Text>

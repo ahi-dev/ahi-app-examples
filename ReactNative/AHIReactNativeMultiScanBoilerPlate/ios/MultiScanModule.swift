@@ -209,6 +209,8 @@ extension MultiScanModule {
                 reject("-10", "No body scan extras available.", "" as? Error)
                 return
             }
+            
+//        TODO: get mesh
             var bsExtras = [String: String]()
             if let meshURL = extras["meshURL"] as? URL {
                 bsExtras["meshURL"] = meshURL.absoluteString

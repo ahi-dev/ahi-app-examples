@@ -4,15 +4,14 @@ source 'https://cdn.cocoapods.org/'
 platform :ios, '15.4'
 
 
-target 'ahi_uikit_multiscan_boilerplate' do
+target 'ahi_swiftui_multiscan_boilerplate' do
   # Comment the next line if you don't want to use dynamic frameworks
   use_frameworks!
 
-  # Pods for ahi_uikit_multiscan_boilerplate
+  # Pods for ahi_swiftui_multiscan_boilerplate
   pod 'MyFiziqSDKCoreLite', '~> 21.1.3'
   pod 'MFZFaceScan', '~> 21.1.3'
   pod 'AHIMultiScan', '~> 21.1.3'
-
 end
 
 

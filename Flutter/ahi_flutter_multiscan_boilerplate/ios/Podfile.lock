@@ -1,36 +1,36 @@
 PODS:
-  - AHIMultiScan (21.1.3):
+  - AHIMultiScan (21.1.5):
     - Bolts
-    - MyFiziqSDKCommon (~> 21.1.2)
+    - MyFiziqSDKCommon (~> 21.1.1)
   - Bolts (1.9.1):
     - Bolts/AppLinks (= 1.9.1)
     - Bolts/Tasks (= 1.9.1)
   - Bolts/AppLinks (1.9.1):
     - Bolts/Tasks
   - Bolts/Tasks (1.9.1)
-  - Flutter (2.10.2)
-  - GBDeviceInfo (6.7.0):
-    - GBDeviceInfo/Core (= 6.7.0)
-  - GBDeviceInfo/Core (6.7.0)
-  - MFZFaceScan (21.1.3):
+  - Flutter (3.13.0)
+  - GBDeviceInfo (6.8.0):
+    - GBDeviceInfo/Core (= 6.8.0)
+  - GBDeviceInfo/Core (6.8.0)
+  - MFZFaceScan (21.1.5):
     - MyFiziqSDKCommon (~> 21.1.1)
-    - OpenCV (~> 4.1.0)
+    - OpenCV
   - MyFaCSS (19.1.6)
   - MyFiziqSDKCommon (21.1.2):
     - Bolts
     - GBDeviceInfo (~> 6.5)
     - MyFaCSS (~> 19.1.5)
     - PureLayout
-  - MyFiziqSDKCoreLite (21.1.3):
+  - MyFiziqSDKCoreLite (21.1.4):
     - MyFiziqSDKCommon
-  - OpenCV (4.1.0)
+  - OpenCV (4.3.0)
   - PureLayout (3.1.9)
 
 DEPENDENCIES:
-  - AHIMultiScan (~> 21.1.2)
+  - AHIMultiScan (~> 21.1.3)
   - Flutter
-  - MFZFaceScan (~> 21.1.2)
-  - MyFiziqSDKCoreLite (~> 21.1.2)
+  - MFZFaceScan (~> 21.1.3)
+  - MyFiziqSDKCoreLite (~> 21.1.3)
 
 SPEC REPOS:
   https://git-codecommit.ap-southeast-1.amazonaws.com/v1/repos/myfiziq-sdk-podrepo:
@@ -47,17 +47,17 @@ SPEC REPOS:
     - PureLayout
 
 SPEC CHECKSUMS:
-  AHIMultiScan: 5e086db7395476290df8c170a2ca590c286a5f87
+  AHIMultiScan: 866cdf471a9da7b56643ce0e898ae17f2b6913cc
   Bolts: 8c1e8aab2f603387b8b9924f57d1d64f43d3ffdc
-  Flutter: f806e130a7fc533948a62c576e768b4aec6d41d4
-  GBDeviceInfo: c1a46e3fe1b5406a0ebaa60f8a871cfed9da9a42
-  MFZFaceScan: 03fa3bd60311179b2155e45ec29404717e5d3b76
+  Flutter: 8ff16720b007bae16abfe75ef9fe3ee45ead486a
+  GBDeviceInfo: 0f5a54412c0eca15ee6f94dd93566ceba505b40f
+  MFZFaceScan: 260fa31eee5323aa71fdb4f48c8bb91860eadee3
   MyFaCSS: 80be5c5156037f4de0277fc316ded7773417d2c8
   MyFiziqSDKCommon: 783e08ce5859d9a616d36e418a05325d98d1be8f
-  MyFiziqSDKCoreLite: e2c59b0598be82a69274bdbaf39eb7452485fd7b
-  OpenCV: 52cd4d72ff29e2be83421477aec5447320b7fb19
+  MyFiziqSDKCoreLite: f806a5d95aa857130a6b0ad9255c17594f93fefe
+  OpenCV: 681e0451c1e54c5930a8922277f817ed5d5ab459
   PureLayout: 5fb5e5429519627d60d079ccb1eaa7265ce7cf88
 
-PODFILE CHECKSUM: 909dd0f979016389120f393c7b366f737652870c
+PODFILE CHECKSUM: ac502db41411df9429e916cd47fa28210820d904
 
-COCOAPODS: 1.11.3
+COCOAPODS: 1.12.1

@@ -15,8 +15,8 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-import {NativeModules} from 'react-native';
-const {MultiScanModule} = NativeModules;
+import { NativeModules } from 'react-native';
+const { MultiScanModule } = NativeModules;
 
 /** Multi Scan SDK */
 interface MultiScanInterface {

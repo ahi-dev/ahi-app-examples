@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FaceScan Web SDK | Simple Example</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body onload="initScan()">
+    <main>
+      <form onsubmit="return postValidateForm(event)">
+        <h2>Advanced Health Intelligence</h2>
+        <h3>New FaceScan</h3>
+        <!-- Age -->
+        <div>
+          <label
+            for="age"
+            title="Web Scan is not intended for children under 13 years old."
+            >Age:</label
+          >
+
+          <input
+            type="number"
+            id="age"
+            name="age"
+            required
+            min="13"
+            max="120"
+            pattern="\d*"
+            placeholder="Enter your current age in years"
+          />
+        </div>
+
+        <!-- Height -->
+        <div>
+          <label for="height">Height: </label>
+          <input
+            type="number"
+            id="height"
+            name="height"
+            min="50"
+            max="300"
+            pattern="\d*"
+            required
+            placeholder="Enter your current height in centimetres"
+          />
+        </div>
+
+        <!-- Weight -->
+        <div>
+          <label for="weight">Weight:</label>
+          <input
+            type="number"
+            id="weight"
+            name="weight"
+            min="25"
+            max="300"
+            pattern="\d*"
+            required
+            placeholder="Enter your current weight in kilos"
+          />
+        </div>
+
+        <!-- Biological sex -->
+        <div>
+          <label for="biological-sex">Biological Sex:</label>
+          <select name="biological-sex" id="biological-sex" required>
+            <option value="">What biological sex are you?</option>
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+          </select>
+        </div>
+
+        <!-- Smoker -->
+        <div>
+          <label for="smoker">Smoking Status:</label>
+          <select name="smoker" id="smoker" required>
+            <option value="">Do you smoke?</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+
+        <!-- Hypertension -->
+        <div>
+          <label for="hypertension">Hypertension Status:</label>
+          <select name="hypertension" id="hypertension" required>
+            <option value="">
+              Do you have Hypertension (high blood pressure)?
+            </option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+
+        <!-- bloodpressure meds -->
+        <div>
+          <label for="bloodpressure">Blood Pressure Medication:</label>
+          <select name="bloodpressure" id="bloodpressure" required>
+            <option value="">Do you take blood pressure medication?</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+
+        <!-- diabetic -->
+        <div>
+          <label for="diabetic">Diabetic Status:</label>
+          <select name="diabetic" id="diabetic" required>
+            <option value="">Are you diabetic?</option>
+            <option value="type1">Yes, Type 1</option>
+            <option value="type2">Yes, Type 2</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+
+        <!-- Button -->
+        <button type="submit" id="submit-button">Start Scan</button>
+      </form>
+    </main>
+    <script
+      type="text/javascript"
+      src="https://sdk.advancedhumanimaging.io/js/23.9/ahi.js"
+    ></script>
+    <script type="text/javascript" src="indexscript.js"></script>
+  </body>
+</html>
