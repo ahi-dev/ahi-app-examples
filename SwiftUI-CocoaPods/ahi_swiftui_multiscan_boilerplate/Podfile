@@ -9,16 +9,16 @@ target 'ahi_swiftui_multiscan_boilerplate' do
   use_frameworks!
 
   # Pods for ahi_swiftui_multiscan_boilerplate
-  pod 'AHIMultiScan', '~> 22.0'
-  pod 'AHIBodyScan', '~> 22.0'
-  pod 'AHIFaceScan', '~> 22.0'
-  pod 'AHIFingerScan', '~> 22.0'
+  pod 'AHIMultiScan', '~> 23.8.0'
+  pod 'AHIBodyScan', '~> 23.8.0'
+  pod 'AHIFaceScan', '~> 23.8.0'
+  pod 'AHIFingerScan', '~> 23.8.0'
 end
+
 
 post_install do |installer|
   # Fix for Xcode 15
   # https://stackoverflow.com/questions/77136958/flutter-xcode-15-error-xcode-dt-toolchain-dir-cannot-be-used-to-evaluate-libr
-
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
       xcconfig_path = config.base_configuration_reference.real_path

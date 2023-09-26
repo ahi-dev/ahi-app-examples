@@ -2,7 +2,7 @@
 
 This tutorial shows you how to implement AHI's MultiScan SDK for Web. The example will include a full FaceScan process.
 
-[GitHub source code](https://github.com/ahi-dev/ahi-app-examples/tree/22.0/trunk/Web)
+[GitHub source code](https://github.com/ahi-dev/ahi-app-examples/tree/23.8/trunk/Web)
 
 [SDK Reference Docs](https://ref.advancedhumanimaging.io/js/ahi/AHIMultiScan.html)
 
@@ -40,7 +40,7 @@ In the first instance we will configure our code to call the AHI service and set
 ```html
 <script
   type="text/javascript"
-  src="https://sdk.advancedhumanimaging.io/js/22.0/ahi.js"
+  src="https://sdk.advancedhumanimaging.io/js/23.8/ahi.js"
 >
 </script>
 ```

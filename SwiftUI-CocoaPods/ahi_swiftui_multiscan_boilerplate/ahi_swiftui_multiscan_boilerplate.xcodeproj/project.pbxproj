@@ -103,7 +103,7 @@
 				C9611E0A27FD711500EB4B88 /* Frameworks */,
 				C9611E0B27FD711500EB4B88 /* Resources */,
 				17445AC5645035AC12FB4354 /* [CP] Embed Pods Frameworks */,
-				4AD9FC46ECCD6B179F6BEC0C /* [CP] Copy Pods Resources */,
+				81EC56137FE86BE7AF0597C8 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -177,7 +177,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-ahi_swiftui_multiscan_boilerplate/Pods-ahi_swiftui_multiscan_boilerplate-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		4AD9FC46ECCD6B179F6BEC0C /* [CP] Copy Pods Resources */ = {
+		81EC56137FE86BE7AF0597C8 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (

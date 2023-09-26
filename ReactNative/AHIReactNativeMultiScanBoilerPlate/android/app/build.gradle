@@ -267,7 +267,7 @@ dependencies {
     implementation "com.facebook.react:react-native:+"  // From node_modules
 
     // AHI SDK
-    def AHISdkVersion = '22.0.+'
+    def AHISdkVersion = '23.8.+'
     implementation "com.advancedhumanimaging.sdk:ahi-sdk-multiscan:$AHISdkVersion"
     implementation "com.advancedhumanimaging.sdk:ahi-sdk-facescan:$AHISdkVersion"
     implementation "com.advancedhumanimaging.sdk:ahi-sdk-fingerscan:$AHISdkVersion"
