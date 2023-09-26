@@ -266,7 +266,7 @@ extension AHISDKManager {
 //                if let nsError = error as? NSError, nsError.code == AHIFaceScanErrorCode.ScanCanceled.rawValue {
 //                    print("AHI: INFO: User cancelled the session.")
 //                } else {
-                    // Handle error through either lack of results or error.
+//                    // Handle error through either lack of results or error.
                     print("AHI: ERROR WITH FACE SCAN: \(error ?? NSError())")
 //                }
                 return

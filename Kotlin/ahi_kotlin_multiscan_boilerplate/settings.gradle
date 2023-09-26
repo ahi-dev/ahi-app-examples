@@ -10,8 +10,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-
-
+        
         // release sdk repo (partner and AHI developer access)
         def RELEASE_ACCESS_KEY = System.getenv("AHI_RELEASE_AWS_ACCESS_KEY") ?: ""
         def RELEASE_SECRET = System.getenv("AHI_RELEASE_AWS_SECRET_KEY") ?: ""
@@ -20,17 +19,6 @@ dependencyResolutionManagement {
             credentials(AwsCredentials) {
                 accessKey "$RELEASE_ACCESS_KEY"
                 secretKey "$RELEASE_SECRET"
-            }
-        }
-
-        // staging and dev sdk repo (AHI developer access only)
-        def DEV_ACCESS_KEY = System.getenv("AHI_DEV_AWS_ACCESS_KEY") ?: ""
-        def DEV_SECRET = System.getenv("AHI_DEV_AWS_SECRET_KEY") ?: ""
-        maven {
-            url 's3://ahi-prod-sdk-builds/android/staging'
-            credentials(AwsCredentials) {
-                accessKey "$DEV_ACCESS_KEY"
-                secretKey "$DEV_SECRET"
             }
         }
     }

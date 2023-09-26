@@ -161,8 +161,8 @@ extension AHISDKManager {
     /// We recommend doing this on successfuil load of your application.
     fileprivate func setupMultiScanSDK() {
         bodyScan.setEventListener(self)
-        ahi.setup(withConfig: ["TOKEN": AHIConfigTokens.AHI_MULTI_SCAN_TOKEN], scans: [faceScan, fingerScan, bodyScan]) { error in
-            if let err = error {
+        ahi.setup(withConfig: ["TOKEN": AHIConfigTokens.AHI_MULTI_SCAN_TOKEN], scans: [faceScan, fingerScan, bodyScan]) { errorSetup in
+            if let err = errorSetup {
                 print("AHI: Error setting up: \(err)")
                 print("AHI: Confirm you have a valid token.")
                 return
@@ -175,8 +175,8 @@ extension AHISDKManager {
     ///
     /// With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
     fileprivate func authorizeUser() {
-        ahi.userAuthorize(forId: AHIConfigTokens.AHI_TEST_USER_ID, withSalt: AHIConfigTokens.AHI_TEST_USER_SALT, withClaims: AHIConfigTokens.AHI_TEST_USER_CLAIMS) { authError in
-            if let err = authError {
+        ahi.userAuthorize(forId: AHIConfigTokens.AHI_TEST_USER_ID, withSalt: AHIConfigTokens.AHI_TEST_USER_SALT, withClaims: AHIConfigTokens.AHI_TEST_USER_CLAIMS, completion: { errorAuth in
+            if let err = errorAuth {
                 print("AHI: Auth Error: \(err)")
                 print("AHI: Confirm you are using a valid user id, salt and claims")
                 return
@@ -187,7 +187,7 @@ extension AHISDKManager {
                 }
                 return
             }
-        }
+        })
     }
 }
 
@@ -199,9 +199,9 @@ extension AHISDKManager {
     /// We have remote resources that exceed 100MB that enable our scans to work.
     /// You are required to download them inorder to obtain a body scan.
     fileprivate func areAHIResourcesAvailable() {
-        ahi.areResourcesDownloaded { [weak self] success, error in
-            if !success {
-                print("AHI INFO: Resources are not downloaded, Error: \(String(describing: error))")
+        ahi.areResourcesDownloaded { [weak self] downloaded, errorDownloaded in
+            if !downloaded {
+                print("AHI INFO: Resources are not downloaded, Error: \(String(describing: errorDownloaded))")
                 weak var weakSelf = self
                 DispatchQueue.main.async {
                     weakSelf?.isDownloadInProgress = true
@@ -215,11 +215,10 @@ extension AHISDKManager {
                 return
             }
             DispatchQueue.main.async {
-                self?.isFinishedDownloadingResources = success
+                self?.isFinishedDownloadingResources = downloaded
                 self?.isDownloadInProgress = false
                 print("AHI: Resources ready")
             }
-            return
         }
     }
 
@@ -261,13 +260,13 @@ extension AHISDKManager {
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
         guard let vc = topMostVC() else { return }
-        ahi.initiateScan("face", withOptions: options, from: vc) { scanTask, error in
-            guard let task = scanTask, error == nil else {
-                if let nsError = error as? NSError, nsError.code == AHIFaceScanErrorCode.ScanCanceled.rawValue {
+        ahi.initiateScan("face", withOptions: options, from: vc) { scanTask, errorScan in
+            guard let task = scanTask, errorScan == nil else {
+                if let nsError = errorScan as? NSError, nsError.code == AHIFaceScanErrorCode.ScanCanceled.rawValue {
                     print("AHI: INFO: User cancelled the session.")
                 } else {
                     // Handle error through either lack of results or error.
-                    print("AHI: ERROR WITH FACE SCAN: \(error ?? NSError())")
+                    print("AHI: ERROR WITH FACE SCAN: \(errorScan ?? NSError())")
                 }
                 return
             }
@@ -340,14 +339,14 @@ extension AHISDKManager: AHIBSEventListenerDelegate {
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
         guard let vc = topMostVC() else { return }
-        ahi.initiateScan("body", withOptions: options, from: vc) { [weak self] scanTask, error in
-            guard let task = scanTask, error == nil else {
+        ahi.initiateScan("body", withOptions: options, from: vc) { scanTask, errorScan in
+            guard let task = scanTask, errorScan == nil else {
                 // Error code 2011 is the code for the SDK interaction that cancels the scan.
-                if let nsError = error as? NSError, nsError.code == 2011 {
+                if let nsError = errorScan as? NSError, nsError.code == 2011 {
                     print("AHI: INFO: User cancelled the session.")
                 } else {
                     // Handle error through either lack of results or error.
-                    print("AHI: ERROR WITH BODY SCAN: \(error ?? NSError())")
+                    print("AHI: ERROR WITH BODY SCAN: \(errorScan ?? NSError())")
                 }
                 return
             }
@@ -355,9 +354,6 @@ extension AHISDKManager: AHIBSEventListenerDelegate {
                 if let results = resultsTask.result as? [String : Any] {
                     // Handle results
                     print("AHI: SCAN RESULTS: \(results)")
-                    // Consider getting the 3D mesh here
-                    // This is an optional feature.
-                    self?.getBodyScanExtras(withBodyScanResult: results)
                 }
                 // Handle failure.
                 return nil
