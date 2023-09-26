@@ -9,8 +9,31 @@ target 'ahi_uikit_multiscan_boilerplate' do
   use_frameworks!
 
   # Pods for ahi_uikit_multiscan_boilerplate
-  pod 'AHIMultiScan', '~> 23.9'
-  pod 'AHIBodyScan', '~> 23.9'
-  pod 'AHIFaceScan', '~> 23.9'
-  pod 'AHIFingerScan', '~> 23.9'
+  pod 'AHIMultiScan', '~> 23.9.0'
+  pod 'AHIBodyScan', '~> 23.9.0'
+  pod 'AHIFaceScan', '~> 23.9.0'
+  pod 'AHIFingerScan', '~> 23.9.0'
+end
+
+
+post_install do |installer|
+  # Fix for Xcode 15
+  # https://stackoverflow.com/questions/77136958/flutter-xcode-15-error-xcode-dt-toolchain-dir-cannot-be-used-to-evaluate-libr
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      xcconfig_path = config.base_configuration_reference.real_path
+      xcconfig = File.read(xcconfig_path)
+      xcconfig_mod = xcconfig.gsub(/DT_TOOLCHAIN_DIR/, "TOOLCHAIN_DIR")
+      File.open(xcconfig_path, "w") { |file| file << xcconfig_mod }
+    end
+  end
+  # Fix for Xcode 14.3+
+  # https://stackoverflow.com/questions/75574268/missing-file-libarclite-iphoneos-a-xcode-14-3
+  installer.generated_projects.each do |project|
+    project.targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+      end
+    end
+  end
 end

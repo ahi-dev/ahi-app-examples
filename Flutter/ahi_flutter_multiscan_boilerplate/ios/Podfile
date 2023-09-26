@@ -9,10 +9,10 @@ target 'Runner' do
   use_frameworks!
 
   # Pods for Runner
-  pod 'AHIMultiScan', '~> 23.9'
-  pod 'AHIBodyScan', '~> 23.9'
-  pod 'AHIFaceScan', '~> 23.9'
-  pod 'AHIFingerScan', '~> 23.9'
+  pod 'AHIMultiScan', '~> 23.9.0'
+  pod 'AHIBodyScan', '~> 23.9.0'
+  pod 'AHIFaceScan', '~> 23.9.0'
+  pod 'AHIFingerScan', '~> 23.9.0'
   
   pod 'Flutter'
 end

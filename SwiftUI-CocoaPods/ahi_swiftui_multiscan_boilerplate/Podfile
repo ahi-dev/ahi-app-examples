@@ -9,10 +9,10 @@ target 'ahi_swiftui_multiscan_boilerplate' do
   use_frameworks!
 
   # Pods for ahi_swiftui_multiscan_boilerplate
-  pod 'AHIMultiScan', '~> 23.9'
-  pod 'AHIBodyScan', '~> 23.9'
-  pod 'AHIFaceScan', '~> 23.9'
-  pod 'AHIFingerScan', '~> 23.9'
+  pod 'AHIMultiScan', '~> 23.9.0'
+  pod 'AHIBodyScan', '~> 23.9.0'
+  pod 'AHIFaceScan', '~> 23.9.0'
+  pod 'AHIFingerScan', '~> 23.9.0'
 end
 
 
