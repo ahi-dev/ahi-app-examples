@@ -42,11 +42,6 @@ const AHI_TEST_USER_SALT = 'EXAMPLE_APP_SALT';
 /** Claims are optional values to increase the security for the user. The order and values should be unique for a given user and be the same on both iOS and Android (e.g. user join date in the format "yyyy", "mm", "dd", "zzzz"). */
 
 const AHI_TEST_USER_CLAIMS = ['EXAMPLE_CLAIM'];
-/** Payment type */
-enum MSPaymentType {
-  PAYG = 'PAYG',
-  SUBS = 'SUBSCRIBER',
-}
 
 const App: () => ReactNode = () => {
   const [resourcesDownloaded, setResourcesDownloaded] = useState(false);
@@ -61,6 +56,10 @@ const App: () => ReactNode = () => {
     startFaceScan();
   }
 
+  function didTapStartFingerScan() {
+    startFingerScan();
+  }
+
   function didTapStartBodyScan() {
     startBodyScan();
   }
@@ -70,7 +69,6 @@ const App: () => ReactNode = () => {
   }
 
   function didTapDownloadResources() {
-    downloadAHIResources();
     areAHIResourcesAvailable();
     checkAHIResourcesDownloadSize();
   }
@@ -137,19 +135,39 @@ const App: () => ReactNode = () => {
   const areAHIResourcesAvailable = async () => {
     MultiScanModule.areAHIResourcesAvailable().then((areAvailable: boolean) => {
       if (!areAvailable) {
-        setResourcesDownloading(true);
         console.log('AHI INFO: Resources are not downloaded');
         // start download.
-        downloadAHIResources();
-        checkAHIResourcesDownloadSize();
-        setTimeout(() => areAHIResourcesAvailable(), 30000);
+        if (resourcesDownloading != true) {
+          getResourcesDownloadProgressReport();
+          downloadAHIResources();
+        }
+        setResourcesDownloading(true);
       } else {
         console.log('AHI: Resources ready');
-        // control view state
         setResourcesDownloaded(true);
       }
     });
   };
+
+  const getResourcesDownloadProgressReport = () => {
+    DeviceEventEmitter.addListener('progress_report', (value) => {
+      if (value == "done") {
+        setResourcesDownloaded(true);
+        setResourcesDownloading(false);
+        console.log('AHI INFO: Download Finished')
+      } else if (value == "failed") {
+        console.log('AHI INFO: Download Failed.')
+      } else {
+        console.log('AHI INFO: Size of Download is ' +
+          (Number(value["progress"]) / 1024 / 1024).toFixed(1) + ' / ' +
+          (Number(value["total"]) / 1024 / 1024).toFixed(1)
+        );
+      }
+    }
+    );
+    MultiScanModule.getResourcesDownloadProgressReport();
+  };
+
 
   /**
    * Download scan resources.
@@ -187,13 +205,34 @@ const App: () => ReactNode = () => {
       console.log('AHI ERROR: Face Scan inputs');
       return;
     }
-    MultiScanModule.startFaceScan(userFaceScanInput, MSPaymentType.PAYG)
+    MultiScanModule.startFaceScan(userFaceScanInput)
       .then((faceScanResults: Map<String, any>) => {
         console.log('AHI: SCAN RESULTS: ' + JSON.stringify(faceScanResults));
       })
       .catch(error => {
         console.log('AHI ERROR: Face Scan error: ' + error);
       });
+  };
+
+  const startFingerScan = async () => {
+    let userFingerScanInput = {
+      sec_ent_scanLength: 60,
+      str_ent_instruction1: "Instruction 1",
+      str_ent_instruction2: "Instruction 2",
+    };
+    if (!areFingerScanConfigOptionsValid(objectToMap(userFingerScanInput))) {
+      console.log('AHI ERROR: Finger Scan inputs');
+      return;
+    }
+
+    MultiScanModule.startFingerScan(userFingerScanInput)
+      .then((fingerScanResults: Map<String, any>) => {
+        console.log('AHI: SCAN RESULTS: ' + JSON.stringify(fingerScanResults));
+      })
+      .catch(error => {
+        console.log('AHI ERROR: Face Scan error: ' + error);
+      });
+
   };
 
   const startBodyScan = () => {
@@ -207,10 +246,10 @@ const App: () => ReactNode = () => {
       console.log('AHI ERROR: Body Scan inputs invalid.');
       return;
     }
-    MultiScanModule.startBodyScan(userBodyScanInput, MSPaymentType.PAYG)
-      .then((bodyScanResults: Map<String, any>) => {
-        console.log('AHI: SCAN RESULTS: ' + JSON.stringify(bodyScanResults));
-        getBodyScanExtras(bodyScanResults);
+    MultiScanModule.startBodyScan(userBodyScanInput)
+      .then((bodyScanResult: Map<String, any>) => {
+        console.log('AHI: SCAN RESULTS: ' + JSON.stringify(bodyScanResult));
+        getBodyScanExtra(bodyScanResult);
       })
       .catch(error => {
         console.log('AHI ERROR: Body Scan error: ' + error);
@@ -223,17 +262,21 @@ const App: () => ReactNode = () => {
    * The 3D mesh can be created and returned at any time.
    * We recommend doing this on successful completion of a body scan with the results.
    */
-  function getBodyScanExtras(bodyScanResults: Map<String, any>) {
-    if (bodyScanResults == null) {
+  function getBodyScanExtra(bodyScanResult: Map<String, any>) {
+    if (bodyScanResult == null) {
       console.log('AHI ERROR: Body scan results must not be null.');
       return;
     }
-    var results = JSON.parse(JSON.stringify(bodyScanResults));
-    if (!areBodyScanSmoothingResultsValid([bodyScanResults])) {
+    // Check bodyScanResult has contains output schema.
+    if (!areBodyScanSmoothingResultsValid(bodyScanResult)) {
       console.log('AHI ERROR: Body scan results not valid for extras.');
       return;
     }
-    MultiScanModule.getBodyScanExtras(results).then((path: any) => {
+    // Set bodyScanResult to MultiScanPersistenceDelagate.
+    setMultiScanPersistenceDelegate(bodyScanResult)
+    // Get body scan extra.
+    var result = JSON.parse(JSON.stringify(bodyScanResult));
+    MultiScanModule.getBodyScanExtra(result).then((path: any) => {
       console.log('AHI 3D Mesh : ' + path['meshURL']);
       console.log('AHI 3D Mesh : ' + JSON.stringify(path));
     });
@@ -265,7 +308,7 @@ const App: () => ReactNode = () => {
    * Check if the user is authorized to use the MuiltScan service.
    */
   function getUserAuthorizedState() {
-    MultiScanModule.getUserAuthorizedState(AHI_TEST_USER_ID)
+    MultiScanModule.getUserAuthorizedState()
       .then(isAuthorized => {
         console.log(
           'AHI INFO: User is ',
@@ -322,38 +365,21 @@ const App: () => ReactNode = () => {
    * We recommend using this for individual users results; avoid using this if the app is a single user ID with multiple users results.
    * More info found here: https://docs.advancedhumanimaging.io/MultiScan%20SDK/Data/
    */
-  function setMultiScanPersistenceDelegate(scanResult?: any) {
+  function setMultiScanPersistenceDelegate(scanResult: Map<String, any>) {
     /* Each result requires: 
      * - _ent_ values 
      * - _raw_ values 
      * - id value 
      * - date value 
-     * Your token may only provide you access to a smaller subset of results.
-       The persistence delegate will still work with your results provided you adhere to the validation check. 
+     * The persistence delegate will still work with your result provided you add here to the validation check. 
      */
-    var exampleResult = {
-      enum_ent_sex: 'male',
-      cm_ent_height: 180,
-      kg_ent_weight: 85,
-      cm_raw_chest: 104.5213096618652,
-      cm_raw_hips: 100.4377449035645,
-      cm_raw_inseam: 82.3893051147461,
-      cm_raw_thigh: 60.23823547363281,
-      cm_raw_waist: 84.81353988647462,
-      kg_raw_weightPredict: 82.55660247802734,
-      ml_raw_fitness: 0.8,
-      percent_raw_bodyFat: 17.3342390826027,
-      id: 'ee2367211649040093',
-      date: 1649040093,
-    };
-    var exampleResults: Array<any> = [exampleResult];
-    if (!areBodyScanSmoothingResultsValid(exampleResults)) {
+    if (!areBodyScanSmoothingResultsValid(scanResult)) {
       console.log(
         'AHI WARN: Results are not valid for the persistence delegate. Please compare your results against the schema for more information.',
       );
       return;
     }
-    MultiScanModule.setMultiScanPersistenceDelegate(exampleResults);
+    MultiScanModule.setMultiScanPersistenceDelegate(scanResult);
   }
 
   /**
@@ -415,6 +441,24 @@ const App: () => ReactNode = () => {
   }
 
   /**
+   * FingerScan config requirements validation. Please see the Schemas for more information:
+   * FingerScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/FingerScan/Schemas/
+   */
+  function areFingerScanConfigOptionsValid(
+    inputValues: Map<string, any>,
+  ): boolean {
+    var scanLength = inputValues.get('sec_ent_scanLength');
+    var instruction1 = inputValues.get('str_ent_instruction1');
+    var instruction2 = inputValues.get('str_ent_instruction2');
+    return (
+      scanLength != null &&
+      instruction1 != null &&
+      instruction2 != null &&
+      scanLength >= 20
+    );
+  }
+
+  /**
    * BodyScan config requirements validation. Please see the Schemas for more information:
    * BodyScan: https://docs.advancedhumanimaging.io/MultiScan%20SDK/BodyScan/Schemas/
    */
@@ -440,7 +484,7 @@ const App: () => ReactNode = () => {
 
   /** Confirm results have correct set of keys. */
   function areBodyScanSmoothingResultsValid(
-    resultsList: Array<Map<String, any>>,
+    result: Map<String, any>,
   ): boolean {
     /* Your token may only provide you access to a smaller subset of results. */
     /* You should modify this list based on your available config options. */
@@ -459,12 +503,10 @@ const App: () => ReactNode = () => {
       'date',
     ];
     var isValid = true;
-    for (var result of resultsList) {
-      for (var key of sdkResultSchema) {
-        /* Check if keys in result contains the required keys. */
-        if (!result.hasOwnProperty(key)) {
-          isValid = false;
-        }
+    for (var key of sdkResultSchema) {
+      /* Check if keys in result contains the required keys. */
+      if (!result.hasOwnProperty(key)) {
+        isValid = false;
       }
     }
     return isValid;
@@ -490,6 +532,10 @@ const App: () => ReactNode = () => {
               <DefaultButton
                 action={didTapStartFaceScan}
                 buttonText={'Start FaceScan'}
+              />
+              <DefaultButton
+                action={didTapStartFingerScan}
+                buttonText={'Start FingerScan'}
               />
               {resourcesDownloaded ? (
                 <>

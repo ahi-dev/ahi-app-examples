@@ -20,9 +20,11 @@ import UIKit
 // The MultiScan SDK
 import AHIMultiScan
 // The Body Scan SDK
-import MyFiziqSDKCoreLite
+import AHIBodyScan
 // The FaceScan SDK
-import MFZFaceScan
+import AHIFaceScan
+// The FingerScan SDK
+import AHIFingerScan
 
 /// The required tokens for the MultiScan Setup and Authorization.
 public struct AHIConfigTokens {
@@ -56,6 +58,17 @@ struct ContentView: View {
                         })
             .frame(height: buttonHeight)
             .background(Color.black)
+            
+            Button (action:{
+                didTapStartFingerScan()
+            }, label: {
+                Text("Start Finger")
+                    .foregroundColor(Color.white)
+                    .frame(maxWidth: .infinity)
+            })
+            .frame(height: buttonHeight)
+            .background(Color.black)
+            .hidden(!multiScan.isSetup)
             
             Button (action:{
                 if multiScan.isFinishedDownloadingResources {
@@ -95,6 +108,10 @@ extension ContentView {
     func didTapStartFaceScan() {
         multiScan.startFaceScan()
     }
+    
+    func didTapStartFingerScan() {
+        multiScan.startFingerScan()
+    }
 
     func didTapStartBodyScan() {
         multiScan.startBodyScan()
@@ -120,14 +137,18 @@ class AHISDKManager: NSObject, ObservableObject {
     // MARK: Scan Instances
 
     /// Instance of AHI MultiScan
-    let ahi = AHIMultiScan.shared()
+    let ahi = MultiScan.shared()
     /// Instance of AHI FaceScan
-    let faceScan = AHIFaceScan.shared()
+    let faceScan = FaceScan()
+    /// Instance of AHI FaceScan
+    let fingerScan = FingerScan()
     /// Instance of AHI BodyScan
-    let bodyScan = AHIBodyScan.shared()
+    let bodyScan = BodyScan()
     
     public override init() {
         super.init()
+        // Set persistence delegate
+        ahi.delegatePersistence = self
     }
 }
 
@@ -139,21 +160,22 @@ extension AHISDKManager {
     /// This must happen before requesting a scan.
     /// We recommend doing this on successfuil load of your application.
     fileprivate func setupMultiScanSDK() {
-        ahi?.setup(withConfig: ["TOKEN": AHIConfigTokens.AHI_MULTI_SCAN_TOKEN], scans: [faceScan, bodyScan], completion: { errorSetup in
+        bodyScan.setEventListener(self)
+        ahi.setup(withConfig: ["TOKEN": AHIConfigTokens.AHI_MULTI_SCAN_TOKEN], scans: [faceScan, fingerScan, bodyScan]) { errorSetup in
             if let err = errorSetup {
                 print("AHI: Error setting up: \(err)")
                 print("AHI: Confirm you have a valid token.")
                 return
             }
             self.authorizeUser()
-        })
+        }
     }
 
     /// Once successfully setup, you should authorize your user with our service.
     ///
     /// With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
     fileprivate func authorizeUser() {
-        ahi?.userAuthorize(forId: AHIConfigTokens.AHI_TEST_USER_ID, withSalt: AHIConfigTokens.AHI_TEST_USER_SALT, withClaims: AHIConfigTokens.AHI_TEST_USER_CLAIMS, completion: { errorAuth in
+        ahi.userAuthorize(forId: AHIConfigTokens.AHI_TEST_USER_ID, withSalt: AHIConfigTokens.AHI_TEST_USER_SALT, withClaims: AHIConfigTokens.AHI_TEST_USER_CLAIMS, completion: { errorAuth in
             if let err = errorAuth {
                 print("AHI: Auth Error: \(err)")
                 print("AHI: Confirm you are using a valid user id, salt and claims")
@@ -177,9 +199,9 @@ extension AHISDKManager {
     /// We have remote resources that exceed 100MB that enable our scans to work.
     /// You are required to download them inorder to obtain a body scan.
     fileprivate func areAHIResourcesAvailable() {
-        ahi?.areResourcesDownloaded(completion: { [weak self] downloaded in
+        ahi.areResourcesDownloaded { [weak self] downloaded, errorDownloaded in
             if !downloaded {
-                print("AHI INFO: Resources are not downloaded.")
+                print("AHI INFO: Resources are not downloaded, Error: \(String(describing: errorDownloaded))")
                 weak var weakSelf = self
                 DispatchQueue.main.async {
                     weakSelf?.isDownloadInProgress = true
@@ -197,21 +219,21 @@ extension AHISDKManager {
                 self?.isDownloadInProgress = false
                 print("AHI: Resources ready")
             }
-        })
+        }
     }
 
     /// Download scan resources.
     ///
     /// We recomment only calling this function once per session to prevent duplicate background resource calls.
     fileprivate func downloadAHIResources() {
-        ahi?.downloadResourcesInBackground()
+        ahi.downloadResourcesInBackground()
     }
 
     /// Check the size of the AHI resources that require downloading.
     fileprivate func checkAHIResourcesDownloadSize() {
-        ahi?.totalEstimatedDownloadSizeInBytes(completion: { [weak self] bytesDownloaded in
-            print("AHI INFO: Size downloaded is \(self?.convertBytesToMBString(Int(bytesDownloaded)) ?? "0")")
-        })
+        ahi.totalEstimatedDownloadSizeInBytes { [weak self] bytes, totalBytes, error in
+            print("AHI INFO: Size of download is \(self?.convertBytesToMBString(Int(bytes)) ?? "0") / \(self?.convertBytesToMBString(Int(totalBytes)) ?? "0")")
+        }
     }
 }
 
@@ -238,9 +260,9 @@ extension AHISDKManager {
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
         guard let vc = topMostVC() else { return }
-        ahi?.initiateScan("face", paymentType: .subscriber, from: vc, completion: { scanTask, errorScan in
+        ahi.initiateScan("face", withOptions: options, from: vc) { scanTask, errorScan in
             guard let task = scanTask, errorScan == nil else {
-                if let nsError = errorScan as? NSError, nsError.code == 7 {
+                if let nsError = errorScan as? NSError, nsError.code == AHIFaceScanErrorCode.ScanCanceled.rawValue {
                     print("AHI: INFO: User cancelled the session.")
                 } else {
                     // Handle error through either lack of results or error.
@@ -256,14 +278,52 @@ extension AHISDKManager {
                 // Handle failure.
                 return nil
             })
-        })
+        }
     }
 }
 
 
-// MARK: - AHI Body Scan Initialiser
+// MARK: - AHI Finger Scan Initialiser
 
 extension AHISDKManager {
+    fileprivate func startFingerScan() {
+        // All required finger scan options.
+        let options: [String : Any] = [
+            "sec_ent_scanLength": 60
+        ]
+        if !areFingerScanConfigOptionsValid(fingerScanInput: options) {
+            print("AHI ERROR: Finger Scan inputs invalid.")
+            return
+        }
+        // Ensure the view controller being used is the top one.
+        // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
+        // you may have issues.
+        guard let vc = topMostVC() else { return }
+        ahi.initiateScan("finger", withOptions: options, from: vc) { scanTask, error in
+            guard let task = scanTask, error == nil else {
+                if let nsError = error as? NSError, nsError.code == AHIFingerScanErrorCode.codeScanCanceled.rawValue {
+                    print("AHI: INFO: User cancelled the session.")
+                } else {
+                    // Handle error through either lack of results or error.
+                    print("AHI: ERROR WITH FINGER SCAN: \(error ?? NSError())")
+                }
+                return
+            }
+            task.continueWith(block: { resultsTask in
+                if let results = resultsTask.result as? [String : Any] {
+                    // Handle results
+                    print("AHI: SCAN RESULTS: \(results)")
+                }
+                // Handle failure.
+                return nil
+            })
+        }
+    }
+}
+
+// MARK: - AHI Body Scan Initialiser
+
+extension AHISDKManager: AHIBSEventListenerDelegate {
     fileprivate func startBodyScan() {
         // All required body scan options
         let options: [String : Any] = [
@@ -279,10 +339,10 @@ extension AHISDKManager {
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
         guard let vc = topMostVC() else { return }
-        ahi?.initiateScan("body", paymentType: .subscriber, from: vc, completion: { scanTask, errorScan in
+        ahi.initiateScan("body", withOptions: options, from: vc) { scanTask, errorScan in
             guard let task = scanTask, errorScan == nil else {
                 // Error code 2011 is the code for the SDK interaction that cancels the scan.
-                if let nsError = errorScan as? NSError, nsError.code == 4 {
+                if let nsError = errorScan as? NSError, nsError.code == 2011 {
                     print("AHI: INFO: User cancelled the session.")
                 } else {
                     // Handle error through either lack of results or error.
@@ -298,11 +358,33 @@ extension AHISDKManager {
                 // Handle failure.
                 return nil
             })
-        })
+        }
     }
     
     func event(_ name: String, meta: [String : Any]?) {
         print("event: \(name)")
+    }
+}
+
+// MARK: - Body Scan Extras
+
+extension AHISDKManager {
+    /// Use this function to fetch the 3D avatar mesh.
+    ///
+    /// The 3D mesh can be created and returned at any time.
+    /// We recommend doing this on successful completion of a body scan with the results.
+    fileprivate func getBodyScanExtras(withBodyScanResult result: [String: Any]) {
+        ahi.getExtra(["body": [result]], query: ["extrapolate": ["mesh"]]) { extras, error in
+            guard let extras = extras, error == nil else {
+                print("AHI: ERROR GETTING BODY SCAN EXTRAS. \(error ?? NSError())")
+                return
+            }
+            print("AHI EXTRAS: \(extras)")
+            // The mesh is returned as a URL that stored the file in the app cache.
+            if let meshResult = extras["extrapolate"]?.first as? Dictionary<String, Any>, let meshURL = meshResult["mesh"] as? URL {
+                print("AHI: Mesh URL: \(meshURL)")
+            }
+        }
     }
 }
 
@@ -311,28 +393,28 @@ extension AHISDKManager {
 extension AHISDKManager {
     /// Check if MultiScan is on or offline.
     fileprivate func getMultiScanStatus() {
-        ahi?.status { multiScanStatus in
+        ahi.status { multiScanStatus in
             print("AHI INFO: Status: \(multiScanStatus)")
         }
     }
 
     /// Check your AHI MultiScan organisation  details.
     fileprivate func getMultiScanDetails() {
-        if let details = ahi?.getDetails() {
+        if let details = ahi.getDetails() {
             print("AHI INFO: MultiScan details: \(details)")
         }
     }
 
     /// Check if the userr is authorized to use the MuiltScan service.
     fileprivate func getUserAuthorizedState() {
-        ahi?.userIsAuthorized(forId: AHIConfigTokens.AHI_TEST_USER_ID, completion: { isAuthorized in
+        ahi.userIsAuthorized { isAuthorized, userId, error in
             print("AHI INFO: User is \(isAuthorized ? "authorized" : "not authorized")")
-        })
+        }
     }
 
     /// Deuathorize the user.
     fileprivate func deauthorizeUser() {
-        ahi?.userDeauthorize { error in
+        ahi.userDeauthorize { error in
             if let err = error {
                 print("AHI ERROR: Failed to deuathorize user with error: \(err)")
             } else {
@@ -345,7 +427,7 @@ extension AHISDKManager {
     ///
     /// If you  use this, you will need to call setupSDK again.
     fileprivate func releaseMultiScanSDK() {
-        ahi?.releaseSDK { [weak self] error in
+        ahi.releaseSDK { [weak self] error in
             if let err = error {
                 print("AHI ERROR: Failed to release SDK with error: \(err)")
             } else {

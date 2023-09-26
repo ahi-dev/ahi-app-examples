@@ -103,6 +103,7 @@
 				C9611E0A27FD711500EB4B88 /* Frameworks */,
 				C9611E0B27FD711500EB4B88 /* Resources */,
 				17445AC5645035AC12FB4354 /* [CP] Embed Pods Frameworks */,
+				4AD9FC46ECCD6B179F6BEC0C /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -174,6 +175,23 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-ahi_swiftui_multiscan_boilerplate/Pods-ahi_swiftui_multiscan_boilerplate-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		4AD9FC46ECCD6B179F6BEC0C /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-ahi_swiftui_multiscan_boilerplate/Pods-ahi_swiftui_multiscan_boilerplate-resources-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-ahi_swiftui_multiscan_boilerplate/Pods-ahi_swiftui_multiscan_boilerplate-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-ahi_swiftui_multiscan_boilerplate/Pods-ahi_swiftui_multiscan_boilerplate-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		9D5944543F330FE66C0DF086 /* [CP] Check Pods Manifest.lock */ = {

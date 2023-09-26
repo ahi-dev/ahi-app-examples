@@ -19,19 +19,23 @@ import React
 // The MultiScan SDK
 import AHIMultiScan
 // The Body Scan SDK
-import MyFiziqSDKCoreLite
+import AHIBodyScan
 // The FaceScan SDK
-import MFZFaceScan
+import AHIFaceScan
+// The FingerScan SDK
+import AHIFingerScan
 
 @objc(MultiScanModule)
 class MultiScanModule: NSObject {
     // Start SDK init
     /// Instance of AHI MultiScan
-    let ahi = AHIMultiScan.shared()!
+    let ahi = MultiScan.shared()
     /// Instance of AHI FaceScan
-    let faceScan = AHIFaceScan.shared()
+    let faceScan = FaceScan()
+    /// Instance of AHI FingerScan
+    let fingerScan = FingerScan()
     /// Instance of AHI BodyScan
-    let bodyScan = AHIBodyScan.shared()
+    let bodyScan = BodyScan()
     /// Body Scan Results
     var bodyScanResults = [[String: Any]]()
 
@@ -47,7 +51,7 @@ extension MultiScanModule {
                            resolver resolve: @escaping RCTPromiseResolveBlock,
                            rejecter reject: @escaping RCTPromiseRejectBlock) {
         var hasReturned = false
-        ahi.setup(withConfig: ["TOKEN": token], scans: [faceScan, bodyScan]) { error in
+        ahi.setup(withConfig: ["TOKEN": token], scans: [faceScan, fingerScan, bodyScan]) { error in
             if hasReturned {
                 return
             }
@@ -85,7 +89,7 @@ extension MultiScanModule {
                                   rejecter reject: @escaping RCTPromiseRejectBlock){
         // This is a temporary solution to prevent multiple callbacks being invoked on null pointer promise and resolve blocks. 
         var hasReturned = false
-        ahi.areResourcesDownloaded{ success in
+        ahi.areResourcesDownloaded{ success, error in
             if hasReturned {
                 return
             }
@@ -102,36 +106,30 @@ extension MultiScanModule {
     @objc
     func checkAHIResourcesDownloadSize(_ resolve: @escaping RCTPromiseResolveBlock,
                                        rejecter reject: @escaping RCTPromiseRejectBlock){
-        ahi.totalEstimatedDownloadSizeInBytes(){ bytes in
+        ahi.totalEstimatedDownloadSizeInBytes(){ bytes, totalBytes, error in
             resolve(Int64(bytes))
         }
     }
 
     @objc
-    func startFaceScan(_ userInputs: [String: Any], paymentType msPaymentType: String,
+    func startFaceScan(_ userInputs: [String: Any],
                        resolver resolve: @escaping RCTPromiseResolveBlock,
                        rejecter reject: @escaping RCTPromiseRejectBlock) {
-        var pType = AHIMultiScanPaymentType.PAYG
-        if msPaymentType == "PAYG" {
-            pType = AHIMultiScanPaymentType.PAYG
-        } else if msPaymentType == "SUBSCRIBER" {
-            pType = AHIMultiScanPaymentType.subscriber
-        } else {
-            reject("-4", "Missing user face scan payment type.", "" as? Error)
-            return
-        }
         DispatchQueue.main.async {
             // This is a temporary solution to prevent multiple callbacks being invoked on null pointer promise and resolve blocks. 
             var hasReturned = false
             guard let vc = self.topMostVC() else {return }
-            self.ahi.initiateScan("face", paymentType: pType, withOptions: userInputs, from:vc) { scanTask, error in
+            self.ahi.initiateScan("face", withOptions: userInputs, from:vc) { scanTask, error in
                 if hasReturned {
                     return
                 }
                 guard let task = scanTask,
                       error == nil else {
-                          // Error code 4 is the code for the SDK interaction that cancels the scan.
                           if let err = error as NSError? {
+                              if (err.code == AHIFaceScanErrorCode.ScanCanceled.rawValue) {
+                                  // Scan cancelled by user
+                                  print("User scan cancelled")
+                              }
                               reject("\(err.code)", err.localizedDescription, err)
                           } else {
                               reject("-10", "Error performing face scan.", "" as? Error)
@@ -150,26 +148,53 @@ extension MultiScanModule {
             }
         }
     }
+    
+    @objc
+    func startFingerScan(_ userInputs: [String: Any],
+                       resolver resolve: @escaping RCTPromiseResolveBlock,
+                       rejecter reject: @escaping RCTPromiseRejectBlock) {
+        DispatchQueue.main.async {
+            // This is a temporary solution to prevent multiple callbacks being invoked on null pointer promise and resolve blocks.
+            var hasReturned = false
+            guard let vc = self.topMostVC() else {return }
+            self.ahi.initiateScan("finger", withOptions: userInputs, from:vc) { scanTask, error in
+                if hasReturned {
+                    return
+                }
+                guard let task = scanTask, error == nil else {
+                    if let err = error as NSError? {
+                        if (err.code == AHIFingerScanErrorCode.codeScanCanceled.rawValue) {
+                            // Scan cancelled by user
+                            print("User scan cancelled")
+                        }
+                        reject("\(err.code)", err.localizedDescription, err)
+                    } else {
+                        reject("-10", "Error performing face scan.", "" as? Error)
+                    }
+                    return
+                }
+                task.continueWith(block: { resultsTask in
+                    if let results = resultsTask.result as? [String : Any] {
+                        resolve(results)
+                    } else {
+                        resolve("")
+                    }
+                    // Handle failure.
+                    return nil
+                })
+            }
+        }
+    }
 
     @objc
     func startBodyScan(_ userInputs: [String: Any],
-                       paymentType msPaymentType: String,
                        resolver resolve: @escaping RCTPromiseResolveBlock,
                        rejecter reject: @escaping RCTPromiseRejectBlock) {
-        var pType = AHIMultiScanPaymentType.PAYG
-        if msPaymentType == "PAYG" {
-            pType = AHIMultiScanPaymentType.PAYG
-        } else if msPaymentType == "SUBSCRIBER" {
-            pType = AHIMultiScanPaymentType.subscriber
-        } else {
-            reject("-6", "Missing user body scan payment type.", "" as? Error)
-            return
-        }
         DispatchQueue.main.async {
             guard let vc = self.topMostVC() else { return }
             // This is a temporary solution to prevent multiple callbacks being invoked on null pointer promise and resolve blocks. 
             var hasReturned = false
-            self.ahi.initiateScan("body", paymentType: pType, withOptions: userInputs, from:vc) { scanTask, error in
+            self.ahi.initiateScan("body", withOptions: userInputs, from:vc) { scanTask, error in
                 if hasReturned {
                     return
                 }
@@ -199,8 +224,9 @@ extension MultiScanModule {
     @objc
     func getBodyScanExtras(_ bodyScanResult: [String: Any],
                            resolver resolve: @escaping RCTPromiseResolveBlock,
-                           rejecter reject: @escaping RCTPromiseRejectBlock){
-        ahi.getExtra(bodyScanResult, options: nil) { error, bodyExtras in
+                           rejecter reject: @escaping RCTPromiseRejectBlock) {
+        
+        ahi.getExtra(["body": [bodyScanResult]], query: ["extrapolate" : ["mesh"]]) { bodyExtras, error in
             if let err = error as NSError? {
                 reject("\(err.code)", err.localizedDescription, err)
                 return
@@ -212,7 +238,8 @@ extension MultiScanModule {
             
 //        TODO: get mesh
             var bsExtras = [String: String]()
-            if let meshURL = extras["meshURL"] as? URL {
+            
+            if let meshResult = extras["extrapolate"]?.first as? Dictionary<String, Any>, let meshURL = meshResult["mesh"] as? URL {
                 bsExtras["meshURL"] = meshURL.absoluteString
             } else {
                 bsExtras["meshURL"] = ""
@@ -253,15 +280,9 @@ extension MultiScanModule {
     }
 
     @objc
-    func getUserAuthorizedState(_ userId: Any?,
-                                resolver resolve: @escaping RCTPromiseResolveBlock,
-                                rejecter reject: @escaping RCTPromiseRejectBlock){
-        guard let userId = userId as? String else {
-            let err = NSError(domain: "com.ahi.ios.ahi_multiscan_react_native_wrapper", code: -11, userInfo: [NSLocalizedDescriptionKey: "User is not authorized"])
-            reject("\(err.code)", err.localizedDescription, err)
-            return
-        }
-        ahi.userIsAuthorized(forId: userId) { isAuthorized in
+    func getUserAuthorizedState( resolver resolve: @escaping RCTPromiseResolveBlock,
+                                 rejecter reject: @escaping RCTPromiseRejectBlock) {
+        ahi.userIsAuthorized() { isAuthorized, userId, error in
             resolve(isAuthorized)
         }
     }
@@ -292,8 +313,32 @@ extension MultiScanModule {
             print("AHI: Results must not be nil and must conform to an Array of Map results.")
             return
         }
-        ahi.setPersistenceDelegate(self)
+        ahi.delegatePersistence = self
         bodyScanResults = bsResults
+    }
+    @objc
+    func getResourcesDownloadProgressReport(){
+        ahi.delegateDownloadProgress = self
+    }
+}
+
+extension MultiScanModule: AHIDelegateDownloadProgress {
+    func downloadProgressReport(_ error: Error?) {
+        if((error) != nil){
+            print("AHI: Download Failed.")
+            return
+        }
+        DispatchQueue.main.sync {
+            ahi.totalEstimatedDownloadSizeInBytes(){ bytes, totalBytes, error in
+                if(bytes>=totalBytes){
+                    print("AHI: INFO: Download Finished.")
+                }else{
+                    let progress = bytes/1024/1024
+                    let total = totalBytes/1024/1024
+                    print("AHI: Download Size: \(progress) / \(total)")
+                }
+            }
+        }
     }
 }
 

@@ -22,7 +22,7 @@ import AHIMultiScan
 // The Body Scan SDK
 import AHIBodyScan
 // The FaceScan SDK
-import AHIFaceScan
+//import AHIFaceScan
 // The FingerScan SDK
 import AHIFingerScan
 
@@ -139,7 +139,7 @@ class AHISDKManager: NSObject, ObservableObject {
     /// Instance of AHI MultiScan
     let ahi = MultiScan.shared()
     /// Instance of AHI FaceScan
-    let faceScan = FaceScan()
+//    let faceScan = FaceScan()
     /// Instance of AHI FaceScan
     let fingerScan = FingerScan()
     /// Instance of AHI BodyScan
@@ -161,7 +161,7 @@ extension AHISDKManager {
     /// We recommend doing this on successfuil load of your application.
     fileprivate func setupMultiScanSDK() {
         bodyScan.setEventListener(self)
-        ahi.setup(withConfig: ["TOKEN": AHIConfigTokens.AHI_MULTI_SCAN_TOKEN], scans: [faceScan, fingerScan, bodyScan]) { error in
+        ahi.setup(withConfig: ["TOKEN": AHIConfigTokens.AHI_MULTI_SCAN_TOKEN], scans: [/*faceScan,*/ fingerScan, bodyScan]) { error in
             if let err = error {
                 print("AHI: Error setting up: \(err)")
                 print("AHI: Confirm you have a valid token.")
@@ -263,12 +263,12 @@ extension AHISDKManager {
         guard let vc = topMostVC() else { return }
         ahi.initiateScan("face", withOptions: options, from: vc) { scanTask, error in
             guard let task = scanTask, error == nil else {
-                if let nsError = error as? NSError, nsError.code == AHIFaceScanErrorCode.ScanCanceled.rawValue {
-                    print("AHI: INFO: User cancelled the session.")
-                } else {
-                    // Handle error through either lack of results or error.
+//                if let nsError = error as? NSError, nsError.code == AHIFaceScanErrorCode.ScanCanceled.rawValue {
+//                    print("AHI: INFO: User cancelled the session.")
+//                } else {
+//                    // Handle error through either lack of results or error.
                     print("AHI: ERROR WITH FACE SCAN: \(error ?? NSError())")
-                }
+//                }
                 return
             }
             task.continueWith(block: { resultsTask in

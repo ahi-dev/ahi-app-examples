@@ -11,18 +11,16 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
 
-
         // release sdk repo (partner and AHI developer access)
         def RELEASE_ACCESS_KEY = System.getenv("AHI_RELEASE_AWS_ACCESS_KEY") ?: ""
         def RELEASE_SECRET = System.getenv("AHI_RELEASE_AWS_SECRET_KEY") ?: ""
         maven {
-            url System.getenv("AHI_MULTISCAN_AWS_URL")
+            url 's3://ahi-prod-sdk-builds/android/release'
             credentials(AwsCredentials) {
                 accessKey "$RELEASE_ACCESS_KEY"
                 secretKey "$RELEASE_SECRET"
             }
         }
-
     }
 }
 

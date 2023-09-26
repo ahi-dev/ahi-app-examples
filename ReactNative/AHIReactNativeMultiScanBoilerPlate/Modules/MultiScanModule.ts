@@ -34,29 +34,30 @@ interface MultiScanInterface {
   downloadAHIResources(): void;
   /** Will return an integer for the bytes size. */
   checkAHIResourcesDownloadSize(): Promise<string>;
-  /** Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG"). */
+  /** Will return an map for current download progress report. */
+  getResourcesDownloadProgressReport(): void;
   startFaceScan(
     userInput: Object,
-    paymentType: string,
   ): Promise<Map<String, any>>;
-  /** Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG"). */
+  startFingerScan(
+    userInput: Object,
+  ): Promise<Map<String, any>>;
   startBodyScan(
     userInput: Object,
-    paymentType: string,
   ): Promise<Map<String, any>>;
   /** Requires a map object of the body scan results and returns a Map object. */
-  getBodyScanExtras(scanResults: Map<String, any>): Promise<Map<String, any>>;
+  getBodyScanExtra(scanResults: Map<String, any>): Promise<Map<String, any>>;
   /** Returns the SDK status. */
   getMultiScanStatus(): Promise<string>;
   /** Returns a Map containing the SDK details. */
   getMultiScanDetails(): Promise<Map<string, any>>;
   /** Returns the user authorization status of the SDK. */
-  getUserAuthorizedState(userID: string): Promise<string>;
+  getUserAuthorizedState(): Promise<string>;
   /** Will deuathorize the user from the SDK. */
   deauthorizeUser(): Promise<string>;
   /** Released the actively registered SDK session. */
   releaseMultiScanSDK(): Promise<string>;
   /** Use the AHIMultiScan persistence delegate and set historical body scan results */
-  setMultiScanPersistenceDelegate(result: any): void;
+  setMultiScanPersistenceDelegate(scanResult: Map<String, any>): void;
 }
 export default MultiScanModule as MultiScanInterface;

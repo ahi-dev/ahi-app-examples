@@ -20,11 +20,14 @@ import Flutter
 // The MultiScan SDK
 import AHIMultiScan
 // The Body Scan SDK
-import MyFiziqSDKCoreLite
+import AHIBodyScan
 // The FaceScan SDK
-import MFZFaceScan
+import AHIFaceScan
+// The FingerScan SDK
+import AHIFingerScan
 
 private let CHANNEL = "ahi_multiscan_flutter_wrapper"
+private let EVENT_CHANNEL = "ahi_multiscan_flutter_event_channel"
 
 @UIApplicationMain
 @objc class AppDelegate: FlutterAppDelegate, FlutterStreamHandler {
@@ -42,9 +45,11 @@ private let CHANNEL = "ahi_multiscan_flutter_wrapper"
         case downloadAHIResources = "downloadAHIResources"
         /// Will return an integer for the bytes size.
         case checkAHIResourcesDownloadSize = "checkAHIResourcesDownloadSize"
-        /// Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG")
+        /// Requires a map object for the required user inputs
         case startFaceScan = "startFaceScan"
-        /// Requires a map object for the required user inputs and the payment type ("SUBSCRIBER" or "PAYG")
+        /// Requires a map object for the required user inputs
+        case startFingerScan = "startFingerScan"
+        /// Requires a map object for the required user inputs 
         case startBodyScan = "startBodyScan"
         /// Requires a map object of the body scan results and returns a Map object.
         case getBodyScanExtras = "getBodyScanExtras"
@@ -63,9 +68,8 @@ private let CHANNEL = "ahi_multiscan_flutter_wrapper"
     }
 
     /// Event sink used to send scan status events back to the Flutter code
-    private var eventSink: FlutterEventSink?
-    let multiScan = AHIMultiScanModule()
-    
+    fileprivate var eventSink: FlutterEventSink?
+    fileprivate let multiScan = AHIMultiScanModule()
     override func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -89,7 +93,7 @@ extension AppDelegate {
     fileprivate func setupFlutter() {
         let controller: FlutterViewController = window?.rootViewController as! FlutterViewController
         let boilerPlateChannel = FlutterMethodChannel(name: CHANNEL, binaryMessenger: controller.binaryMessenger)
-        let eventBoilerPlateChannel = FlutterEventChannel(name: CHANNEL, binaryMessenger: controller.binaryMessenger)
+        let eventBoilerPlateChannel = FlutterEventChannel(name: EVENT_CHANNEL, binaryMessenger: controller.binaryMessenger)
         eventBoilerPlateChannel.setStreamHandler(self)
         boilerPlateChannel.setMethodCallHandler({
             [weak self] (call: FlutterMethodCall, resultHandler: @escaping FlutterResult) -> Void in
@@ -117,6 +121,9 @@ extension AppDelegate {
                 case .startFaceScan:
                     weakSelf.startFaceScan(arguments: call.arguments, resultHandler: resultHandler)
                     break
+                case .startFingerScan:
+                    weakSelf.startFingerScan(arguments: call.arguments, resultHandler: resultHandler)
+                    break
                 case .startBodyScan:
                     weakSelf.startBodyScan(arguments: call.arguments, resultHandler: resultHandler)
                     break
@@ -130,7 +137,7 @@ extension AppDelegate {
                     weakSelf.multiScan.getMultiScanDetails(resultHandler: resultHandler)
                     break
                 case .getUserAuthorizedState:
-                    weakSelf.multiScan.getUserAuthorizedState(userId: call.arguments, resultHandler: resultHandler)
+                    weakSelf.multiScan.getUserAuthorizedState(resultHandler: resultHandler)
                     break
                 case .deauthorizeUser:
                     weakSelf.multiScan.deauthorizeUser(resultHandler: resultHandler)
@@ -160,7 +167,6 @@ extension AppDelegate {
     }
 
     fileprivate func startFaceScan(arguments: Any?, resultHandler: @escaping FlutterResult) {
-        // Need to separate the payment type content from the Map.
         guard let args = arguments as? [String: Any],
               let enum_ent_sex = args["enum_ent_sex"] as? String,
                 let cm_ent_height = args["cm_ent_height"] as? Int,
@@ -174,10 +180,6 @@ extension AppDelegate {
             resultHandler(FlutterError(code: "-3", message: "Missing user face scan input details.", details: nil))
             return
         }
-        guard let paymentType = args["paymentType"] as? String else {
-            resultHandler(FlutterError(code: "-4", message: "Missing user face scan payment type.", details: nil))
-            return
-        }
         let userInputs: [String : Any] = [
             "enum_ent_sex": enum_ent_sex,
             "cm_ent_height": cm_ent_height,
@@ -188,11 +190,27 @@ extension AppDelegate {
             "bool_ent_bloodPressureMedication": bool_ent_bloodPressureMedication,
             "enum_ent_diabetic": enum_ent_diabetic,
         ]
-        multiScan.startFaceScan(userInputs: userInputs, paymentType: paymentType.uppercased(), resultHandler: resultHandler)
+        multiScan.startFaceScan(userInputs: userInputs, resultHandler: resultHandler)
+    }
+
+    fileprivate func startFingerScan(arguments: Any?, resultHandler: @escaping FlutterResult) {
+        guard let args = arguments as? [String: Any],
+              let sec_ent_scanLength = args["sec_ent_scanLength"] as? Int,
+              let str_ent_instruction1 = args["str_ent_instruction1"] as? String,
+              let str_ent_instruction2 = args["str_ent_instruction2"] as? String
+        else {
+            resultHandler(FlutterError(code: "-3", message: "Missing user finger scan input details.", details: nil))
+            return
+        }
+        let userInputs: [String : Any] = [
+            "sec_ent_scanLength": sec_ent_scanLength,
+            "str_ent_instruction1": str_ent_instruction1,
+            "str_ent_instruction2": str_ent_instruction2,
+        ]
+        multiScan.startFingerScan(userInputs: userInputs, resultHandler: resultHandler)
     }
 
     fileprivate func startBodyScan(arguments: Any?, resultHandler: @escaping FlutterResult) {
-        // Need to separate the payment type content from the Map.
         guard let args = arguments as? [String: Any],
               let enum_ent_sex = args["enum_ent_sex"] as? String,
               let cm_ent_height = args["cm_ent_height"] as? Int,
@@ -201,31 +219,29 @@ extension AppDelegate {
             resultHandler(FlutterError(code: "-5", message: "Missing user body scan input details.", details: nil))
             return
         }
-        guard let paymentType = args["paymentType"] as? String else {
-            resultHandler(FlutterError(code: "-6", message: "Missing user body scan payment type.", details: nil))
-            return
-        }
         let userInputs: [String : Any] = [
             "enum_ent_sex": enum_ent_sex,
             "cm_ent_height": cm_ent_height,
             "kg_ent_weight": kg_ent_weight
         ]
-        multiScan.startBodyScan(userInputs: userInputs, paymentType: paymentType.uppercased(), resultHandler: resultHandler)
+        multiScan.startBodyScan(userInputs: userInputs, resultHandler: resultHandler)
     }
 }
 
 // MARK: - AHI MultiScan Module
 
-class AHIMultiScanModule: NSObject {
+private class AHIMultiScanModule: NSObject {
     
     // MARK: Scan Instances
     
     /// Instance of AHI MultiScan
-    let ahi = AHIMultiScan.shared()!
+    let ahi = MultiScan.shared()
     /// Instance of AHI FaceScan
-    let faceScan = AHIFaceScan.shared()
+    let faceScan = FaceScan()
+    /// Instance of AHI FigerScan
+    let fingerScan = FingerScan()
     /// Instance of AHI BodyScan
-    let bodyScan = AHIBodyScan.shared()
+    let bodyScan = BodyScan()
     /// Body Scan Results
     var bodyScanResults = [[String: Any]]()
     
@@ -246,7 +262,7 @@ extension AHIMultiScanModule {
             resultHandler(FlutterError(code: "-1", message: "Missing multi scan token", details: nil))
             return
         }
-        ahi.setup(withConfig: ["TOKEN": token], scans: [faceScan, bodyScan]) { [weak self] error in
+        ahi.setup(withConfig: ["TOKEN": token], scans: [faceScan, fingerScan, bodyScan]) { [weak self] error in
             if let err = error {
                 resultHandler(self?.createFlutterError(fromError: err))
                 return
@@ -279,7 +295,7 @@ extension AHIMultiScanModule {
     ///
     /// This function checks if they are already downloaded and available for use.
     fileprivate func areAHIResourcesAvailable(resultHandler: @escaping FlutterResult) {
-        ahi.areResourcesDownloaded { success in
+        ahi.areResourcesDownloaded { success, error in
             resultHandler(success)
         }
     }
@@ -288,12 +304,13 @@ extension AHIMultiScanModule {
     ///
     /// We recomment only calling this function once per session to prevent duplicate background resource calls.
     fileprivate func downloadAHIResources() {
+        ahi.delegateDownloadProgress = self
         ahi.downloadResourcesInBackground()
     }
     
     /// Check the size of the AHI resources that require downloading.
     fileprivate func checkAHIResourcesDownloadSize(resultHandler: @escaping FlutterResult) {
-        ahi.totalEstimatedDownloadSizeInBytes { bytes in
+        ahi.totalEstimatedDownloadSizeInBytes { bytes, totalBytes, error in
             resultHandler(Int64(bytes))
         }
     }
@@ -302,21 +319,38 @@ extension AHIMultiScanModule {
 // MARK: - AHI Face Scan Initialiser
 
 extension AHIMultiScanModule {
-    fileprivate func startFaceScan(userInputs: [String: Any], paymentType: String, resultHandler: @escaping FlutterResult) {
-        var pType = AHIMultiScanPaymentType.PAYG
-        if paymentType == "PAYG" {
-            pType = .PAYG
-        } else if paymentType == "SUBSCRIBER" {
-            pType = .subscriber
-        } else {
-            resultHandler(FlutterError(code: "-7", message: "Missing valid payment type.", details: nil))
-            return
-        }
+    fileprivate func startFaceScan(userInputs: [String: Any], resultHandler: @escaping FlutterResult) {
         // Ensure the view controller being used is the top one.
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
         guard let vc = topMostVC() else { return }
-        ahi.initiateScan("face", paymentType: pType, withOptions: userInputs, from: vc) { [weak self] scanTask, error in
+        ahi.initiateScan("face", withOptions: userInputs, from: vc) { [weak self] scanTask, error in
+            guard let task = scanTask, error == nil else {
+                resultHandler(self?.createFlutterError(fromError: error))
+                return
+            }
+            task.continueWith(block: { resultsTask in
+                if let results = resultsTask.result as? [String : Any] {
+                    resultHandler(results)
+                } else {
+                    resultHandler(nil)
+                }
+                return nil
+            })
+        }
+    }
+}
+
+
+// MARK: - AHI Finger Scan Initialiser
+
+extension AHIMultiScanModule {
+    fileprivate func startFingerScan(userInputs: [String: Any], resultHandler: @escaping FlutterResult) {
+        // Ensure the view controller being used is the top one.
+        // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
+        // you may have issues.
+        guard let vc = topMostVC() else { return }
+        ahi.initiateScan("finger", withOptions: userInputs, from: vc) { [weak self] scanTask, error in
             guard let task = scanTask, error == nil else {
                 resultHandler(self?.createFlutterError(fromError: error))
                 return
@@ -336,21 +370,12 @@ extension AHIMultiScanModule {
 // MARK: - AHI Body Scan Initialiser
 
 extension AHIMultiScanModule {
-    fileprivate func startBodyScan(userInputs: [String: Any], paymentType: String, resultHandler: @escaping FlutterResult) {
-        var pType = AHIMultiScanPaymentType.PAYG
-        if paymentType == "PAYG" {
-            pType = .PAYG
-        } else if paymentType == "SUBSCRIBER" {
-            pType = .subscriber
-        } else {
-            resultHandler(FlutterError(code: "-7", message: "Missing valid payment type.", details: nil))
-            return
-        }
+    fileprivate func startBodyScan(userInputs: [String: Any], resultHandler: @escaping FlutterResult) {
         // Ensure the view controller being used is the top one.
         // If you are not attempting to get a scan simultaneous with dismissing your calling view controller, or attempting to present from a view controller lower in the stack
         // you may have issues.
         guard let vc = topMostVC() else { return }
-        ahi.initiateScan("body", paymentType: pType, withOptions: userInputs, from: vc) {
+        ahi.initiateScan("body", withOptions: userInputs, from: vc) {
             [weak self] scanTask, error in
             guard let task = scanTask, error == nil else {
                 resultHandler(self?.createFlutterError(fromError: error))
@@ -381,13 +406,14 @@ extension AHIMultiScanModule {
             resultHandler(FlutterError(code: "-8", message: "Missing valid body scan result.", details: nil))
             return
         }
-        ahi.getExtra(bodyScanResult, options: nil) { [weak self] error, extras in
+        ahi.getExtra(["body": [result ?? [:]]], query: ["extrapolate": ["mesh"]]) { [weak self] extras, error in
             guard let extras = extras, error == nil else {
                 resultHandler(self?.createFlutterError(fromError: error))
                 return
             }
+            
             var bsExtras = [String: String]()
-            if let meshURL = extras["meshURL"] as? URL {
+            if let meshResult = extras["extrapolate"]?.first as? Dictionary<String, Any>, let meshURL = meshResult["mesh"] as? URL {
                 // This may require being relative path over absoluteString.
                 // Would recommend in session moving the mesh to another file controlled by the app.
                 bsExtras["meshURL"] = meshURL.absoluteString
@@ -419,12 +445,8 @@ extension AHIMultiScanModule {
     }
     
     /// Check if the user is authorized to use the MuiltScan service.
-    fileprivate func getUserAuthorizedState(userId: Any?, resultHandler: @escaping FlutterResult) {
-        guard let userID = userId as? String else {
-            resultHandler(FlutterError(code: "-9", message: "Missing user ID.", details: nil))
-            return
-        }
-        ahi.userIsAuthorized(forId: userID) { isAuthorized in
+    fileprivate func getUserAuthorizedState(resultHandler: @escaping FlutterResult) {
+        ahi.userIsAuthorized { isAuthorized, partnerUserId, error in
             resultHandler(isAuthorized)
         }
     }
@@ -459,7 +481,7 @@ extension AHIMultiScanModule: AHIDelegatePersistence {
             print("AHI: Results must not be nil and must conform to an Array of Map results.")
             return
         }
-        ahi.setPersistenceDelegate(self)
+        ahi.delegatePersistence = self
         bodyScanResults = bsResults
     }
 
@@ -469,6 +491,26 @@ extension AHIMultiScanModule: AHIDelegatePersistence {
     }
 }
 
+// MARK: - Download Progress report example
+extension AHIMultiScanModule:AHIDelegateDownloadProgress{
+    func downloadProgressReport(_ error: Error?) {
+        if(error != nil){
+            ((UIApplication.shared.delegate as? AppDelegate)?.eventSink?("failed"))
+            return
+        }
+        DispatchQueue.main.sync {
+            ahi.totalEstimatedDownloadSizeInBytes(){ bytes, totalBytes, error in
+                if(bytes>=totalBytes){
+                    ((UIApplication.shared.delegate as? AppDelegate)?.eventSink?("done"))
+                }else {
+                    ((UIApplication.shared.delegate as? AppDelegate)?.eventSink?("\(bytes):\(totalBytes)"))
+                }
+            }
+        }
+    }
+}
+
+
 // MARK: - Error Safety
 
 extension AHIMultiScanModule {
@@ -476,7 +518,8 @@ extension AHIMultiScanModule {
         guard let err = error as? NSError else {
             return nil
         }
-        let errCode = err.code
+        let errCode = (err.code == AHIFingerScanErrorCode.codeScanCanceled.rawValue ||
+                       err.code == AHIFaceScanErrorCode.ScanCanceled.rawValue) ? "USER_CANCELLED" : "\(err.code)"
         var errMessage = err.localizedDescription
         if errMessage.isEmpty {
             errMessage = "Unknown error occurred. Please contact developer support."

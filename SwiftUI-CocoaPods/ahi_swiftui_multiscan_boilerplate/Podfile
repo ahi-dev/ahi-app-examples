@@ -1,4 +1,4 @@
-source 'https://git-codecommit.ap-southeast-1.amazonaws.com/v1/repos/myfiziq-sdk-podrepo'
+source 'https://git-codecommit.ap-southeast-2.amazonaws.com/v1/repos/ahi-pod-ios-cocoapods'
 source 'https://cdn.cocoapods.org/'
 
 platform :ios, '15.4'
@@ -9,15 +9,16 @@ target 'ahi_swiftui_multiscan_boilerplate' do
   use_frameworks!
 
   # Pods for ahi_swiftui_multiscan_boilerplate
-  pod 'MyFiziqSDKCoreLite', '~> 21.1.3'
-  pod 'MFZFaceScan', '~> 21.1.3'
-  pod 'AHIMultiScan', '~> 21.1.3'
+  pod 'AHIMultiScan', '~> 22.0'
+  pod 'AHIBodyScan', '~> 22.0'
+  pod 'AHIFaceScan', '~> 22.0'
+  pod 'AHIFingerScan', '~> 22.0'
 end
-
 
 post_install do |installer|
   # Fix for Xcode 15
   # https://stackoverflow.com/questions/77136958/flutter-xcode-15-error-xcode-dt-toolchain-dir-cannot-be-used-to-evaluate-libr
+
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
       xcconfig_path = config.base_configuration_reference.real_path
