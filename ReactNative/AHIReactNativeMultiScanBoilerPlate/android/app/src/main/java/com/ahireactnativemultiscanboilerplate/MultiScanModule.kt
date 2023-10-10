@@ -192,11 +192,11 @@ class MultiScanModule(private val context: ReactApplicationContext) :
                             promise.resolve(scanResult)
                         }
                         else -> {
-                            if (result.error() == AHIFaceScanError.FACE_SCAN_CANCELED) {
+                            if (result.error() == AHIFaceScanError.FACE_SCAN_CANCELLED) {
                                 Log.d(TAG, "User cancelled scan")
                                 promise.reject(
-                                    AHIFaceScanError.FACE_SCAN_CANCELED.code().toString(),
-                                    AHIFaceScanError.FACE_SCAN_CANCELED.name
+                                    AHIFaceScanError.FACE_SCAN_CANCELLED.code().toString(),
+                                    AHIFaceScanError.FACE_SCAN_CANCELLED.name
                                 )
                             } else {
                                 Log.d(TAG, "initiateScan: ${result.error()}")
