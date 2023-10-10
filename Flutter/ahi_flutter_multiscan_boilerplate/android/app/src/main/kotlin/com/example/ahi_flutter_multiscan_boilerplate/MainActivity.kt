@@ -447,7 +447,7 @@ class MainActivity : FlutterActivity() {
                         result.success(response.value)
                     }
                     else -> {
-                        if (response.error() == AHIFaceScanError.FACE_SCAN_CANCELED) {
+                        if (response.error() == AHIFaceScanError.FACE_SCAN_CANCELLED) {
                             Log.i(TAG, "User cancelled scan")
                             result.error(response.error().toString(), "UserCancelled", null)
                         } else {
