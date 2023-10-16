@@ -222,7 +222,7 @@ extension MultiScanModule {
     }
 
     @objc
-    func getBodyScanExtras(_ bodyScanResult: [String: Any],
+    func getBodyScanExtra(_ bodyScanResult: [String: Any],
                            resolver resolve: @escaping RCTPromiseResolveBlock,
                            rejecter reject: @escaping RCTPromiseRejectBlock) {
         
