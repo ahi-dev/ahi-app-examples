@@ -379,7 +379,7 @@
 			requirement = {
 				kind = versionRange;
 				maximumVersion = 23.10.0;
-				minimumVersion = 23.9.0;
+				minimumVersion = 23.10.0;
 			};
 		};
 		D9B6173A2AC29A93008DA927 /* XCRemoteSwiftPackageReference "ahi-pod-ios-facescan" */ = {
@@ -388,7 +388,7 @@
 			requirement = {
 				kind = versionRange;
 				maximumVersion = 23.10.0;
-				minimumVersion = 23.9.0;
+				minimumVersion = 23.10.0;
 			};
 		};
 		D9B6173D2AC29AB6008DA927 /* XCRemoteSwiftPackageReference "ahi-pod-ios-bodyscan" */ = {
@@ -397,7 +397,7 @@
 			requirement = {
 				kind = versionRange;
 				maximumVersion = 23.10.0;
-				minimumVersion = 23.9.0;
+				minimumVersion = 23.10.0;
 			};
 		};
 		D9B617402AC29AD4008DA927 /* XCRemoteSwiftPackageReference "ahi-pod-ios-fingerscan" */ = {
@@ -406,7 +406,7 @@
 			requirement = {
 				kind = versionRange;
 				maximumVersion = 23.10.0;
-				minimumVersion = 23.9.0;
+				minimumVersion = 23.10.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

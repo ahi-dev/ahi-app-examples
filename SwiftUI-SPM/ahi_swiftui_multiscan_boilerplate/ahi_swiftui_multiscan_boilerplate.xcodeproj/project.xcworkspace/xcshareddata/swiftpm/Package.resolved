@@ -6,7 +6,7 @@
       "location" : "https://git-codecommit.ap-southeast-2.amazonaws.com/v1/repos/ahi-pod-ios-bodyscan",
       "state" : {
         "revision" : "351f4280e0e68988f814cb73d1e42123ab1e4f90",
-        "version" : "23.9.2201"
+        "version" : "23.10.2201"
       }
     },
     {
@@ -15,7 +15,7 @@
       "location" : "https://git-codecommit.ap-southeast-2.amazonaws.com/v1/repos/ahi-pod-ios-common",
       "state" : {
         "revision" : "5e93b8fd192937f61bf722f9f27ba274d96a6cef",
-        "version" : "23.9.1225"
+        "version" : "23.10.1225"
       }
     },
     {
@@ -24,7 +24,7 @@
       "location" : "https://git-codecommit.ap-southeast-2.amazonaws.com/v1/repos/ahi-pod-ios-facescan",
       "state" : {
         "revision" : "b469965c997468aad57f6176ce52d430f120b2a5",
-        "version" : "23.9.1267"
+        "version" : "23.10.1267"
       }
     },
     {
@@ -33,7 +33,7 @@
       "location" : "https://git-codecommit.ap-southeast-2.amazonaws.com/v1/repos/ahi-pod-ios-fingerscan",
       "state" : {
         "revision" : "8bb722e2e5a156bcdc99e742f58df50ed4ff5de0",
-        "version" : "23.9.451"
+        "version" : "23.10.451"
       }
     },
     {
@@ -42,7 +42,7 @@
       "location" : "https://git-codecommit.ap-southeast-2.amazonaws.com/v1/repos/ahi-pod-ios-multiscan",
       "state" : {
         "revision" : "0356a3a304d4b1b412d642f159ab37d30a1ed7c9",
-        "version" : "23.9.1137"
+        "version" : "23.10.1137"
       }
     },
     {
