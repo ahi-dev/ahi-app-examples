@@ -8,12 +8,14 @@
 
 /* Begin PBXBuildFile section */
 		00E356F31AD99517003FC87E /* ahi_react_native_multiscan_boilerplateTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E356F21AD99517003FC87E /* ahi_react_native_multiscan_boilerplateTests.m */; };
-		0C80B921A6F3F58F76C31292 /* libPods-ahi_react_native_multiscan_boilerplate.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-ahi_react_native_multiscan_boilerplate.a */; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.mm */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
-		7699B88040F8A987B510C191 /* libPods-ahi_react_native_multiscan_boilerplate-ahi_react_native_multiscan_boilerplateTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 19F6CBCC0A4E27FBF8BF4A61 /* libPods-ahi_react_native_multiscan_boilerplate-ahi_react_native_multiscan_boilerplateTests.a */; };
+		3F583A0EFE5F85B42B9C74A2 /* Pods_ahi_react_native_multiscan_boilerplate_ahi_react_native_multiscan_boilerplateTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C24CD3746A2759BE4DDA9E12 /* Pods_ahi_react_native_multiscan_boilerplate_ahi_react_native_multiscan_boilerplateTests.framework */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		C5FE89B4B7CC8B886B94689A /* Pods_ahi_react_native_multiscan_boilerplate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 727E5314E9D5B1A94FFD919E /* Pods_ahi_react_native_multiscan_boilerplate.framework */; };
+		F05C51A32B1574FE00CAEBD9 /* AHIMultiScanModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = F05C51A22B1574FE00CAEBD9 /* AHIMultiScanModule.swift */; };
+		F05C51A52B15766200CAEBD9 /* AHIMultiScanModule.m in Sources */ = {isa = PBXBuildFile; fileRef = F05C51A42B15766200CAEBD9 /* AHIMultiScanModule.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,14 +38,17 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = ahi_react_native_multiscan_boilerplate/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = ahi_react_native_multiscan_boilerplate/Info.plist; sourceTree = "<group>"; };
 		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = ahi_react_native_multiscan_boilerplate/main.m; sourceTree = "<group>"; };
-		19F6CBCC0A4E27FBF8BF4A61 /* libPods-ahi_react_native_multiscan_boilerplate-ahi_react_native_multiscan_boilerplateTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-ahi_react_native_multiscan_boilerplate-ahi_react_native_multiscan_boilerplateTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B4392A12AC88292D35C810B /* Pods-ahi_react_native_multiscan_boilerplate.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ahi_react_native_multiscan_boilerplate.debug.xcconfig"; path = "Target Support Files/Pods-ahi_react_native_multiscan_boilerplate/Pods-ahi_react_native_multiscan_boilerplate.debug.xcconfig"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-ahi_react_native_multiscan_boilerplate.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ahi_react_native_multiscan_boilerplate.release.xcconfig"; path = "Target Support Files/Pods-ahi_react_native_multiscan_boilerplate/Pods-ahi_react_native_multiscan_boilerplate.release.xcconfig"; sourceTree = "<group>"; };
 		5B7EB9410499542E8C5724F5 /* Pods-ahi_react_native_multiscan_boilerplate-ahi_react_native_multiscan_boilerplateTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ahi_react_native_multiscan_boilerplate-ahi_react_native_multiscan_boilerplateTests.debug.xcconfig"; path = "Target Support Files/Pods-ahi_react_native_multiscan_boilerplate-ahi_react_native_multiscan_boilerplateTests/Pods-ahi_react_native_multiscan_boilerplate-ahi_react_native_multiscan_boilerplateTests.debug.xcconfig"; sourceTree = "<group>"; };
-		5DCACB8F33CDC322A6C60F78 /* libPods-ahi_react_native_multiscan_boilerplate.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-ahi_react_native_multiscan_boilerplate.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		727E5314E9D5B1A94FFD919E /* Pods_ahi_react_native_multiscan_boilerplate.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ahi_react_native_multiscan_boilerplate.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = ahi_react_native_multiscan_boilerplate/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		89C6BE57DB24E9ADA2F236DE /* Pods-ahi_react_native_multiscan_boilerplate-ahi_react_native_multiscan_boilerplateTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ahi_react_native_multiscan_boilerplate-ahi_react_native_multiscan_boilerplateTests.release.xcconfig"; path = "Target Support Files/Pods-ahi_react_native_multiscan_boilerplate-ahi_react_native_multiscan_boilerplateTests/Pods-ahi_react_native_multiscan_boilerplate-ahi_react_native_multiscan_boilerplateTests.release.xcconfig"; sourceTree = "<group>"; };
+		C24CD3746A2759BE4DDA9E12 /* Pods_ahi_react_native_multiscan_boilerplate_ahi_react_native_multiscan_boilerplateTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ahi_react_native_multiscan_boilerplate_ahi_react_native_multiscan_boilerplateTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		F05C51A12B1574FD00CAEBD9 /* ahi_react_native_multiscan_boilerplate-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ahi_react_native_multiscan_boilerplate-Bridging-Header.h"; sourceTree = "<group>"; };
+		F05C51A22B1574FE00CAEBD9 /* AHIMultiScanModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AHIMultiScanModule.swift; sourceTree = "<group>"; };
+		F05C51A42B15766200CAEBD9 /* AHIMultiScanModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AHIMultiScanModule.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -51,7 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7699B88040F8A987B510C191 /* libPods-ahi_react_native_multiscan_boilerplate-ahi_react_native_multiscan_boilerplateTests.a in Frameworks */,
+				3F583A0EFE5F85B42B9C74A2 /* Pods_ahi_react_native_multiscan_boilerplate_ahi_react_native_multiscan_boilerplateTests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -59,7 +64,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0C80B921A6F3F58F76C31292 /* libPods-ahi_react_native_multiscan_boilerplate.a in Frameworks */,
+				C5FE89B4B7CC8B886B94689A /* Pods_ahi_react_native_multiscan_boilerplate.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -92,6 +97,9 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB71A68108700A75B9A /* main.m */,
+				F05C51A22B1574FE00CAEBD9 /* AHIMultiScanModule.swift */,
+				F05C51A12B1574FD00CAEBD9 /* ahi_react_native_multiscan_boilerplate-Bridging-Header.h */,
+				F05C51A42B15766200CAEBD9 /* AHIMultiScanModule.m */,
 			);
 			name = ahi_react_native_multiscan_boilerplate;
 			sourceTree = "<group>";
@@ -100,8 +108,8 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				5DCACB8F33CDC322A6C60F78 /* libPods-ahi_react_native_multiscan_boilerplate.a */,
-				19F6CBCC0A4E27FBF8BF4A61 /* libPods-ahi_react_native_multiscan_boilerplate-ahi_react_native_multiscan_boilerplateTests.a */,
+				727E5314E9D5B1A94FFD919E /* Pods_ahi_react_native_multiscan_boilerplate.framework */,
+				C24CD3746A2759BE4DDA9E12 /* Pods_ahi_react_native_multiscan_boilerplate_ahi_react_native_multiscan_boilerplateTests.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -207,7 +215,7 @@
 						TestTargetID = 13B07F861A680F5B00A75B9A;
 					};
 					13B07F861A680F5B00A75B9A = {
-						LastSwiftMigration = 1120;
+						LastSwiftMigration = 1500;
 					};
 				};
 			};
@@ -414,6 +422,8 @@
 			files = (
 				13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
+				F05C51A32B1574FE00CAEBD9 /* AHIMultiScanModule.swift in Sources */,
+				F05C51A52B15766200CAEBD9 /* AHIMultiScanModule.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -432,6 +442,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 5B7EB9410499542E8C5724F5 /* Pods-ahi_react_native_multiscan_boilerplate-ahi_react_native_multiscan_boilerplateTests.debug.xcconfig */;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
@@ -459,6 +470,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 89C6BE57DB24E9ADA2F236DE /* Pods-ahi_react_native_multiscan_boilerplate-ahi_react_native_multiscan_boilerplateTests.release.xcconfig */;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COPY_PHASE_STRIP = NO;
 				INFOPLIST_FILE = ahi_react_native_multiscan_boilerplateTests/Info.plist;
@@ -486,6 +498,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = R8N9468BQ5;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = ahi_react_native_multiscan_boilerplate/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -500,6 +513,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = ahi_react_native_multiscan_boilerplate;
+				SWIFT_OBJC_BRIDGING_HEADER = "ahi_react_native_multiscan_boilerplate-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -513,6 +527,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = R8N9468BQ5;
 				INFOPLIST_FILE = ahi_react_native_multiscan_boilerplate/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -526,6 +541,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = ahi_react_native_multiscan_boilerplate;
+				SWIFT_OBJC_BRIDGING_HEADER = "ahi_react_native_multiscan_boilerplate-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
@@ -581,6 +597,14 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"${PODS_CONFIGURATION_BUILD_DIR}/ReactCommon-Samples/ReactCommon_Samples.framework/Headers",
+					"${PODS_CONFIGURATION_BUILD_DIR}/ReactCommon/ReactCommon.framework/Headers/react/nativemodule/core",
+					"${PODS_CONFIGURATION_BUILD_DIR}/ReactCommon-Samples/ReactCommon_Samples.framework/Headers/platform/ios",
+					"${PODS_CONFIGURATION_BUILD_DIR}/React-NativeModulesApple/React_NativeModulesApple.framework/Headers",
+					"${PODS_CONFIGURATION_BUILD_DIR}/React-graphics/React_graphics.framework/Headers/react/renderer/graphics/platform/ios",
+				);
 				IPHONEOS_DEPLOYMENT_TARGET = 12.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					/usr/lib/swift,
@@ -656,6 +680,14 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"${PODS_CONFIGURATION_BUILD_DIR}/ReactCommon-Samples/ReactCommon_Samples.framework/Headers",
+					"${PODS_CONFIGURATION_BUILD_DIR}/ReactCommon/ReactCommon.framework/Headers/react/nativemodule/core",
+					"${PODS_CONFIGURATION_BUILD_DIR}/ReactCommon-Samples/ReactCommon_Samples.framework/Headers/platform/ios",
+					"${PODS_CONFIGURATION_BUILD_DIR}/React-NativeModulesApple/React_NativeModulesApple.framework/Headers",
+					"${PODS_CONFIGURATION_BUILD_DIR}/React-graphics/React_graphics.framework/Headers/react/renderer/graphics/platform/ios",
+				);
 				IPHONEOS_DEPLOYMENT_TARGET = 12.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					/usr/lib/swift,
