@@ -12,9 +12,9 @@
 		C9611E1527FD711600EB4B88 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C9611E1427FD711600EB4B88 /* Assets.xcassets */; };
 		C9611E1827FD711600EB4B88 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C9611E1727FD711600EB4B88 /* Preview Assets.xcassets */; };
 		D9439ED42ABC3C1D00888165 /* AHIMultiScan in Frameworks */ = {isa = PBXBuildFile; productRef = D9439ED32ABC3C1D00888165 /* AHIMultiScan */; };
-		D9B6173C2AC29A93008DA927 /* AHIFaceScan in Frameworks */ = {isa = PBXBuildFile; productRef = D9B6173B2AC29A93008DA927 /* AHIFaceScan */; };
-		D9B6173F2AC29AB6008DA927 /* AHIBodyScan in Frameworks */ = {isa = PBXBuildFile; productRef = D9B6173E2AC29AB6008DA927 /* AHIBodyScan */; };
-		D9B617422AC29AD4008DA927 /* AHIFingerScan in Frameworks */ = {isa = PBXBuildFile; productRef = D9B617412AC29AD4008DA927 /* AHIFingerScan */; };
+		D967E56F2AF0EF0E00CAC913 /* AHIFaceScan in Frameworks */ = {isa = PBXBuildFile; productRef = D967E56E2AF0EF0E00CAC913 /* AHIFaceScan */; };
+		D967E5722AF0EF6400CAC913 /* AHIBodyScan in Frameworks */ = {isa = PBXBuildFile; productRef = D967E5712AF0EF6400CAC913 /* AHIBodyScan */; };
+		D967E5752AF0F28B00CAC913 /* AHIFingerScan in Frameworks */ = {isa = PBXBuildFile; productRef = D967E5742AF0F28B00CAC913 /* AHIFingerScan */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,9 +31,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				D9439ED42ABC3C1D00888165 /* AHIMultiScan in Frameworks */,
-				D9B6173C2AC29A93008DA927 /* AHIFaceScan in Frameworks */,
-				D9B6173F2AC29AB6008DA927 /* AHIBodyScan in Frameworks */,
-				D9B617422AC29AD4008DA927 /* AHIFingerScan in Frameworks */,
+				D967E56F2AF0EF0E00CAC913 /* AHIFaceScan in Frameworks */,
+				D967E5722AF0EF6400CAC913 /* AHIBodyScan in Frameworks */,
+				D967E5752AF0F28B00CAC913 /* AHIFingerScan in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -101,9 +101,9 @@
 			name = ahi_swiftui_multiscan_boilerplate;
 			packageProductDependencies = (
 				D9439ED32ABC3C1D00888165 /* AHIMultiScan */,
-				D9B6173B2AC29A93008DA927 /* AHIFaceScan */,
-				D9B6173E2AC29AB6008DA927 /* AHIBodyScan */,
-				D9B617412AC29AD4008DA927 /* AHIFingerScan */,
+				D967E56E2AF0EF0E00CAC913 /* AHIFaceScan */,
+				D967E5712AF0EF6400CAC913 /* AHIBodyScan */,
+				D967E5742AF0F28B00CAC913 /* AHIFingerScan */,
 			);
 			productName = ahi_swiftui_multiscan_boilerplate;
 			productReference = C9611E0D27FD711500EB4B88 /* ahi_swiftui_multiscan_boilerplate.app */;
@@ -135,9 +135,9 @@
 			mainGroup = C9611E0427FD711500EB4B88;
 			packageReferences = (
 				D9439ED22ABC3C1D00888165 /* XCRemoteSwiftPackageReference "ahi-pod-ios-multiscan" */,
-				D9B6173A2AC29A93008DA927 /* XCRemoteSwiftPackageReference "ahi-pod-ios-facescan" */,
-				D9B6173D2AC29AB6008DA927 /* XCRemoteSwiftPackageReference "ahi-pod-ios-bodyscan" */,
-				D9B617402AC29AD4008DA927 /* XCRemoteSwiftPackageReference "ahi-pod-ios-fingerscan" */,
+				D967E56D2AF0EF0E00CAC913 /* XCRemoteSwiftPackageReference "ahi-pod-ios-facescan" */,
+				D967E5702AF0EF6400CAC913 /* XCRemoteSwiftPackageReference "ahi-pod-ios-bodyscan" */,
+				D967E5732AF0F28B00CAC913 /* XCRemoteSwiftPackageReference "ahi-pod-ios-fingerscan" */,
 			);
 			productRefGroup = C9611E0E27FD711500EB4B88 /* Products */;
 			projectDirPath = "";
@@ -378,35 +378,35 @@
 			repositoryURL = "https://git-codecommit.ap-southeast-2.amazonaws.com/v1/repos/ahi-pod-ios-multiscan";
 			requirement = {
 				kind = versionRange;
-				maximumVersion = 23.10.0;
-				minimumVersion = 23.9.0;
+				maximumVersion = 23.11.0;
+				minimumVersion = 23.10.0;
 			};
 		};
-		D9B6173A2AC29A93008DA927 /* XCRemoteSwiftPackageReference "ahi-pod-ios-facescan" */ = {
+		D967E56D2AF0EF0E00CAC913 /* XCRemoteSwiftPackageReference "ahi-pod-ios-facescan" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://git-codecommit.ap-southeast-2.amazonaws.com/v1/repos/ahi-pod-ios-facescan";
 			requirement = {
 				kind = versionRange;
-				maximumVersion = 23.10.0;
-				minimumVersion = 23.9.0;
+				maximumVersion = 23.11.0;
+				minimumVersion = 23.10.0;
 			};
 		};
-		D9B6173D2AC29AB6008DA927 /* XCRemoteSwiftPackageReference "ahi-pod-ios-bodyscan" */ = {
+		D967E5702AF0EF6400CAC913 /* XCRemoteSwiftPackageReference "ahi-pod-ios-bodyscan" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://git-codecommit.ap-southeast-2.amazonaws.com/v1/repos/ahi-pod-ios-bodyscan";
 			requirement = {
 				kind = versionRange;
-				maximumVersion = 23.10.0;
-				minimumVersion = 23.9.0;
+				maximumVersion = 23.11.0;
+				minimumVersion = 23.10.0;
 			};
 		};
-		D9B617402AC29AD4008DA927 /* XCRemoteSwiftPackageReference "ahi-pod-ios-fingerscan" */ = {
+		D967E5732AF0F28B00CAC913 /* XCRemoteSwiftPackageReference "ahi-pod-ios-fingerscan" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://git-codecommit.ap-southeast-2.amazonaws.com/v1/repos/ahi-pod-ios-fingerscan";
 			requirement = {
 				kind = versionRange;
-				maximumVersion = 23.10.0;
-				minimumVersion = 23.9.0;
+				maximumVersion = 23.11.0;
+				minimumVersion = 23.10.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -417,19 +417,19 @@
 			package = D9439ED22ABC3C1D00888165 /* XCRemoteSwiftPackageReference "ahi-pod-ios-multiscan" */;
 			productName = AHIMultiScan;
 		};
-		D9B6173B2AC29A93008DA927 /* AHIFaceScan */ = {
+		D967E56E2AF0EF0E00CAC913 /* AHIFaceScan */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = D9B6173A2AC29A93008DA927 /* XCRemoteSwiftPackageReference "ahi-pod-ios-facescan" */;
+			package = D967E56D2AF0EF0E00CAC913 /* XCRemoteSwiftPackageReference "ahi-pod-ios-facescan" */;
 			productName = AHIFaceScan;
 		};
-		D9B6173E2AC29AB6008DA927 /* AHIBodyScan */ = {
+		D967E5712AF0EF6400CAC913 /* AHIBodyScan */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = D9B6173D2AC29AB6008DA927 /* XCRemoteSwiftPackageReference "ahi-pod-ios-bodyscan" */;
+			package = D967E5702AF0EF6400CAC913 /* XCRemoteSwiftPackageReference "ahi-pod-ios-bodyscan" */;
 			productName = AHIBodyScan;
 		};
-		D9B617412AC29AD4008DA927 /* AHIFingerScan */ = {
+		D967E5742AF0F28B00CAC913 /* AHIFingerScan */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = D9B617402AC29AD4008DA927 /* XCRemoteSwiftPackageReference "ahi-pod-ios-fingerscan" */;
+			package = D967E5732AF0F28B00CAC913 /* XCRemoteSwiftPackageReference "ahi-pod-ios-fingerscan" */;
 			productName = AHIFingerScan;
 		};
 /* End XCSwiftPackageProductDependency section */
