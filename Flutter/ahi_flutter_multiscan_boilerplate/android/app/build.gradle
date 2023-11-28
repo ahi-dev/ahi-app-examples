@@ -58,6 +58,8 @@ android {
             // Signing with the debug keys for now, so `flutter run --release` works.
             debuggable true
             signingConfig signingConfigs.debug
+            minifyEnabled false
+            shrinkResources false
         }
     }
     namespace 'com.example.ahi_flutter_multiscan_boilerplate'
