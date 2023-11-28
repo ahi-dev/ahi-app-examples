@@ -19,8 +19,10 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            debuggable true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            minifyEnabled false
+            shrinkResources false
         }
     }
     compileOptions {
@@ -52,9 +54,9 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.4'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.0'
 
-    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-multiscan:23.8.+'
-    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-facescan:23.8.+'
-    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-fingerscan:23.8.+'
-    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-bodyscan:23.8.+'
+    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-multiscan:23.9.+'
+    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-facescan:23.9.+'
+    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-fingerscan:23.9.+'
+    implementation 'com.advancedhumanimaging.sdk:ahi-sdk-bodyscan:23.9.+'
 //
 }

@@ -265,7 +265,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                         Log.d(TAG, "initiateScan: ${result.value}")
                     }
                     else -> {
-                        if (result.error() == AHIFaceScanError.FACE_SCAN_CANCELED) {
+                        if (result.error() == AHIFaceScanError.FACE_SCAN_CANCELLED) {
                             Log.i(TAG, "User cancelled scan")
                         } else {
                             Log.d(TAG, "initiateScan: ${result.error()}")

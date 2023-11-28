@@ -354,6 +354,7 @@ extension AHISDKManager: AHIBSEventListenerDelegate {
                 if let results = resultsTask.result as? [String : Any] {
                     // Handle results
                     print("AHI: SCAN RESULTS: \(results)")
+                    self.getBodyScanExtras(withBodyScanResult: results)
                 }
                 // Handle failure.
                 return nil

@@ -91,8 +91,7 @@ class _HomeState extends State<Home> {
       final progressReport = report.toString().split(':');
       final progress = double.parse(progressReport[0]) / 1024 / 1024;
       final total = double.parse(progressReport[1]) / 1024 / 1024;
-      print(
-          "AHI INFO: Size of Download is ${progress.toStringAsFixed(1)} / ${total.toStringAsFixed(1)}");
+      print("AHI INFO: Size of Download is ${progress.toStringAsFixed(1)} / ${total.toStringAsFixed(1)}");
     }
   }
 
@@ -117,15 +116,9 @@ class _HomeState extends State<Home> {
   ///
   /// With your signed in user, you can authorize them to use the AHI service.
   void authorizeUser() async {
-    Map<String, dynamic> ahiConfigTokens = {
-      "USER_ID": AHI_TEST_USER_ID,
-      "SALT": AHI_TEST_USER_SALT,
-      "CLAIMS": AHI_TEST_USER_CLAIMS
-    };
+    Map<String, dynamic> ahiConfigTokens = {"USER_ID": AHI_TEST_USER_ID, "SALT": AHI_TEST_USER_SALT, "CLAIMS": AHI_TEST_USER_CLAIMS};
     try {
-      await platform
-          .invokeMethod("authorizeUser", ahiConfigTokens)
-          .then((response) => {handleAuthorizeUser(response)});
+      await platform.invokeMethod("authorizeUser", ahiConfigTokens).then((response) => {handleAuthorizeUser(response)});
     } on PlatformException catch (error) {
       print("AHI ERROR: authorizeUser $error}");
     }
@@ -148,8 +141,7 @@ class _HomeState extends State<Home> {
   /// We have remote resources that exceed 100MB that enable our scans to work.
   /// You are required to download them inorder to obtain a body scan.
   void areAHIResourcesAvailable() async {
-    platform.invokeMethod("areAHIResourcesAvailable").then(
-        (resourcesAvailable) => {handleResourcesAvailable(resourcesAvailable)});
+    platform.invokeMethod("areAHIResourcesAvailable").then((resourcesAvailable) => {handleResourcesAvailable(resourcesAvailable)});
   }
 
   void handleResourcesAvailable(bool resourcesAvailable) {
@@ -196,9 +188,7 @@ class _HomeState extends State<Home> {
       return;
     }
     try {
-      await platform
-          .invokeMethod("startFaceScan", options)
-          .then((value) => {handleFaceScanResults(value)});
+      await platform.invokeMethod("startFaceScan", options).then((value) => {handleFaceScanResults(value)});
     } on PlatformException catch (error) {
       if (error.code == "USER_CANCELLED") {
         print("AHI: INFO: User cancelled the session.");
@@ -219,11 +209,7 @@ class _HomeState extends State<Home> {
   }
 
   void startFingerScan() async {
-    Map<String, dynamic> options = {
-      "sec_ent_scanLength": 60,
-      "str_ent_instruction1": "Instruction 1",
-      "str_ent_instruction2": "Instruction 2"
-    };
+    Map<String, dynamic> options = {"sec_ent_scanLength": 60, "str_ent_instruction1": "Instruction 1", "str_ent_instruction2": "Instruction 2"};
 
     if (!_areFingerScanConfigOptionsValid(options)) {
       print("AHI ERROR: Finger Scan inputs invalid.");
@@ -231,9 +217,7 @@ class _HomeState extends State<Home> {
     }
 
     try {
-      await platform
-          .invokeMethod("startFingerScan", options)
-          .then((value) => {handleFingerScanResults(value)});
+      await platform.invokeMethod("startFingerScan", options).then((value) => {handleFingerScanResults(value)});
     } on PlatformException catch (error) {
       if (error.code == "USER_CANCELLED") {
         print("AHI: INFO: User cancelled the session.");
@@ -255,22 +239,15 @@ class _HomeState extends State<Home> {
 
   /// Initiate native module BodyScan
   void startBodyScan() async {
-    Map<String, dynamic> options = {
-      "enum_ent_sex": "male",
-      "yr_ent_age": 30,
-      "cm_ent_height": 180,
-      "kg_ent_weight": 85
-    };
+    Map<String, dynamic> options = {"enum_ent_sex": "male", "yr_ent_age": 30, "cm_ent_height": 180, "kg_ent_weight": 85};
     if (!areBodyScanConfigOptionsValid(options)) {
       print("AHI ERROR: Body Scan inputs invalid.");
       return;
     }
     try {
-      await platform
-          .invokeMethod("startBodyScan", options)
-          .then((bodyScanResult) => {
-                handleBodyScanResults(bodyScanResult),
-              });
+      await platform.invokeMethod("startBodyScan", options).then((bodyScanResult) => {
+            handleBodyScanResults(bodyScanResult),
+          });
     } on PlatformException catch (error) {
       if (error.code == "USER_CANCELLED") {
         print("AHI: INFO: User cancelled the session.");
@@ -289,8 +266,7 @@ class _HomeState extends State<Home> {
       // This is an optional feature.
       getBodyScanExtras(Map.from(result));
     } on PlatformException catch (error) {
-      print(
-          "AHI: UNKNOWN ERROR WITH BODY SCAN RESULT: ERROR: $error RESULT: $result");
+      print("AHI: UNKNOWN ERROR WITH BODY SCAN RESULT: ERROR: $error RESULT: $result");
     }
   }
 
@@ -301,9 +277,7 @@ class _HomeState extends State<Home> {
   /// getBodyScanExtras(Map<String, dynamic> result) async {
   void getBodyScanExtras(Map<String, dynamic> result) async {
     try {
-      await platform
-          .invokeMethod("getBodyScanExtras", result)
-          .then((value) => {handleBodyScanExtras(value)});
+      await platform.invokeMethod("getBodyScanExtras", result).then((value) => {handleBodyScanExtras(value)});
     } on PlatformException catch (error) {
       print("AHI: ERROR GETTING BODY SCAN EXTRAS. $error");
     }
@@ -317,17 +291,13 @@ class _HomeState extends State<Home> {
 
   // Check if MultiScan is on or offline.
   void getMultiScanStatus() async {
-    platform
-        .invokeMethod("getMultiScanStatus")
-        .then((status) => print("AHI INFO: Status: $status"));
+    platform.invokeMethod("getMultiScanStatus").then((status) => print("AHI INFO: Status: $status"));
   }
 
   /// Check your AHI MultiScan organisation  details.
   void getMultiScanDetails() async {
     try {
-      await platform
-          .invokeMethod("getMultiScanDetails")
-          .then((details) => print("AHI INFO: MultiScan details: $details"));
+      await platform.invokeMethod("getMultiScanDetails").then((details) => print("AHI INFO: MultiScan details: $details"));
     } on PlatformException catch (error) {
       print("AHI ERROR: getMultiScanDetails $error}");
     }
@@ -336,11 +306,9 @@ class _HomeState extends State<Home> {
   /// Check if the user is authorized to use the MuiltScan service.
   void getUserAuthorizedState() async {
     try {
-      await platform.invokeMethod("getUserAuthorizedState").then(
-          (isAuthorized) => {
-                print(
-                    "AHI INFO: User is ${isAuthorized ? "authorized" : "not authorized"}")
-              });
+      await platform
+          .invokeMethod("getUserAuthorizedState")
+          .then((isAuthorized) => {print("AHI INFO: User is ${isAuthorized ? "authorized" : "not authorized"}")});
     } on PlatformException catch (error) {
       print("AHI ERROR: getUserAuthorizedState $error}");
     }
@@ -349,19 +317,16 @@ class _HomeState extends State<Home> {
   /// Deauthorize the user.
   void deAuthorizeUser() async {
     try {
-      await platform
-          .invokeMethod("deauthorizeUser")
-          .then((deAuthorizeResult) => {
-                if (deAuthorizeResult != null)
-                  {
-                    print(
-                        "AHI ERROR: Failed to deuathorize user with error: $deAuthorizeResult)"),
-                  }
-                else
-                  {
-                    print("AHI INFO: User is deauthorized."),
-                  }
-              });
+      await platform.invokeMethod("deauthorizeUser").then((deAuthorizeResult) => {
+            if (deAuthorizeResult != null)
+              {
+                print("AHI ERROR: Failed to deuathorize user with error: $deAuthorizeResult)"),
+              }
+            else
+              {
+                print("AHI INFO: User is deauthorized."),
+              }
+          });
     } on PlatformException catch (error) {
       print("AHI ERROR: deAuthorizeUser $error");
     }
@@ -437,10 +402,7 @@ class _HomeState extends State<Home> {
     var instruction1 = inputValues["str_ent_instruction1"];
     var instruction2 = inputValues["str_ent_instruction2"];
 
-    if (scanLength is! int &&
-        instruction1 is! String &&
-        instruction2 is! String &&
-        scanLength < 20) {
+    if (scanLength is! int && instruction1 is! String && instruction2 is! String && scanLength < 20) {
       return false;
     } else {
       return true;
@@ -457,19 +419,13 @@ class _HomeState extends State<Home> {
     }
     var height = inputValues["cm_ent_height"];
     var weight = inputValues["kg_ent_weight"];
-    if (height is! int &&
-        weight is! int &&
-        height < 50 &&
-        height > 255 &&
-        weight < 16 &&
-        weight > 300) {
+    if (height is! int && weight is! int && height < 50 && height > 255 && weight < 16 && weight > 300) {
       return false;
     }
     return true;
   }
 
-  bool areBodyScanSmoothingResultsValid(
-      List<Map<String, dynamic>> resultsList) {
+  bool areBodyScanSmoothingResultsValid(List<Map<String, dynamic>> resultsList) {
     // Your token may only provide you access to a smaller subset of results.
     // You should modify this list based on your available config options.
     var sdkResultSchema = [
@@ -511,16 +467,10 @@ class _HomeState extends State<Home> {
           padding: const EdgeInsets.only(left: 12, right: 12),
           children: [
             if (!_isSDKSetup) defaultButton("Setup SDK", () => {didTapSetup()}),
-            if (_isUserAuthorized)
-              defaultButton("Start FaceScan", () => {didTapStartFaceScan()}),
-            if (_isUserAuthorized)
-              defaultButton(
-                  "Start FingerScan", () => {didTapStartFingerScan()}),
-            if (_isUserAuthorized && !_resourcesAreAvailable)
-              defaultButton(
-                  "Download Resources", () => {didTapDownloadResources()}),
-            if (_isUserAuthorized && _resourcesAreAvailable)
-              defaultButton("Start BodyScan", () => {didTapStartBodyScan()}),
+            if (_isUserAuthorized) defaultButton("Start FaceScan", () => {didTapStartFaceScan()}),
+            if (_isUserAuthorized) defaultButton("Start FingerScan", () => {didTapStartFingerScan()}),
+            if (_isUserAuthorized && !_resourcesAreAvailable) defaultButton("Download Resources", () => {didTapDownloadResources()}),
+            if (_isUserAuthorized && _resourcesAreAvailable) defaultButton("Start BodyScan", () => {didTapStartBodyScan()}),
           ],
         ),
       ),
@@ -538,8 +488,7 @@ Widget defaultButton(String title, Function action) {
         title,
         style: const TextStyle(color: Colors.white),
       ),
-      style:
-          ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.black)),
+      style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Colors.black)),
       onPressed: () {
         action();
       },

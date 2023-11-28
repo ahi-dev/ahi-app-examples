@@ -60,7 +60,7 @@ RCT_EXTERN_METHOD(
                   )
 
 RCT_EXTERN_METHOD(
-                  getBodyScanExtras:(NSDictionary *)bodyScanResult
+                  getBodyScanExtra:(NSDictionary *)bodyScanResult
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject
                   )
