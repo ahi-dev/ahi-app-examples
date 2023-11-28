@@ -1,3 +1,9 @@
+//
+//  AHI
+//
+//  Copyright (c) AHI. All rights reserved.
+//
+
 package com.ahi_react_native_multiscan_boilerplate
 
 import android.net.Uri

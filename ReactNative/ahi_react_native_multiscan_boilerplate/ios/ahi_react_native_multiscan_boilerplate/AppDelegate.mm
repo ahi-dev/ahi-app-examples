@@ -1,3 +1,9 @@
+//
+//  AHI
+//
+//  Copyright (c) AHI. All rights reserved.
+//
+
 #import "AppDelegate.h"
 
 #import <React/RCTBundleURLProvider.h>

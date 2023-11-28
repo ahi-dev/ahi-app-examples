@@ -1,3 +1,9 @@
+//
+//  AHI
+//
+//  Copyright (c) AHI. All rights reserved.
+//
+
 package com.ahi_react_native_multiscan_boilerplate
 
 import android.view.View
@@ -15,7 +21,9 @@ class AHIMultiScanPackage : ReactPackage {
         return modules
     }
 
-    override fun createViewManagers(context: ReactApplicationContext): MutableList<ViewManager<View, ReactShadowNode<*>>> {
+    override fun createViewManagers(
+            context: ReactApplicationContext
+    ): MutableList<ViewManager<View, ReactShadowNode<*>>> {
         return Collections.emptyList()
     }
 }
