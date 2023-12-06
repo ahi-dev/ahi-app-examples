@@ -121,7 +121,7 @@ dependencies {
     implementation("com.facebook.react:react-android")
 
     // AHI SDKs
-    def AHISdkVersion = '23.10.+'
+    def AHISdkVersion = '23.11.+'
     implementation "com.advancedhumanimaging.sdk:ahi-sdk-multiscan:$AHISdkVersion"
     implementation "com.advancedhumanimaging.sdk:ahi-sdk-facescan:$AHISdkVersion"
     implementation "com.advancedhumanimaging.sdk:ahi-sdk-fingerscan:$AHISdkVersion"
