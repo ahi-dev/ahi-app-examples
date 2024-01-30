@@ -1,7 +1,7 @@
 //
 //  AHI - Example Code
 //
-// Copyright (c) AHI. All rights reserved.
+//  Copyright (c) AHI. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ import com.facebook.react.ReactRootView;
 public class MainActivity extends ReactActivity {
 
     /**
-     * Returns the name of the main component registered from JavaScript. This is used to schedule
+     * Returns the name of the main component registered from JavaScript. This is
+     * used to schedule
      * rendering of the component.
      */
     @Override
@@ -33,7 +34,8 @@ public class MainActivity extends ReactActivity {
     }
 
     /**
-     * Returns the instance of the {@link ReactActivityDelegate}. There the RootView is created and
+     * Returns the instance of the {@link ReactActivityDelegate}. There the RootView
+     * is created and
      * you can specify the rendered you wish to use (Fabric or the older renderer).
      */
     @Override
