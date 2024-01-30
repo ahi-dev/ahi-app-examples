@@ -27,10 +27,10 @@ target 'AHIReactNativeMultiScanBoilerPlate' do
   use_frameworks!
 
   # Pods for ahi_uikit_multiscan_boilerplate
-  pod 'AHIMultiScan', '~> 23.8.0'
-  pod 'AHIBodyScan', '~> 23.8.0'
-  pod 'AHIFaceScan', '~> 23.8.0'
-  pod 'AHIFingerScan', '~> 23.8.0'
+  pod 'AHIMultiScan', '~> 23.11.0'
+  pod 'AHIBodyScan', '~> 23.11.0'
+  pod 'AHIFaceScan', '~> 23.11.0'
+  pod 'AHIFingerScan', '~> 23.11.0'
 
   target 'AHIReactNativeMultiScanBoilerPlateTests' do
     inherit! :complete
