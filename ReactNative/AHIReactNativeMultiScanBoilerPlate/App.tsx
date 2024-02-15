@@ -17,7 +17,7 @@
 
 import React, { useState } from 'react';
 import type { ReactNode } from 'react';
-import MultiScanModule from './Modules/MultiScanModule';
+import AHIMultiScanModule from './AHIMultiScanModule/AHIMultiScanModule';
 import {
   Button,
   PermissionsAndroid,
@@ -82,7 +82,7 @@ const App: () => ReactNode = () => {
    * We recommend doing this on successfuil load of your application.
    */
   const setupMultiScanSDK = async () => {
-    await MultiScanModule.setupMultiScanSDK(AHI_MULTI_SCAN_TOKEN)
+    await AHIMultiScanModule.setupMultiScanSDK(AHI_MULTI_SCAN_TOKEN)
       .then((result: any) => {
         console.log(result);
         if (result !== '') {
@@ -102,7 +102,7 @@ const App: () => ReactNode = () => {
    * With your signed in user, you can authorize them to use the AHI service,  provided that they have agreed to a payment method.
    */
   const authorizeUser = async () => {
-    await MultiScanModule.authorizeUser(
+    await AHIMultiScanModule.authorizeUser(
       AHI_TEST_USER_ID,
       AHI_TEST_USER_SALT,
       AHI_TEST_USER_CLAIMS,
@@ -133,7 +133,7 @@ const App: () => ReactNode = () => {
    * You are required to download them inorder to obtain a body scan.
    */
   const areAHIResourcesAvailable = async () => {
-    MultiScanModule.areAHIResourcesAvailable().then((areAvailable: boolean) => {
+    AHIMultiScanModule.areAHIResourcesAvailable().then((areAvailable: boolean) => {
       if (!areAvailable) {
         console.log('AHI INFO: Resources are not downloaded');
         // start download.
@@ -165,7 +165,7 @@ const App: () => ReactNode = () => {
       }
     }
     );
-    MultiScanModule.getResourcesDownloadProgressReport();
+    AHIMultiScanModule.getResourcesDownloadProgressReport();
   };
 
 
@@ -175,14 +175,14 @@ const App: () => ReactNode = () => {
    * We recomment only calling this function once per session to prevent duplicate background resource calls.
    */
   function downloadAHIResources() {
-    MultiScanModule.downloadAHIResources();
+    AHIMultiScanModule.downloadAHIResources();
   }
 
   /**
    * Check the size of the AHI resources that require downloading.
    */
   function checkAHIResourcesDownloadSize() {
-    MultiScanModule.checkAHIResourcesDownloadSize().then((size: any) => {
+    AHIMultiScanModule.checkAHIResourcesDownloadSize().then((size: any) => {
       console.log(
         'AHI INFO: Size of download is ' + Number(size) / 1024 / 1024,
         // 'AHI INFO: Size of download is ' + size,
@@ -205,11 +205,11 @@ const App: () => ReactNode = () => {
       console.log('AHI ERROR: Face Scan inputs');
       return;
     }
-    MultiScanModule.startFaceScan(userFaceScanInput)
+    AHIMultiScanModule.startFaceScan(userFaceScanInput)
       .then((faceScanResults: Map<String, any>) => {
         console.log('AHI: SCAN RESULTS: ' + JSON.stringify(faceScanResults));
       })
-      .catch(error => {
+      .catch((error: string) => {
         console.log('AHI ERROR: Face Scan error: ' + error);
       });
   };
@@ -225,11 +225,11 @@ const App: () => ReactNode = () => {
       return;
     }
 
-    MultiScanModule.startFingerScan(userFingerScanInput)
+    AHIMultiScanModule.startFingerScan(userFingerScanInput)
       .then((fingerScanResults: Map<String, any>) => {
         console.log('AHI: SCAN RESULTS: ' + JSON.stringify(fingerScanResults));
       })
-      .catch(error => {
+      .catch((error: string) => {
         console.log('AHI ERROR: Face Scan error: ' + error);
       });
 
@@ -246,12 +246,12 @@ const App: () => ReactNode = () => {
       console.log('AHI ERROR: Body Scan inputs invalid.');
       return;
     }
-    MultiScanModule.startBodyScan(userBodyScanInput)
+    AHIMultiScanModule.startBodyScan(userBodyScanInput)
       .then((bodyScanResult: Map<String, any>) => {
         console.log('AHI: SCAN RESULTS: ' + JSON.stringify(bodyScanResult));
         getBodyScanExtra(bodyScanResult);
       })
-      .catch(error => {
+      .catch((error: string) => {
         console.log('AHI ERROR: Body Scan error: ' + error);
       });
   };
@@ -276,7 +276,7 @@ const App: () => ReactNode = () => {
     setMultiScanPersistenceDelegate(bodyScanResult)
     // Get body scan extra.
     var result = JSON.parse(JSON.stringify(bodyScanResult));
-    MultiScanModule.getBodyScanExtra(result).then((path: any) => {
+    AHIMultiScanModule.getBodyScanExtra(result).then((path: any) => {
       console.log('AHI 3D Mesh : ' + path['meshURL']);
       console.log('AHI 3D Mesh : ' + JSON.stringify(path));
     });
@@ -286,7 +286,7 @@ const App: () => ReactNode = () => {
    * Check if MultiScan is on or offline.
    */
   function getMultiScanStatus() {
-    MultiScanModule.getMultiScanStatus().then(status =>
+    AHIMultiScanModule.getMultiScanStatus().then((status: any) =>
       console.log('AHI INFO: Status: ', status),
     );
   }
@@ -295,11 +295,11 @@ const App: () => ReactNode = () => {
    * Check your AHI MultiScan organisation  details.
    */
   function getMultiScanDetails() {
-    MultiScanModule.getMultiScanDetails()
-      .then(details => {
+    AHIMultiScanModule.getMultiScanDetails()
+      .then((details: any) => {
         console.log('AHI INFO: MultiScan details: ', details);
       })
-      .catch(error => {
+      .catch((error: any) => {
         console.log('AHI ERROR: getMultiScanDetails ', error);
       });
   }
@@ -308,14 +308,14 @@ const App: () => ReactNode = () => {
    * Check if the user is authorized to use the MuiltScan service.
    */
   function getUserAuthorizedState() {
-    MultiScanModule.getUserAuthorizedState()
-      .then(isAuthorized => {
+    AHIMultiScanModule.getUserAuthorizedState()
+      .then((isAuthorized: any) => {
         console.log(
           'AHI INFO: User is ',
           isAuthorized ? 'authorized' : 'not authorized',
         );
       })
-      .catch(error => {
+      .catch((error: any) => {
         console.log('AHI ERROR: getUserAuthorizedState ', error);
       });
   }
@@ -324,8 +324,8 @@ const App: () => ReactNode = () => {
    * Deauthorize the user.
    */
   function deauthorizeUser() {
-    MultiScanModule.deauthorizeUser()
-      .then(deAuthorizeResult => {
+    AHIMultiScanModule.deauthorizeUser()
+      .then((deAuthorizeResult: string) => {
         if (deAuthorizeResult !== '') {
           console.log(
             'AHI ERROR: Failed to deuathorize user with error: ',
@@ -335,7 +335,7 @@ const App: () => ReactNode = () => {
           console.log('AHI INFO: User is deauthorized.');
         }
       })
-      .catch(error => {
+      .catch((error: string) => {
         console.log('AHI ERROR: deAuthorizeUser ', error);
       });
   }
@@ -347,7 +347,7 @@ const App: () => ReactNode = () => {
    * The Android MultiScan SDK does not yet have this functionality implemented. This will be available in future versions of the AHIMultiScan module.
    */
   function releaseMultiScanSDK() {
-    MultiScanModule.releaseMultiScanSDK().then(releaseSDKResult => {
+    AHIMultiScanModule.releaseMultiScanSDK().then((releaseSDKResult: string) => {
       if (releaseSDKResult !== '') {
         console.log(
           'AHI ERROR: Failed to release SDK with error: ',
@@ -379,7 +379,7 @@ const App: () => ReactNode = () => {
       );
       return;
     }
-    MultiScanModule.setMultiScanPersistenceDelegate(scanResult);
+    AHIMultiScanModule.setMultiScanPersistenceDelegate(scanResult);
   }
 
   /**
