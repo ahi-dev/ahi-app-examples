@@ -68,6 +68,14 @@ You've successfully run and modified your React Native App. :partying_face:
 
 If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
 
+**Issue for React-Native v0.73.4 – manually add OpenCV 
+
+1. Step 1: Download the OpenCV libraries for Android by following the link provided: [OpenCV for Android](https://opencv.org/releases/).
+2. Step 2: In Android Studio, go to "File" -> "New" -> "Import Module" in the menu bar to navigate to the module import feature.
+3. Step 3: Please paste the OpenCV path ("OpenCV-android-sdk/sdk") into the source directory field and name the module "opencv".
+4. Step 4: In the "settings.gradle" file, add the line "include ':opencv'".
+5. Step 5: In the app-level "build.gradle" file, add the line "implementation project(':opencv')".
+
 # Learn More
 
 To learn more about React Native, take a look at the following resources:
