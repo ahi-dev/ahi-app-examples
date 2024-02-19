@@ -1,3 +1,9 @@
+//
+//  AHI
+//
+//  Copyright (c) AHI. All rights reserved.
+//
+
 #import "AppDelegate.h"
 
 #import <React/RCTBundleURLProvider.h>
@@ -15,11 +21,6 @@
 }
 
 - (NSURL *)sourceURLForBridge:(RCTBridge *)bridge
-{
-  return [self getBundleURL];
-}
-
-- (NSURL *)getBundleURL
 {
 #if DEBUG
   return [[RCTBundleURLProvider sharedSettings] jsBundleURLForBundleRoot:@"index"];
